@@ -2058,7 +2058,12 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 
 	/* Retieve rows estimation */
 	rows_str = list_nth(name_list, hint->nrels);
-	if (rows_str[0] == '+')
+	if (rows_str[0] == '#')
+	{
+		hint->value_type = RVT_ABSOLUTE;
+		rows_str++;
+	}
+	else if (rows_str[0] == '+')
 	{
 		hint->value_type = RVT_ADD;
 		rows_str++;
@@ -2080,7 +2085,11 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 	}
 	else
 	{
-		hint->value_type = RVT_ABSOLUTE;
+		hint_ereport(str,
+					 ("unrecognized rows value type notation.",
+					  hint->base.keyword));
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
 	}
 	hint->rows = strtod(rows_str, &end_ptr);
 	if (*end_ptr)

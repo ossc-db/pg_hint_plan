@@ -845,3 +845,10 @@ BEGIN
 END;
 $$;
 DROP EXTENSION pg_hint_plan;
+
+-- Rows hint tests
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
+/*+ Rows(t1 t2 #10) */
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
+/*+ Rows(t1 t2 *10) */
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
