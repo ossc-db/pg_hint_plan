@@ -847,8 +847,15 @@ $$;
 DROP EXTENSION pg_hint_plan;
 
 -- Rows hint tests
+-- value types
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
-/*+ Rows(t1 t2 #10) */
+/*+ Rows(t1 t2 #99) */
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
-/*+ Rows(t1 t2 *10) */
+/*+ Rows(t1 t2 +99) */
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
+/*+ Rows(t1 t2 -99) */
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
+/*+ Rows(t1 t2 *99) */
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
+/*+ Rows(t1 t2 /99) */
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
