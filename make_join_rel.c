@@ -36,8 +36,6 @@ adjust_rows(double rows, RowsHint *hint)
 		result =  rows - hint->rows;
 	else if (hint->value_type == RVT_MULTI)
 		result = rows * hint->rows;
-	else if (hint->value_type == RVT_DIV)
-		result = rows / hint->rows;
 	else
 		Assert(false);	/* unrecognized rows value type */
 

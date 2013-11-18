@@ -270,7 +270,6 @@ typedef enum RowsValueType {
 	RVT_ADD,			/* Rows(... +1000) */
 	RVT_SUB,			/* Rows(... -1000) */
 	RVT_MULTI,			/* Rows(... *1.2) */
-	RVT_DIV,			/* Rows(... /100) */
 } RowsValueType;
 typedef struct RowsHint
 {
@@ -2078,16 +2077,9 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 		hint->value_type = RVT_MULTI;
 		rows_str++;
 	}
-	else if (rows_str[0] == '/')
-	{
-		hint->value_type = RVT_DIV;
-		rows_str++;
-	}
 	else
 	{
-		hint_ereport(str,
-					 ("unrecognized rows value type notation.",
-					  hint->base.keyword));
+		hint_ereport(str, ("unrecognized rows value type notation."));
 		hint->base.state = HINT_STATE_ERROR;
 		return str;
 	}
