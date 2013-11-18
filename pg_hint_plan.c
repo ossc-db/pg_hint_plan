@@ -85,6 +85,7 @@ PG_MODULE_MAGIC;
 #define HINT_NOHASHJOIN			"NoHashJoin"
 #define HINT_LEADING			"Leading"
 #define HINT_SET				"Set"
+#define HINT_ROWS				"Rows"
 
 #define HINT_ARRAY_DEFAULT_INITSIZE 8
 
@@ -144,6 +145,7 @@ typedef enum HintKeyword
 	HINT_KEYWORD_NOHASHJOIN,
 	HINT_KEYWORD_LEADING,
 	HINT_KEYWORD_SET,
+	HINT_KEYWORD_ROWS,
 	HINT_KEYWORD_UNRECOGNIZED
 } HintKeyword;
 
@@ -160,20 +162,22 @@ typedef const char *(*HintParseFunction) (Hint *hint, HintState *hstate,
 										  Query *parse, const char *str);
 
 /* hint types */
-#define NUM_HINT_TYPE	4
+#define NUM_HINT_TYPE	5
 typedef enum HintType
 {
 	HINT_TYPE_SCAN_METHOD,
 	HINT_TYPE_JOIN_METHOD,
 	HINT_TYPE_LEADING,
-	HINT_TYPE_SET
+	HINT_TYPE_SET,
+	HINT_TYPE_ROWS,
 } HintType;
 
 static const char *HintTypeName[] = {
 	"scan method",
 	"join method",
 	"leading",
-	"set"
+	"set",
+	"rows",
 };
 
 /* hint status */
@@ -260,6 +264,26 @@ typedef struct SetHint
 	List   *words;
 } SetHint;
 
+/* rows hints */
+typedef enum RowsValueType {
+	RVT_ABSOLUTE,		/* Rows(... #1000) */
+	RVT_ADD,			/* Rows(... +1000) */
+	RVT_SUB,			/* Rows(... -1000) */
+	RVT_MULTI,			/* Rows(... *1.2) */
+	RVT_DIV,			/* Rows(... /100) */
+} RowsValueType;
+typedef struct RowsHint
+{
+	Hint			base;
+	int				nrels;
+	int				inner_nrels;
+	char		  **relnames;
+	Relids			joinrelids;
+	Relids			inner_joinrelids;
+	RowsValueType	value_type;
+	double			rows;
+} RowsHint;
+
 /*
  * Describes a context of hint processing.
  */
@@ -295,6 +319,9 @@ struct HintState
 	/* for Set hints */
 	SetHint		  **set_hints;			/* parsed Set hints */
 	GucContext		context;			/* which GUC parameters can we set? */
+
+	/* for Rows hints */
+	RowsHint	  **rows_hints;			/* parsed Rows hints */
 };
 
 /*
@@ -356,6 +383,15 @@ static void SetHintDesc(SetHint *hint, StringInfo buf);
 static int SetHintCmp(const SetHint *a, const SetHint *b);
 static const char *SetHintParse(SetHint *hint, HintState *hstate, Query *parse,
 								const char *str);
+static Hint *RowsHintCreate(const char *hint_str, const char *keyword,
+							HintKeyword hint_keyword);
+static void RowsHintDelete(RowsHint *hint);
+static void RowsHintDesc(RowsHint *hint, StringInfo buf);
+static int RowsHintCmp(const RowsHint *a, const RowsHint *b);
+static const char *RowsHintParse(RowsHint *hint, HintState *hstate,
+								 Query *parse, const char *str);
+static Hint *LeadingHintCreate(const char *hint_str, const char *keyword,
+							   HintKeyword hint_keyword);
 
 static void quote_value(StringInfo buf, const char *value);
 
@@ -457,6 +493,7 @@ static const HintParser parsers[] = {
 	{HINT_NOHASHJOIN, JoinMethodHintCreate, HINT_KEYWORD_NOHASHJOIN},
 	{HINT_LEADING, LeadingHintCreate, HINT_KEYWORD_LEADING},
 	{HINT_SET, SetHintCreate, HINT_KEYWORD_SET},
+	{HINT_ROWS, RowsHintCreate, HINT_KEYWORD_ROWS},
 	{NULL, NULL, HINT_KEYWORD_UNRECOGNIZED}
 };
 
@@ -725,6 +762,53 @@ SetHintDelete(SetHint *hint)
 	pfree(hint);
 }
 
+static Hint *
+RowsHintCreate(const char *hint_str, const char *keyword,
+			   HintKeyword hint_keyword)
+{
+	RowsHint *hint;
+
+	hint = palloc(sizeof(RowsHint));
+	hint->base.hint_str = hint_str;
+	hint->base.keyword = keyword;
+	hint->base.hint_keyword = hint_keyword;
+	hint->base.type = HINT_TYPE_ROWS;
+	hint->base.state = HINT_STATE_NOTUSED;
+	hint->base.delete_func = (HintDeleteFunction) RowsHintDelete;
+	hint->base.desc_func = (HintDescFunction) RowsHintDesc;
+	hint->base.cmp_func = (HintCmpFunction) RowsHintCmp;
+	hint->base.parse_func = (HintParseFunction) RowsHintParse;
+	hint->nrels = 0;
+	hint->inner_nrels = 0;
+	hint->relnames = NULL;
+	hint->joinrelids = NULL;
+	hint->inner_joinrelids = NULL;
+	hint->value_type = RVT_ABSOLUTE;
+	hint->rows = 0;
+
+	return (Hint *) hint;
+}
+
+static void
+RowsHintDelete(RowsHint *hint)
+{
+	if (!hint)
+		return;
+
+	if (hint->relnames)
+	{
+		int	i;
+
+		for (i = 0; i < hint->nrels; i++)
+			pfree(hint->relnames[i]);
+		pfree(hint->relnames);
+	}
+
+	bms_free(hint->joinrelids);
+	bms_free(hint->inner_joinrelids);
+	pfree(hint);
+}
+
 static HintState *
 HintStateCreate(void)
 {
@@ -748,6 +832,7 @@ HintStateCreate(void)
 	hstate->leading_hint = NULL;
 	hstate->context = superuser() ? PGC_SUSET : PGC_USERSET;
 	hstate->set_hints = NULL;
+	hstate->rows_hints = NULL;
 
 	return hstate;
 }
@@ -912,6 +997,25 @@ SetHintDesc(SetHint *hint, StringInfo buf)
 	appendStringInfo(buf, ")\n");
 }
 
+static void
+RowsHintDesc(RowsHint *hint, StringInfo buf)
+{
+	int	i;
+
+	appendStringInfo(buf, "%s(", hint->base.keyword);
+	if (hint->relnames != NULL)
+	{
+		quote_value(buf, hint->relnames[0]);
+		for (i = 1; i < hint->nrels; i++)
+		{
+			appendStringInfoCharMacro(buf, ' ');
+			quote_value(buf, hint->relnames[i]);
+		}
+	}
+	appendStringInfoString(buf, ")\n");
+
+}
+
 /*
  * Append string which represents all hints in a given state to buf, with
  * preceding title with them.
@@ -1006,6 +1110,24 @@ static int
 SetHintCmp(const SetHint *a, const SetHint *b)
 {
 	return strcmp(a->name, b->name);
+}
+
+static int
+RowsHintCmp(const RowsHint *a, const RowsHint *b)
+{
+	int	i;
+
+	if (a->nrels != b->nrels)
+		return a->nrels - b->nrels;
+
+	for (i = 0; i < a->nrels; i++)
+	{
+		int	result;
+		if ((result = RelnameCmp(&a->relnames[i], &b->relnames[i])) != 0)
+			return result;
+	}
+
+	return 0;
 }
 
 static int
@@ -1607,6 +1729,8 @@ create_hintstate(Query *parse, const char *hints)
 		hstate->num_hints[HINT_TYPE_JOIN_METHOD]);
 	hstate->set_hints = (SetHint **) (hstate->leading_hint +
 		hstate->num_hints[HINT_TYPE_LEADING]);
+	hstate->rows_hints = (RowsHint **) (hstate->set_hints +
+		hstate->num_hints[HINT_TYPE_SET]);
 
 	return hstate;
 }
@@ -1894,6 +2018,94 @@ SetHintParse(SetHint *hint, HintState *hstate, Query *parse, const char *str)
 					  HINT_SET));
 		hint->base.state = HINT_STATE_ERROR;
 	}
+
+	return str;
+}
+
+static const char *
+RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
+			  const char *str)
+{
+	HintKeyword		hint_keyword = hint->base.hint_keyword;
+	List		   *name_list = NIL;
+	char		   *rows_str;
+	char		   *end_ptr;
+
+	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
+		return NULL;
+
+	/* Last element must be rows specification */
+	hint->nrels = list_length(name_list) - 1;
+
+	if (hint->nrels > 0)
+	{
+		ListCell   *l;
+		int			i = 0;
+
+		/*
+		 * Transform relation names from list to array to sort them with qsort
+		 * after.
+		 */
+		hint->relnames = palloc(sizeof(char *) * hint->nrels);
+		foreach (l, name_list)
+		{
+			if (hint->nrels <= i)
+				break;
+			hint->relnames[i] = lfirst(l);
+			i++;
+		}
+	}
+
+	/* Retieve rows estimation */
+	rows_str = list_nth(name_list, hint->nrels);
+	if (rows_str[0] == '+')
+	{
+		hint->value_type = RVT_ADD;
+		rows_str++;
+	}
+	else if (rows_str[0] == '-')
+	{
+		hint->value_type = RVT_SUB;
+		rows_str++;
+	}
+	else if (rows_str[0] == '*')
+	{
+		hint->value_type = RVT_MULTI;
+		rows_str++;
+	}
+	else if (rows_str[0] == '/')
+	{
+		hint->value_type = RVT_DIV;
+		rows_str++;
+	}
+	else
+	{
+		hint->value_type = RVT_ABSOLUTE;
+	}
+	hint->rows = strtod(rows_str, &end_ptr);
+	if (*end_ptr)
+	{
+		hint_ereport(str,
+					 ("%s hint requires valid number as rows estimation.",
+					  hint->base.keyword));
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
+	}
+
+	/* A join hint requires at least two relations */
+	if (hint->nrels < 2)
+	{
+		hint_ereport(str,
+					 ("%s hint requires at least two relations.",
+					  hint->base.keyword));
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
+	}
+
+	list_free(name_list);
+
+	/* Sort relnames in alphabetical order. */
+	qsort(hint->relnames, hint->nrels, sizeof(char *), RelnameCmp);
 
 	return str;
 }
@@ -2962,6 +3174,40 @@ OuterInnerJoinCreate(OuterInnerRels *outer_inner, LeadingHint *leading_hint,
 	return join_relids;
 }
 
+static Relids
+create_bms_of_relids(Hint *base, PlannerInfo *root, List *initial_rels,
+		int nrels, char **relnames)
+{
+	int		relid;
+	Relids	relids = NULL;
+	int		j;
+	char   *relname;
+
+	for (j = 0; j < nrels; j++)
+	{
+		relname = relnames[j];
+
+		relid = find_relid_aliasname(root, relname, initial_rels,
+									 base->hint_str);
+
+		if (relid == -1)
+			base->state = HINT_STATE_ERROR;
+
+		if (relid <= 0)
+			break;
+
+		if (bms_is_member(relid, relids))
+		{
+			hint_ereport(base->hint_str,
+						 ("Relation name \"%s\" is duplicated.", relname));
+			base->state = HINT_STATE_ERROR;
+			break;
+		}
+
+		relids = bms_add_member(relids, relid);
+	}
+	return relids;
+}
 /*
  * Transform join method hint into handy form.
  *
@@ -2989,43 +3235,36 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_JOIN_METHOD]; i++)
 	{
 		JoinMethodHint *hint = hstate->join_hints[i];
-		int	j;
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
 
-		bms_free(hint->joinrelids);
-		hint->joinrelids = NULL;
-		relid = 0;
-		for (j = 0; j < hint->nrels; j++)
-		{
-			relname = hint->relnames[j];
+		hint->joinrelids = create_bms_of_relids(&(hint->base), root,
+									 initial_rels, hint->nrels, hint->relnames);
 
-			relid = find_relid_aliasname(root, relname, initial_rels,
-										 hint->base.hint_str);
-
-			if (relid == -1)
-				hint->base.state = HINT_STATE_ERROR;
-
-			if (relid <= 0)
-				break;
-
-			if (bms_is_member(relid, hint->joinrelids))
-			{
-				hint_ereport(hint->base.hint_str,
-							 ("Relation name \"%s\" is duplicated.", relname));
-				hint->base.state = HINT_STATE_ERROR;
-				break;
-			}
-
-			hint->joinrelids = bms_add_member(hint->joinrelids, relid);
-		}
-
-		if (relid <= 0 || hint->base.state == HINT_STATE_ERROR)
+		if (hint->joinrelids == NULL || hint->base.state == HINT_STATE_ERROR)
 			continue;
 
 		hstate->join_hint_level[hint->nrels] =
 			lappend(hstate->join_hint_level[hint->nrels], hint);
+	}
+
+	/*
+	 * Create bitmap of relids from alias names for each rows hint.
+	 * Bitmaps are more handy than strings in join searching.
+	 */
+	for (i = 0; i < hstate->num_hints[HINT_TYPE_ROWS]; i++)
+	{
+		RowsHint *hint = hstate->rows_hints[i];
+
+		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
+			continue;
+
+		hint->joinrelids = create_bms_of_relids(&(hint->base), root,
+									 initial_rels, hint->nrels, hint->relnames);
+
+		if (hint->joinrelids == NULL || hint->base.state == HINT_STATE_ERROR)
+			continue;
 	}
 
 	/* Do nothing if no Leading hint was supplied. */
@@ -3189,7 +3428,6 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 				ListCell *next = NULL;
 				for(l = list_head(hstate->join_hint_level[i]); l; l = next)
 				{
-
 					JoinMethodHint *hint = (JoinMethodHint *)lfirst(l);
 
 					next = lnext(l);
@@ -3363,6 +3601,7 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 	}
 
 	joinrelids = bms_union(outerrel->relids, innerrel->relids);
+
 	join_hint = find_join_hint(joinrelids);
 	bms_free(joinrelids);
 
