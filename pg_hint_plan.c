@@ -279,6 +279,7 @@ typedef struct RowsHint
 	char		  **relnames;
 	Relids			joinrelids;
 	Relids			inner_joinrelids;
+	char		   *rows_str;
 	RowsValueType	value_type;
 	double			rows;
 } RowsHint;
@@ -782,6 +783,7 @@ RowsHintCreate(const char *hint_str, const char *keyword,
 	hint->relnames = NULL;
 	hint->joinrelids = NULL;
 	hint->inner_joinrelids = NULL;
+	hint->rows_str = NULL;
 	hint->value_type = RVT_ABSOLUTE;
 	hint->rows = 0;
 
@@ -1011,6 +1013,7 @@ RowsHintDesc(RowsHint *hint, StringInfo buf)
 			quote_value(buf, hint->relnames[i]);
 		}
 	}
+	appendStringInfo(buf, " %s", hint->rows_str);
 	appendStringInfoString(buf, ")\n");
 
 }
@@ -2057,6 +2060,7 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 
 	/* Retieve rows estimation */
 	rows_str = list_nth(name_list, hint->nrels);
+	hint->rows_str = rows_str;		/* store as-is for error logging */
 	if (rows_str[0] == '#')
 	{
 		hint->value_type = RVT_ABSOLUTE;
@@ -2079,14 +2083,14 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 	}
 	else
 	{
-		hint_ereport(str, ("unrecognized rows value type notation."));
+		hint_ereport(rows_str, ("unrecognized rows value type notation."));
 		hint->base.state = HINT_STATE_ERROR;
 		return str;
 	}
 	hint->rows = strtod(rows_str, &end_ptr);
 	if (*end_ptr)
 	{
-		hint_ereport(str,
+		hint_ereport(rows_str,
 					 ("%s hint requires valid number as rows estimation.",
 					  hint->base.keyword));
 		hint->base.state = HINT_STATE_ERROR;
