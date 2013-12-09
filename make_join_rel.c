@@ -27,7 +27,8 @@
 static double
 adjust_rows(double rows, RowsHint *hint)
 {
-	double		result;
+	double		result = 0.0;	/* keep compiler quiet */
+
 	if (hint->value_type == RVT_ABSOLUTE)
 		result = hint->rows;
 	else if (hint->value_type == RVT_ADD)
@@ -42,6 +43,7 @@ adjust_rows(double rows, RowsHint *hint)
 	hint->base.state = HINT_STATE_USED;
 	result = clamp_row_est(result);
 	elog(DEBUG1, "adjusted rows %d to %d", (int) rows, (int) result);
+
 	return result;
 }
 
