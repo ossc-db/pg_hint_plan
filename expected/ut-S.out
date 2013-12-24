@@ -5074,7 +5074,7 @@ error hint:
 (8 rows)
 
 ----
----- No. S-3-11 inheritance table specified table
+---- No. S-3-10 inheritance table specified table
 ----
 EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
             QUERY PLAN             
@@ -5089,7 +5089,7 @@ EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
                Filter: (c1 = 1)
 (8 rows)
 
--- No. S-3-11-1
+-- No. S-3-10-1
 /*+IndexScan(p2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
 LOG:  pg_hint_plan:
@@ -5111,7 +5111,7 @@ error hint:
                Index Cond: (c1 = 1)
 (8 rows)
 
--- No. S-3-11-2
+-- No. S-3-10-2
 /*+IndexScan(p2c1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
 LOG:  pg_hint_plan:
@@ -5133,7 +5133,7 @@ error hint:
                Filter: (c1 = 1)
 (8 rows)
 
--- No. S-3-11-3
+-- No. S-3-10-3
 EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
                             QUERY PLAN                             
 -------------------------------------------------------------------
@@ -5168,7 +5168,7 @@ error hint:
                Filter: ((c2 * 2) < 100)
 (6 rows)
 
--- No. S-3-11-4
+-- No. S-3-10-4
 /*+IndexScan(p1 p1_i2)*/
 EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
 LOG:  available indexes for IndexScan(p1): p1_i2
@@ -5196,7 +5196,7 @@ error hint:
                Filter: (c2 = 1)
 (10 rows)
 
--- No. S-3-11-5
+-- No. S-3-10-5
 /*+IndexScan(p2 p2c1_pkey)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
 LOG:  available indexes for IndexScan(p2):
@@ -5328,7 +5328,7 @@ error hint:
 (5 rows)
 
 ----
----- No. S-3-13 message output
+---- No. S-3-13 message output of hint
 ----
 -- No. S-3-13-1
 /*+SeqScan(ti1)*/
@@ -5874,7 +5874,7 @@ NoIndexOnlyScan(ti1 ti1_pkey ti1_btree)
 (2 rows)
 
 ----
----- No. S-3-14 message output
+---- No. S-3-14 regular expression
 ----
 EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
            QUERY PLAN           
@@ -6007,7 +6007,7 @@ error hint:
 (6 rows)
 
 ----
----- No. S-3-15 message output
+---- No. S-3-15 message output of index candidate
 ----
 -- No. S-3-15-1
 /*+IndexScan(ti1 ti1_i1)*/
