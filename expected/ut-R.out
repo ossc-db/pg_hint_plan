@@ -289,6 +289,7 @@ error hint:
 \! diff expected/R_1-6-3.out results/R_1-6-3.out
 -- No. R-1-6-4
 CREATE TEMP TABLE tm1 (LIKE s1.t1 INCLUDING ALL);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "tm1_pkey" for table "tm1"
 \o results/R_1-6-4.out.log
 EXPLAIN SELECT * FROM tm1 t1, tm1 t2 WHERE t1.c1 = t2.c1;
 /*+Rows(t1 t2 #1)*/
