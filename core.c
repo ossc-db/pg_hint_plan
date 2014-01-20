@@ -178,7 +178,7 @@ set_append_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 	foreach(l, all_child_outers)
 	{
 		Relids		required_outer = (Relids) lfirst(l);
-		bool		ok = true;
+		bool		subpaths_valid = true;
 		ListCell   *lcr;
 
 		/* Select the child paths for an Append with this parameterization */
@@ -186,31 +186,21 @@ set_append_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 		foreach(lcr, live_childrels)
 		{
 			RelOptInfo *childrel = (RelOptInfo *) lfirst(lcr);
-			Path	   *cheapest_total;
+			Path	   *subpath;
 
-			cheapest_total =
-				get_cheapest_path_for_pathkeys(childrel->pathlist,
-											   NIL,
-											   required_outer,
-											   TOTAL_COST);
-			Assert(cheapest_total != NULL);
-
-			/* Children must have exactly the desired parameterization */
-			if (!bms_equal(PATH_REQ_OUTER(cheapest_total), required_outer))
+			subpath = get_cheapest_parameterized_child_path(root,
+															childrel,
+															required_outer);
+			if (subpath == NULL)
 			{
-				cheapest_total = reparameterize_path(root, cheapest_total,
-													 required_outer, 1.0);
-				if (cheapest_total == NULL)
-				{
-					ok = false;
-					break;
-				}
+				/* failed to make a suitable path for this child */
+				subpaths_valid = false;
+				break;
 			}
-
-			subpaths = accumulate_append_subpath(subpaths, cheapest_total);
+			subpaths = accumulate_append_subpath(subpaths, subpath);
 		}
 
-		if (ok)
+		if (subpaths_valid)
 			add_path(rel, (Path *)
 					 create_append_path(rel, subpaths, required_outer));
 	}
