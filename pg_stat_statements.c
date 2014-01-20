@@ -34,7 +34,7 @@
  * disappear!) and also take the entry's mutex spinlock.
  *
  *
- * Copyright (c) 2008-2013, PostgreSQL Global Development Group
+ * Copyright (c) 2008-2014, PostgreSQL Global Development Group
  *
  * IDENTIFICATION
  *	  contrib/pg_stat_statements/pg_stat_statements.c
@@ -245,8 +245,8 @@ static void pgss_ExecutorRun(QueryDesc *queryDesc,
 				 long count);
 static void pgss_ExecutorFinish(QueryDesc *queryDesc);
 static void pgss_ExecutorEnd(QueryDesc *queryDesc);
-static void pgss_ProcessUtility(Node *parsetree, const char *queryString,
-					ProcessUtilityContext context, ParamListInfo params,
+static void pgss_ProcessUtility(Node *parsetree,
+			  const char *queryString, ParamListInfo params, bool isTopLevel,
 					DestReceiver *dest, char *completionTag);
 static uint32 pgss_hash_fn(const void *key, Size keysize);
 static int	pgss_match_fn(const void *key1, const void *key2, Size keysize);
@@ -797,7 +797,7 @@ pgss_ExecutorEnd(QueryDesc *queryDesc)
  */
 static void
 pgss_ProcessUtility(Node *parsetree, const char *queryString,
-					ProcessUtilityContext context, ParamListInfo params,
+					ParamListInfo params, bool isTopLevel,
 					DestReceiver *dest, char *completionTag)
 {
 	/*
@@ -830,13 +830,11 @@ pgss_ProcessUtility(Node *parsetree, const char *queryString,
 		PG_TRY();
 		{
 			if (prev_ProcessUtility)
-				prev_ProcessUtility(parsetree, queryString,
-									context, params,
-									dest, completionTag);
+				prev_ProcessUtility(parsetree, queryString, params,
+									isTopLevel, dest, completionTag);
 			else
-				standard_ProcessUtility(parsetree, queryString,
-										context, params,
-										dest, completionTag);
+				standard_ProcessUtility(parsetree, queryString, params,
+										isTopLevel, dest, completionTag);
 			nested_level--;
 		}
 		PG_CATCH();
@@ -893,13 +891,11 @@ pgss_ProcessUtility(Node *parsetree, const char *queryString,
 	else
 	{
 		if (prev_ProcessUtility)
-			prev_ProcessUtility(parsetree, queryString,
-								context, params,
-								dest, completionTag);
+			prev_ProcessUtility(parsetree, queryString, params,
+								isTopLevel, dest, completionTag);
 		else
-			standard_ProcessUtility(parsetree, queryString,
-									context, params,
-									dest, completionTag);
+			standard_ProcessUtility(parsetree, queryString, params,
+									isTopLevel, dest, completionTag);
 	}
 }
 
@@ -2143,4 +2139,3 @@ comp_location(const void *a, const void *b)
 	else
 		return 0;
 }
-
