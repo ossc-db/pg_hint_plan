@@ -6,6 +6,7 @@
  * src/backend/optimizer/path/allpaths.c
  *     set_append_rel_pathlist()
  *     generate_mergeappend_paths()
+ *     get_cheapest_parameterized_child_path()
  *     accumulate_append_subpath()
  *     standard_join_search()
  *
@@ -304,6 +305,79 @@ generate_mergeappend_paths(PlannerInfo *root, RelOptInfo *rel,
 															pathkeys,
 															NULL));
 	}
+}
+
+/*
+ * get_cheapest_parameterized_child_path
+ *		Get cheapest path for this relation that has exactly the requested
+ *		parameterization.
+ *
+ * Returns NULL if unable to create such a path.
+ */
+static Path *
+get_cheapest_parameterized_child_path(PlannerInfo *root, RelOptInfo *rel,
+									  Relids required_outer)
+{
+	Path	   *cheapest;
+	ListCell   *lc;
+
+	/*
+	 * Look up the cheapest existing path with no more than the needed
+	 * parameterization.  If it has exactly the needed parameterization, we're
+	 * done.
+	 */
+	cheapest = get_cheapest_path_for_pathkeys(rel->pathlist,
+											  NIL,
+											  required_outer,
+											  TOTAL_COST);
+	Assert(cheapest != NULL);
+	if (bms_equal(PATH_REQ_OUTER(cheapest), required_outer))
+		return cheapest;
+
+	/*
+	 * Otherwise, we can "reparameterize" an existing path to match the given
+	 * parameterization, which effectively means pushing down additional
+	 * joinquals to be checked within the path's scan.  However, some existing
+	 * paths might check the available joinquals already while others don't;
+	 * therefore, it's not clear which existing path will be cheapest after
+	 * reparameterization.	We have to go through them all and find out.
+	 */
+	cheapest = NULL;
+	foreach(lc, rel->pathlist)
+	{
+		Path	   *path = (Path *) lfirst(lc);
+
+		/* Can't use it if it needs more than requested parameterization */
+		if (!bms_is_subset(PATH_REQ_OUTER(path), required_outer))
+			continue;
+
+		/*
+		 * Reparameterization can only increase the path's cost, so if it's
+		 * already more expensive than the current cheapest, forget it.
+		 */
+		if (cheapest != NULL &&
+			compare_path_costs(cheapest, path, TOTAL_COST) <= 0)
+			continue;
+
+		/* Reparameterize if needed, then recheck cost */
+		if (!bms_equal(PATH_REQ_OUTER(path), required_outer))
+		{
+			path = reparameterize_path(root, path, required_outer, 1.0);
+			if (path == NULL)
+				continue;		/* failed to reparameterize this one */
+			Assert(bms_equal(PATH_REQ_OUTER(path), required_outer));
+
+			if (cheapest != NULL &&
+				compare_path_costs(cheapest, path, TOTAL_COST) <= 0)
+				continue;
+		}
+
+		/* We have a new best path */
+		cheapest = path;
+	}
+
+	/* Return the best path, or NULL if we found no suitable candidate */
+	return cheapest;
 }
 
 /*
