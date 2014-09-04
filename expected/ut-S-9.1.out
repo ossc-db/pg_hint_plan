@@ -1894,7 +1894,7 @@ error hint:
                        Filter: (ctid = '(1,1)'::tid)
                        ->  Bitmap Index Scan on t4_pkey
                              Index Cond: (c1 = b1t1.c1)
-   InitPlan 2 (returns $3)
+   InitPlan 2 (returns $4)
      ->  Aggregate
            ->  Nested Loop
                  ->  Nested Loop
@@ -1912,7 +1912,7 @@ error hint:
                  ->  Index Scan using t4_pkey on t4 b2t4
                        Index Cond: (c1 = b2t1.c1)
                        Filter: (ctid = '(1,1)'::tid)
-   InitPlan 3 (returns $5)
+   InitPlan 3 (returns $7)
      ->  Aggregate
            ->  Nested Loop
                  ->  Nested Loop
@@ -1937,7 +1937,7 @@ error hint:
                      Join Filter: (bmt1.c1 = bmt4.c1)
                      ->  Nested Loop
                            ->  Seq Scan on t1 bmt1
-                                 Filter: ((c1 <> $5) AND (ctid = '(1,1)'::tid))
+                                 Filter: ((c1 <> $7) AND (ctid = '(1,1)'::tid))
                            ->  Bitmap Heap Scan on t3 bmt3
                                  Recheck Cond: (c1 = bmt1.c1)
                                  Filter: (ctid = '(1,1)'::tid)
