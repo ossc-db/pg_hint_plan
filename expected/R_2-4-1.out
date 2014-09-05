@@ -24,7 +24,7 @@
 
                                  QUERY PLAN                                  
 -----------------------------------------------------------------------------
- Nested Loop  (cost=xxx rows=1 width=73)
+ Nested Loop  (cost=xxx rows=20 width=73)
    ->  Nested Loop  (cost=xxx rows=2 width=59)
          ->  Values Scan on "*VALUES*"  (cost=xxx rows=1 width=44)
          ->  Index Scan using t1_i1 on t1  (cost=xxx rows=1 width=15)
