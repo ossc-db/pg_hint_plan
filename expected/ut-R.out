@@ -305,9 +305,11 @@ error hint:
 \! diff expected/R_1-6-4.out results/R_1-6-4.out
 -- No. R-1-6-5
 \o results/R_1-6-5.out.log
-EXPLAIN SELECT * FROM pg_catalog.pg_class t1, pg_catalog.pg_class t2 WHERE t1.oid = t2.oid;
+CREATE TABLE tmpcl WITH OIDS AS SELECT * from pg_catalog.pg_class LIMIT 100;
+ANALYZE tmpcl;
+EXPLAIN SELECT * FROM tmpcl t1, tmpcl t2 WHERE t1.oid = t2.oid;
 /*+Rows(t1 t2 #1)*/
-EXPLAIN SELECT * FROM pg_catalog.pg_class t1, pg_catalog.pg_class t2 WHERE t1.oid = t2.oid;
+EXPLAIN SELECT * FROM tmpcl t1, tmpcl t2 WHERE t1.oid = t2.oid;
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -316,7 +318,7 @@ duplication hint:
 error hint:
 
 \o
-\! sed 's/cost=[\.0-9]*/cost=xxx/' results/R_1-6-5.out.log > results/R_1-6-5.out
+\! sed -e 's/cost=[\.0-9]*/cost=xxx/' -e 's/width=[0-9]*/width=xxx/' results/R_1-6-5.out.log > results/R_1-6-5.out
 \! diff expected/R_1-6-5.out results/R_1-6-5.out
 -- No. R-1-6-6
 -- refer ut-fdw.sql

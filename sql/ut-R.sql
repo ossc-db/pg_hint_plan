@@ -190,11 +190,13 @@ EXPLAIN SELECT * FROM tm1 t1, tm1 t2 WHERE t1.c1 = t2.c1;
 
 -- No. R-1-6-5
 \o results/R_1-6-5.out.log
-EXPLAIN SELECT * FROM pg_catalog.pg_class t1, pg_catalog.pg_class t2 WHERE t1.oid = t2.oid;
+CREATE TABLE tmpcl WITH OIDS AS SELECT * from pg_catalog.pg_class LIMIT 100;
+ANALYZE tmpcl;
+EXPLAIN SELECT * FROM tmpcl t1, tmpcl t2 WHERE t1.oid = t2.oid;
 /*+Rows(t1 t2 #1)*/
-EXPLAIN SELECT * FROM pg_catalog.pg_class t1, pg_catalog.pg_class t2 WHERE t1.oid = t2.oid;
+EXPLAIN SELECT * FROM tmpcl t1, tmpcl t2 WHERE t1.oid = t2.oid;
 \o
-\! sed 's/cost=[\.0-9]*/cost=xxx/' results/R_1-6-5.out.log > results/R_1-6-5.out
+\! sed -e 's/cost=[\.0-9]*/cost=xxx/' -e 's/width=[0-9]*/width=xxx/' results/R_1-6-5.out.log > results/R_1-6-5.out
 \! diff expected/R_1-6-5.out results/R_1-6-5.out
 
 -- No. R-1-6-6
