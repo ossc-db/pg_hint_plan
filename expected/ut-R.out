@@ -137,7 +137,7 @@ error hint:
 EXPLAIN SELECT * FROM s1.t1, s2.t1 WHERE s1.t1.c1 = s2.t1.c1;
 /*+Rows(t1 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s2.t1 WHERE s1.t1.c1 = s2.t1.c1;
-INFO:  hint syntax error at or near "Rows(t1 t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t1 #1)"
 DETAIL:  Relation name "t1" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:
@@ -214,7 +214,7 @@ error hint:
 \o results/R_1-5-2.out.log
 /*+Rows(t1 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "Rows(t1 t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t1 #1)"
 DETAIL:  Relation name "t1" is duplicated.
 LOG:  pg_hint_plan:
 used hint:
@@ -230,12 +230,12 @@ Rows(t1 t1 #1)
 \o results/R_1-5-3.out.log
 /*+(t1 t1)(t2 t2)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "(t1 t1)(t2 t2)"
+INFO:  pg_hint_plan: hint syntax error at or near "(t1 t1)(t2 t2)"
 DETAIL:  Unrecognized hint keyword "".
 EXPLAIN SELECT * FROM s1.t1, s1.t2, s1.t3 WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
 /*+(t1 t2 t1 t2)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2, s1.t3, s1.t4 WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
-INFO:  hint syntax error at or near "(t1 t2 t1 t2)"
+INFO:  pg_hint_plan: hint syntax error at or near "(t1 t2 t1 t2)"
 DETAIL:  Unrecognized hint keyword "".
 \o
 \! sed 's/cost=[\.0-9]*/cost=xxx/' results/R_1-5-3.out.log > results/R_1-5-3.out
@@ -481,7 +481,7 @@ error hint:
 \o results/R_1-7-1.out.log
 /*+Rows(t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near ""
+INFO:  pg_hint_plan: hint syntax error at or near ""
 DETAIL:  Rows hint requires at least two relations.
 LOG:  pg_hint_plan:
 used hint:
@@ -497,7 +497,7 @@ Rows(t1 #1)
 \o results/R_1-7-2.out.log
 /*+Rows(t1 t2 1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "1"
+INFO:  pg_hint_plan: hint syntax error at or near "1"
 DETAIL:  Unrecognized rows value type notation.
 LOG:  pg_hint_plan:
 used hint:
@@ -513,7 +513,7 @@ Rows(t1 t2 1)
 \o results/R_1-7-3.out.log
 /*+Rows(t1 t2 #notrows)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "notrows"
+INFO:  pg_hint_plan: hint syntax error at or near "notrows"
 DETAIL:  Rows hint requires valid number as rows estimation.
 LOG:  pg_hint_plan:
 used hint:
@@ -1963,7 +1963,7 @@ error hint:
 \o results/R_2-3-4.out.log
 /*+HashJoin(v1t1 v1t1)*/
 EXPLAIN SELECT * FROM s1.v1 v1, s1.v1 v2 WHERE v1.c1 = v2.c1;
-INFO:  hint syntax error at or near "HashJoin(v1t1 v1t1)"
+INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(v1t1 v1t1)"
 DETAIL:  Relation name "v1t1" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:
@@ -1974,9 +1974,9 @@ HashJoin(v1t1 v1t1)
 
 /*+HashJoin(v1t1 v1t1)Rows(v1t1 v1t1 #1)*/
 EXPLAIN SELECT * FROM s1.v1 v1, s1.v1 v2 WHERE v1.c1 = v2.c1;
-INFO:  hint syntax error at or near "HashJoin(v1t1 v1t1)Rows(v1t1 v1t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(v1t1 v1t1)Rows(v1t1 v1t1 #1)"
 DETAIL:  Relation name "v1t1" is ambiguous.
-INFO:  hint syntax error at or near "Rows(v1t1 v1t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(v1t1 v1t1 #1)"
 DETAIL:  Relation name "v1t1" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:
@@ -2017,11 +2017,11 @@ error hint:
 \o results/R_2-3-6.out.log
 /*+RowsHashJoin(r4t1 r4t1)*/
 EXPLAIN SELECT * FROM s1.r4 t1, s1.r4 t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "RowsHashJoin(r4t1 r4t1)"
+INFO:  pg_hint_plan: hint syntax error at or near "RowsHashJoin(r4t1 r4t1)"
 DETAIL:  Unrecognized hint keyword "RowsHashJoin".
 /*+RowsHashJoin(r4t1 r4t1)Rows(r4t1 r4t1 #1)*/
 EXPLAIN SELECT * FROM s1.r4 t1, s1.r4 t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "RowsHashJoin(r4t1 r4t1)Rows(r4t1 r4t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "RowsHashJoin(r4t1 r4t1)Rows(r4t1 r4t1 #1)"
 DETAIL:  Unrecognized hint keyword "RowsHashJoin".
 \o
 \! sed 's/cost=[\.0-9]*/cost=xxx/' results/R_2-3-6.out.log > results/R_2-3-6.out
@@ -2098,11 +2098,11 @@ error hint:
 
 /*+ Leading(*VALUES* t3 t2 t1) Rows(t4 t3 #2)Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
-INFO:  hint syntax error at or near "Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
-INFO:  hint syntax error at or near "Rows(*VALUES* t3 t2 t1 #2)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(*VALUES* t3 t2 t1 #2)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
-INFO:  hint syntax error at or near "Leading(*VALUES* t3 t2 t1) Rows(t4 t3 #2)Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
+INFO:  pg_hint_plan: hint syntax error at or near "Leading(*VALUES* t3 t2 t1) Rows(t4 t3 #2)Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:
@@ -2342,7 +2342,7 @@ error hint:
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 /*+Rows(t1 t2 #1)Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)"
 DETAIL:  Conflict rows hint.
 LOG:  pg_hint_plan:
 used hint:
@@ -2360,9 +2360,9 @@ error hint:
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 /*+Rows(t1 t2 #1)Rows(t1 t2 #1)Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)Rows(t1 t2 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)Rows(t1 t2 #1)"
 DETAIL:  Conflict rows hint.
-INFO:  hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)"
 DETAIL:  Conflict rows hint.
 LOG:  pg_hint_plan:
 used hint:
@@ -2381,7 +2381,7 @@ error hint:
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 /*+Rows(t1 t2 #1)Rows(t2 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "Rows(t1 t2 #1)Rows(t2 t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t2 t1 #1)"
 DETAIL:  Conflict rows hint.
 LOG:  pg_hint_plan:
 used hint:
@@ -2399,9 +2399,9 @@ error hint:
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 /*+Rows(t2 t1 #1)Rows(t1 t2 #1)Rows(t2 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-INFO:  hint syntax error at or near "Rows(t2 t1 #1)Rows(t1 t2 #1)Rows(t2 t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t2 t1 #1)Rows(t1 t2 #1)Rows(t2 t1 #1)"
 DETAIL:  Conflict rows hint.
-INFO:  hint syntax error at or near "Rows(t1 t2 #1)Rows(t2 t1 #1)"
+INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t2 t1 #1)"
 DETAIL:  Conflict rows hint.
 LOG:  pg_hint_plan:
 used hint:
