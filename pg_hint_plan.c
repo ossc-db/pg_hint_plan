@@ -32,6 +32,7 @@
 #include "utils/memutils.h"
 #include "utils/rel.h"
 #include "utils/syscache.h"
+#include "utils/resowner.h"
 
 #include "catalog/pg_class.h"
 
@@ -427,6 +428,10 @@ static void pg_hint_plan_plpgsql_stmt_beg(PLpgSQL_execstate *estate,
 										  PLpgSQL_stmt *stmt);
 static void pg_hint_plan_plpgsql_stmt_end(PLpgSQL_execstate *estate,
 										  PLpgSQL_stmt *stmt);
+static void plpgsql_query_erase_callback(ResourceReleasePhase phase,
+										 bool isCommit,
+										 bool isTopLevel,
+										 void *arg);
 
 /* GUC variables */
 static bool	pg_hint_plan_enable_hint = true;
@@ -620,6 +625,8 @@ _PG_init(void)
 	/* setup PL/pgSQL plugin hook */
 	var_ptr = (PLpgSQL_plugin **) find_rendezvous_variable("PLpgSQL_plugin");
 	*var_ptr = &plugin_funcs;
+
+	RegisterResourceReleaseCallback(plpgsql_query_erase_callback, NULL);
 }
 
 /*
@@ -4078,6 +4085,17 @@ pg_hint_plan_plpgsql_stmt_end(PLpgSQL_execstate *estate, PLpgSQL_stmt *stmt)
 	if (plpgsql_query_string &&
 		plpgsql_query_string_src == stmt->cmd_type)
 		plpgsql_query_string = NULL;
+}
+
+void plpgsql_query_erase_callback(ResourceReleasePhase phase,
+								  bool isCommit,
+								  bool isTopLevel,
+								  void *arg)
+{
+	if (phase != RESOURCE_RELEASE_AFTER_LOCKS)
+		return;
+	/* Force erase stored plpgsql query string */
+	plpgsql_query_string = NULL;
 }
 
 #define standard_join_search pg_hint_plan_standard_join_search
