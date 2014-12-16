@@ -524,7 +524,9 @@ static const HintParser parsers[] = {
  * PL/pgSQL plugin for retrieving string representation of each query during
  * function execution.
  */
-const char *plpgsql_query_string = NULL;
+static const char *plpgsql_query_string = NULL;
+static enum PLpgSQL_stmt_types plpgsql_query_string_src;
+
 PLpgSQL_plugin  plugin_funcs = {
 	NULL,
 	NULL,
@@ -4059,7 +4061,10 @@ pg_hint_plan_plpgsql_stmt_beg(PLpgSQL_execstate *estate, PLpgSQL_stmt *stmt)
 	}
 
 	if (expr)
+	{
 		plpgsql_query_string = expr->query;
+		plpgsql_query_string_src = (enum PLpgSQL_stmt_types) stmt->cmd_type;
+	}
 }
 
 /*
@@ -4070,7 +4075,8 @@ pg_hint_plan_plpgsql_stmt_beg(PLpgSQL_execstate *estate, PLpgSQL_stmt *stmt)
 static void
 pg_hint_plan_plpgsql_stmt_end(PLpgSQL_execstate *estate, PLpgSQL_stmt *stmt)
 {
-	if ((enum PLpgSQL_stmt_types) stmt->cmd_type == PLPGSQL_STMT_EXECSQL)
+	if (plpgsql_query_string &&
+		plpgsql_query_string_src == stmt->cmd_type)
 		plpgsql_query_string = NULL;
 }
 
