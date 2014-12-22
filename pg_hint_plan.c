@@ -1134,12 +1134,12 @@ HintStateDump2(HintState *hstate)
 	if (!hstate)
 	{
 		elog(pg_hint_plan_message_level,
-			 "pg_hint_plan[qno=0x%x]: HintStateDump:\nno hint", qno);
+			 "pg_hint_plan%s: HintStateDump:\nno hint", qnostr);
 		return;
 	}
 
 	initStringInfo(&buf);
-	appendStringInfo(&buf, "pg_hint_plan[qno=0x%x]: HintStateDump: ", qno);
+	appendStringInfo(&buf, "pg_hint_plan%s: HintStateDump: ", qnostr);
 	desc_hint_in_state(hstate, &buf, "{used hints", HINT_STATE_USED, true);
 	desc_hint_in_state(hstate, &buf, "}, {not used hints", HINT_STATE_NOTUSED, true);
 	desc_hint_in_state(hstate, &buf, "}, {duplicate hints", HINT_STATE_DUPLICATION, true);
