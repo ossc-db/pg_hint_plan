@@ -26,11 +26,11 @@ STARBALL = pg_dbms_stats-$(DBMSSTATSVER).tar.gz
 STARBALL95 = pg_hint_plan95-$(HINTPLANVER).tar.gz
 STARBALLS = $(STARBALL) $(STARBALL95)
 
-TARSOURCES = Makefile *.c  *.h \
+TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	pg_hint_plan--*.sql \
 	pg_hint_plan.control \
-	doc/* expected/*.out sql/*.sql \
-	input/*.source output/*.source SPECS/*.spec
+	doc/* expected/*.out sql/*.sql sql/maskout.sh \
+	data/data.csv input/*.source output/*.source SPECS/*.spec
 
 installcheck: $(REGRESSION_EXPECTED)
 
