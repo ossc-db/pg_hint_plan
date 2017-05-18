@@ -4339,6 +4339,7 @@ error hint:
 
 -- No. S-3-4-28
 EXPLAIN (COSTS false) SELECT c4 FROM s1.ti1 WHERE lower(c4) >= '1';
+LOG:  lc_collate_is_c: LC_COLLATE is "ja_JP.UTF8"
              QUERY PLAN             
 ------------------------------------
  Seq Scan on ti1

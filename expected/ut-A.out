@@ -161,6 +161,8 @@ INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
 	'',
 	'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+LOG:  lc_collate_is_c: LC_COLLATE is "ja_JP.UTF8"
+CONTEXT:  SQL statement "SELECT hints   FROM hint_plan.hints  WHERE norm_query_string = $1    AND ( application_name = $2     OR application_name = '' )  ORDER BY application_name DESC"
 LOG:  pg_hint_plan:
 used hint:
 SeqScan(t1)
