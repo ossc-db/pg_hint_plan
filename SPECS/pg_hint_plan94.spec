@@ -1,5 +1,5 @@
 # SPEC file for pg_hint_plan
-# Copyright(C) 2012-2014 NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+# Copyright(C) 2012-2017 NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
 %define _pgdir   /usr/pgsql-9.4
 %define _bindir  %{_pgdir}/bin
@@ -13,7 +13,7 @@
 ## Set general information for pg_hint_plan.
 Summary:    Optimizer hint for PostgreSQL 9.4
 Name:       pg_hint_plan94
-Version:    1.1.3
+Version:    1.1.4
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -61,7 +61,8 @@ install -d %{buildroot}%{_libdir}
 install pg_hint_plan.so %{buildroot}%{_libdir}/pg_hint_plan.so
 install -d %{buildroot}%{_datadir}/extension
 install -m 644 pg_hint_plan--1.1.2--1.1.3.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.2--1.1.3.sql
-install -m 644 pg_hint_plan--1.1.3.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.3.sql
+install -m 644 pg_hint_plan--1.1.3--1.1.4.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.3--1.1.4.sql
+install -m 644 pg_hint_plan--1.1.4.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.4.sql
 install -m 644 pg_hint_plan.control %{buildroot}%{_datadir}/extension/pg_hint_plan.control
 
 %clean
@@ -72,11 +73,14 @@ rm -rf %{buildroot}
 %{_libdir}/pg_hint_plan.so
 %defattr(0644,root,root)
 %{_datadir}/extension/pg_hint_plan--1.1.2--1.1.3.sql
-%{_datadir}/extension/pg_hint_plan--1.1.3.sql
+%{_datadir}/extension/pg_hint_plan--1.1.3--1.1.4.sql
+%{_datadir}/extension/pg_hint_plan--1.1.4.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 # History of pg_hint_plan.
 %changelog
+* Fri May 19 2017 Kyotaro Horiguchi
+- Fixed a crash bug.
 * Thu Dec 22 2014 Kyotaro Horiguchi
 - Bug fix related to pl/pgsql.
 * Thu Dec 17 2014 Kyotaro Horiguchi
