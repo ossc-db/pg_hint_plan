@@ -6529,7 +6529,6 @@ error hint:
 (13 rows)
 
 EXPLAIN (COSTS false) SELECT val FROM p2 WHERE val >= '50' AND val <= '51' AND p2.ctid = '(1,1)';
-LOG:  lc_collate_is_c: LC_COLLATE is "ja_JP.UTF8"
                                        QUERY PLAN                                        
 -----------------------------------------------------------------------------------------
  Append
