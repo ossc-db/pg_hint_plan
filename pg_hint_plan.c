@@ -454,7 +454,6 @@ void pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 								   Index rti, RangeTblEntry *rte);
 static void create_plain_partial_paths(PlannerInfo *root,
 													RelOptInfo *rel);
-static int compute_parallel_worker(RelOptInfo *rel, BlockNumber pages);
 
 static void make_rels_by_clause_joins(PlannerInfo *root, RelOptInfo *old_rel,
 									  ListCell *other_rels);

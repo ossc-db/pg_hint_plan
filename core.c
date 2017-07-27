@@ -637,26 +637,6 @@ create_plain_partial_paths(PlannerInfo *root, RelOptInfo *rel)
 {
 	int			parallel_workers;
 
-	parallel_workers = compute_parallel_worker(rel, rel->pages);
-
-	/* If any limit was set to zero, the user doesn't want a parallel scan. */
-	if (parallel_workers <= 0)
-		return;
-
-	/* Add an unordered partial path based on a parallel sequential scan. */
-	add_partial_path(rel, create_seqscan_path(root, rel, NULL, parallel_workers));
-}
-
-/*
- * Compute the number of parallel workers that should be used to scan a
- * relation.  "pages" is the number of pages from the relation that we
- * expect to scan.
- */
-static int
-compute_parallel_worker(RelOptInfo *rel, BlockNumber pages)
-{
-	int			parallel_workers;
-
 	/*
 	 * If the user has set the parallel_workers reloption, use that; otherwise
 	 * select a default number of workers.
@@ -674,9 +654,9 @@ compute_parallel_worker(RelOptInfo *rel, BlockNumber pages)
 		 * might not be worthwhile just for this relation, but when combined
 		 * with all of its inheritance siblings it may well pay off.
 		 */
-		if (pages < (BlockNumber) min_parallel_relation_size &&
+		if (rel->pages < (BlockNumber) min_parallel_relation_size &&
 			rel->reloptkind == RELOPT_BASEREL)
-			return 0;
+			return;
 
 		/*
 		 * Select the number of workers based on the log of the size of the
@@ -687,7 +667,7 @@ compute_parallel_worker(RelOptInfo *rel, BlockNumber pages)
 		 */
 		parallel_workers = 1;
 		parallel_threshold = Max(min_parallel_relation_size, 1);
-		while (pages >= (BlockNumber) (parallel_threshold * 3))
+		while (rel->pages >= (BlockNumber) (parallel_threshold * 3))
 		{
 			parallel_workers++;
 			parallel_threshold *= 3;
@@ -701,9 +681,13 @@ compute_parallel_worker(RelOptInfo *rel, BlockNumber pages)
 	 */
 	parallel_workers = Min(parallel_workers, max_parallel_workers_per_gather);
 
-	return parallel_workers;
-}
+	/* If any limit was set to zero, the user doesn't want a parallel scan. */
+	if (parallel_workers <= 0)
+		return;
 
+	/* Add an unordered partial path based on a parallel sequential scan. */
+	add_partial_path(rel, create_seqscan_path(root, rel, NULL, parallel_workers));
+}
 
 /*
  * join_search_one_level
