@@ -5,7 +5,7 @@
 #
 
 MODULES = pg_hint_plan
-HINTPLANVER = 1.1.4
+HINTPLANVER = 1.1.5
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R ut-fdw ut-T ut-fini
 
@@ -14,7 +14,7 @@ REGRESSION_EXPECTED = expected/init.out expected/base_plan.out expected/pg_hint_
 REGRESS_OPTS = --encoding=UTF8
 
 EXTENSION = pg_hint_plan
-DATA = pg_hint_plan--1.1.4.sql pg_hint_plan--1.1.3--1.1.4.sql
+DATA = pg_hint_plan--1.1.5.sql pg_hint_plan--1.1.4--1.1.5.sql pg_hint_plan--1.1.3--1.1.4.sql
 
 EXTRA_CLEAN = sql/ut-fdw.sql expected/ut-fdw.out
 
