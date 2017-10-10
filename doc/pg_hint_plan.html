@@ -237,6 +237,44 @@ postgres-#   ORDER BY a.aid;
 (7 rows)
 
 postgres=# </pre>
+</dd>
+
+<h3>Using with PL/pgSQL</h3>
+<dd>pg_hint_plan works for queries in PL/pgSQL scripts with some restrictions.
+<ul>
+ <li>Hints affect only on the following kind of queires.
+ <ul>
+  <li>Queries that returns one row. (SELECT, INSERT, UPDATE and DELETE)</li>
+  <li>Queries that returns multiple rows. (RETURN QUERY)</li>
+  <li>Dynamic SQL statements. (EXECUTE)</li>
+  <li>Cursor open. (OPEN)</li>
+  <li>Loop over result of a query (FOR)</li>
+ </ul>
+
+ <li>A hint comment have to be placed after the first word in a query
+     as the following since preceding comments are not sent as a part
+     of the query.</li>
+</ul>
+<pre>
+postgres=# CREATE FUNCTION hints_func(integer) RETURNS integer AS $$
+postgres$# DECLARE
+postgres$#     id  integer;
+postgres$#     cnt integer;
+postgres$# BEGIN
+postgres$#     SELECT <b><u>/*+ NoIndexScan(a) */</u></b> aid
+postgres$#         INTO id FROM pgbench_accounts a WHERE aid = $1;
+postgres$#     SELECT <b><u>/*+ SeqScan(a) */</u></b> count(*)
+postgres$#         INTO cnt FROM pgbench_accounts a;
+postgres$#     RETURN id + cnt;
+postgres$# END;
+postgres$# $$ LANGUAGE plpgsql;
+</pre>
+</dd>
+
+<h3>Letter case in a hinted object</h3>
+<p>Unlike the way PostgreSQL handles object names, pg_hint_plan compares bare object names in hints against the database internal object names in case sensitive way. Therefore an object name TBL in a hint matches only "TBL" in database and does not match any unquoted names like TBL, tbl or Tbl.
+</p>
+
 <h3>Escaping special chacaters in object names</h3>
 <p>The objects as the hint parameter should be enclosed by double quotes if they includes parentheses, double quotes and white spaces. The escaping rule is the same as PostgreSQL.
 </p>
@@ -274,6 +312,7 @@ postgres-# JOIN public.t1 pt ON (st.id=pt.id);
          ->  Seq Scan on t1 pt  (cost=0.00..34.00 rows=2400 width=4)
 (5 行)
 
+<<<<<<< HEAD
 postgres=#</pre>
 </p>
 <h2 id="restrictions">Restrictions</h2>
@@ -295,6 +334,42 @@ postgres=#</pre>
 <p>Hints are effective on any objects with the target name even if they aren't aparent in the query, specifically objects in views. For that reason, you should create different views in which targetted objects have distinct aliases if you want to hint them differently from the first view.</p>
 <p>In the following examples, the first query is assigning the same name "t1" on the two occurrences of the table1 so the hint SeqScan(t1) affects both scans. On the other hand the second assignes the different name 't3' on the one of them so the hint affects only on the rest one.</p>
 <p>This mechanism also applies on rewritten queries by rules.</p>
+=======
+<h3>Underlying tables of views or rules</h3>
+<dd>Hints are not applicable on views itself, but they can affect the
+queries within if the object names match the object names in the
+expanded query on the view. Assigning aliases to the tables in a view
+enables them to be manipulated from outside the view.
+<pre>
+<b>postgres=#</b> CREATE VIEW v1 AS SELECT * FROM <b><u>t2</u></b>;
+<b>postgres=#</b> EXPLAIN <b>/*+ HashJoin(t1 v1) */</b>
+          SELECT * FROM t1 JOIN v1 ON (c1.a = v1.a);
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=3.27..18181.67 rows=101 width=8)
+   Hash Cond: (t1.a = t2.a)
+   ->  Seq Scan on t1  (cost=0.00..14427.01 rows=1000101 width=4)
+   ->  Hash  (cost=2.01..2.01 rows=101 width=4)
+         ->  Seq Scan on t2  (cost=0.00..2.01 rows=101 width=4)
+</pre>
+</dd>
+
+<h3>Inheritance tables</h3>
+<dd>Hints can point only the parent of an inheritance tables and the
+hint affect all the inheritance. Hints simultaneously point directly
+to children are not in effect.
+</dd>
+
+<h3>Hinting on multistatements</h3>
+<dd>One multistatement can have exactly one hint comment and the hints affects all of the individual statement in the multistatement. Notice that the seemingly multistatement on the interactive interface of psql is internally a sequence of single statements so hints affects only on the statement just following.</dd>
+
+<h3>VALUES expressions</h3>
+<dd>VALUES expressions in FROM clause are named as *VALUES* internally
+so it is hintable if it is the only VALUES in a query. Two or more
+VALUES expressions in a query seems distinguishable looking its
+explain result. But in reality it is mere a cosmetic and they are not
+distinguisable.
+>>>>>>> c6204a7... Added a notice in the manual.
 <pre>
 postgres=# CREATE VIEW view1 AS SELECT * FROM table1 <span class="strong">t1</span>;
 CREATE TABLE
@@ -355,9 +430,18 @@ postgres=#   WHERE aid IN (SELECT bid FROM pgbench_accounts a2 LIMIT 10);
 <h3>Using IndexOnlyScan hint (PostgreSQL 9.2 and later)</h3>
 <p>You shoud explicitly specify an index that can perform index only scan if you put IndexOnlyScan hint on a table that have other indexes that cannot perform index only scan. Or pg_hint_plan may select them. </p>
 
+<<<<<<< HEAD
 <h3>Precaution points for NoIndexScan hint (PostgreSQL 9.2 and later)</h3>
 <p>NoIndexScan hint involes NoIndexOnlyScan.</p>
 
+=======
+<h3>Parallel hint and UNION</h3>
+<dd>A UNION can run in parallel only when all underlying subqueries
+are parallel-safe. Conversely enforcing parallel on any of
+the subqueries let a parallel-executable UNION run in
+parallel. Meanwhile, a parallel hint with zero workers hinhibits a scan
+from executed in parallel.</dd>
+>>>>>>> c6204a7... Added a notice in the manual.
 
 <h2 id="errors">Errors of hints</h2>
 <p>pg_hint_plan stops parsing on any error and uses hints already parsed on the most cases. Followings are the typical errors.</p>
