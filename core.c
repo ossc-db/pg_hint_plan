@@ -14,7 +14,8 @@
  * src/backend/optimizer/path/allpaths.c
  *
  *	static functions:
- *	   set_plain_rel_pathlist()
+ *     set_plain_rel_pathlist()
+ *     create_plain_partial_paths()
  *     set_append_rel_pathlist()
  *     add_paths_to_append_rel()
  *     generate_mergeappend_paths()
@@ -79,6 +80,26 @@ set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 
 	/* Consider TID scans */
 	create_tidscan_paths(root, rel);
+}
+
+
+/*
+ * create_plain_partial_paths
+ *	  Build partial access paths for parallel scan of a plain relation
+ */
+static void
+create_plain_partial_paths(PlannerInfo *root, RelOptInfo *rel)
+{
+	int			parallel_workers;
+
+	parallel_workers = compute_parallel_worker(rel, rel->pages, -1);
+
+	/* If any limit was set to zero, the user doesn't want a parallel scan. */
+	if (parallel_workers <= 0)
+		return;
+
+	/* Add an unordered partial path based on a parallel sequential scan. */
+	add_partial_path(rel, create_seqscan_path(root, rel, NULL, parallel_workers));
 }
 
 
@@ -195,7 +216,7 @@ add_paths_to_append_rel(PlannerInfo *root, RelOptInfo *rel,
 			build_partitioned_rels = true;
 			break;
 		default:
-			elog(ERROR, "unexpcted rtekind: %d", (int) rte->rtekind);
+			elog(ERROR, "unexpected rtekind: %d", (int) rte->rtekind);
 	}
 
 	/*
@@ -714,25 +735,6 @@ standard_join_search(PlannerInfo *root, int levels_needed, List *initial_rels)
 	root->join_rel_level = NULL;
 
 	return rel;
-}
-
-/*
- * create_plain_partial_paths
- *	  Build partial access paths for parallel scan of a plain relation
- */
-static void
-create_plain_partial_paths(PlannerInfo *root, RelOptInfo *rel)
-{
-	int			parallel_workers;
-
-	parallel_workers = compute_parallel_worker(rel, rel->pages, -1);
-
-	/* If any limit was set to zero, the user doesn't want a parallel scan. */
-	if (parallel_workers <= 0)
-		return;
-
-	/* Add an unordered partial path based on a parallel sequential scan. */
-	add_partial_path(rel, create_seqscan_path(root, rel, NULL, parallel_workers));
 }
 
 
@@ -1448,18 +1450,21 @@ mark_dummy_rel(RelOptInfo *rel)
 
 
 /*
- * restriction_is_constant_false --- is a restrictlist just FALSE?
+ * restriction_is_constant_false --- is a restrictlist just false?
  *
- * In cases where a qual is provably constant FALSE, eval_const_expressions
+ * In cases where a qual is provably constant false, eval_const_expressions
  * will generally have thrown away anything that's ANDed with it.  In outer
  * join situations this will leave us computing cartesian products only to
  * decide there's no match for an outer row, which is pretty stupid.  So,
  * we need to detect the case.
  *
- * If only_pushed_down is TRUE, then consider only pushed-down quals.
+ * If only_pushed_down is true, then consider only quals that are pushed-down
+ * from the point of view of the joinrel.
  */
 static bool
-restriction_is_constant_false(List *restrictlist, bool only_pushed_down)
+restriction_is_constant_false(List *restrictlist,
+							  RelOptInfo *joinrel,
+							  bool only_pushed_down)
 {
 	ListCell   *lc;
 
@@ -1473,7 +1478,7 @@ restriction_is_constant_false(List *restrictlist, bool only_pushed_down)
 	{
 		RestrictInfo *rinfo = lfirst_node(RestrictInfo, lc);
 
-		if (only_pushed_down && !rinfo->is_pushed_down)
+		if (only_pushed_down && !RINFO_IS_PUSHED_DOWN(rinfo, joinrel->relids))
 			continue;
 
 		if (rinfo->clause && IsA(rinfo->clause, Const))
