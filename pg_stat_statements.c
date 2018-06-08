@@ -10,8 +10,6 @@
  */
 #include "postgres.h"
 
-#include <sys/stat.h>
-
 #include "access/hash.h"
 #include "parser/scanner.h"
 
