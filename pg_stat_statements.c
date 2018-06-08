@@ -2,15 +2,13 @@
  *
  * pg_stat_statements.c
  * 
- * Part of pg_stat_statements.c in PostgreSQL 9.5.
+ * Part of pg_stat_statements.c in PostgreSQL 9.6.
  *
  * Copyright (c) 2008-2016, PostgreSQL Global Development Group
  *
  *-------------------------------------------------------------------------
  */
 #include "postgres.h"
-
-#include <sys/stat.h>
 
 #include "access/hash.h"
 #include "parser/scanner.h"

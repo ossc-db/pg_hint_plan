@@ -14,7 +14,8 @@
  * src/backend/optimizer/path/allpaths.c
  *
  *	static functions:
- *	   set_plain_rel_pathlist()
+ *     set_plain_rel_pathlist()
+ *     create_plain_partial_paths()
  *     set_append_rel_pathlist()
  *     generate_mergeappend_paths()
  *     get_cheapest_parameterized_child_path()
@@ -43,7 +44,7 @@
  *     restriction_is_constant_false()
  *
  *
- * Portions Copyright (c) 1996-2017, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2016, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  *-------------------------------------------------------------------------
@@ -78,6 +79,67 @@ set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 
 	/* Consider TID scans */
 	create_tidscan_paths(root, rel);
+}
+
+/*
+ * create_plain_partial_paths
+ *	  Build partial access paths for parallel scan of a plain relation
+ */
+static void
+create_plain_partial_paths(PlannerInfo *root, RelOptInfo *rel)
+{
+	int			parallel_workers;
+
+	/*
+	 * If the user has set the parallel_workers reloption, use that; otherwise
+	 * select a default number of workers.
+	 */
+	if (rel->rel_parallel_workers != -1)
+		parallel_workers = rel->rel_parallel_workers;
+	else
+	{
+		int			parallel_threshold;
+
+		/*
+		 * If this relation is too small to be worth a parallel scan, just
+		 * return without doing anything ... unless it's an inheritance child.
+		 * In that case, we want to generate a parallel path here anyway.  It
+		 * might not be worthwhile just for this relation, but when combined
+		 * with all of its inheritance siblings it may well pay off.
+		 */
+		if (rel->pages < (BlockNumber) min_parallel_relation_size &&
+			rel->reloptkind == RELOPT_BASEREL)
+			return;
+
+		/*
+		 * Select the number of workers based on the log of the size of the
+		 * relation.  This probably needs to be a good deal more
+		 * sophisticated, but we need something here for now.  Note that the
+		 * upper limit of the min_parallel_relation_size GUC is chosen to
+		 * prevent overflow here.
+		 */
+		parallel_workers = 1;
+		parallel_threshold = Max(min_parallel_relation_size, 1);
+		while (rel->pages >= (BlockNumber) (parallel_threshold * 3))
+		{
+			parallel_workers++;
+			parallel_threshold *= 3;
+			if (parallel_threshold > INT_MAX / 3)
+				break;			/* avoid overflow */
+		}
+	}
+
+	/*
+	 * In no case use more than max_parallel_workers_per_gather workers.
+	 */
+	parallel_workers = Min(parallel_workers, max_parallel_workers_per_gather);
+
+	/* If any limit was set to zero, the user doesn't want a parallel scan. */
+	if (parallel_workers <= 0)
+		return;
+
+	/* Add an unordered partial path based on a parallel sequential scan. */
+	add_partial_path(rel, create_seqscan_path(root, rel, NULL, parallel_workers));
 }
 
 /*
@@ -626,67 +688,6 @@ standard_join_search(PlannerInfo *root, int levels_needed, List *initial_rels)
 	root->join_rel_level = NULL;
 
 	return rel;
-}
-
-/*
- * create_plain_partial_paths
- *	  Build partial access paths for parallel scan of a plain relation
- */
-static void
-create_plain_partial_paths(PlannerInfo *root, RelOptInfo *rel)
-{
-	int			parallel_workers;
-
-	/*
-	 * If the user has set the parallel_workers reloption, use that; otherwise
-	 * select a default number of workers.
-	 */
-	if (rel->rel_parallel_workers != -1)
-		parallel_workers = rel->rel_parallel_workers;
-	else
-	{
-		int			parallel_threshold;
-
-		/*
-		 * If this relation is too small to be worth a parallel scan, just
-		 * return without doing anything ... unless it's an inheritance child.
-		 * In that case, we want to generate a parallel path here anyway.  It
-		 * might not be worthwhile just for this relation, but when combined
-		 * with all of its inheritance siblings it may well pay off.
-		 */
-		if (rel->pages < (BlockNumber) min_parallel_relation_size &&
-			rel->reloptkind == RELOPT_BASEREL)
-			return;
-
-		/*
-		 * Select the number of workers based on the log of the size of the
-		 * relation.  This probably needs to be a good deal more
-		 * sophisticated, but we need something here for now.  Note that the
-		 * upper limit of the min_parallel_relation_size GUC is chosen to
-		 * prevent overflow here.
-		 */
-		parallel_workers = 1;
-		parallel_threshold = Max(min_parallel_relation_size, 1);
-		while (rel->pages >= (BlockNumber) (parallel_threshold * 3))
-		{
-			parallel_workers++;
-			parallel_threshold *= 3;
-			if (parallel_threshold > INT_MAX / 3)
-				break;			/* avoid overflow */
-		}
-	}
-
-	/*
-	 * In no case use more than max_parallel_workers_per_gather workers.
-	 */
-	parallel_workers = Min(parallel_workers, max_parallel_workers_per_gather);
-
-	/* If any limit was set to zero, the user doesn't want a parallel scan. */
-	if (parallel_workers <= 0)
-		return;
-
-	/* Add an unordered partial path based on a parallel sequential scan. */
-	add_partial_path(rel, create_seqscan_path(root, rel, NULL, parallel_workers));
 }
 
 /*
@@ -1394,18 +1395,21 @@ mark_dummy_rel(RelOptInfo *rel)
 }
 
 /*
- * restriction_is_constant_false --- is a restrictlist just FALSE?
+ * restriction_is_constant_false --- is a restrictlist just false?
  *
- * In cases where a qual is provably constant FALSE, eval_const_expressions
+ * In cases where a qual is provably constant false, eval_const_expressions
  * will generally have thrown away anything that's ANDed with it.  In outer
  * join situations this will leave us computing cartesian products only to
  * decide there's no match for an outer row, which is pretty stupid.  So,
  * we need to detect the case.
  *
- * If only_pushed_down is TRUE, then consider only pushed-down quals.
+ * If only_pushed_down is true, then consider only quals that are pushed-down
+ * from the point of view of the joinrel.
  */
 static bool
-restriction_is_constant_false(List *restrictlist, bool only_pushed_down)
+restriction_is_constant_false(List *restrictlist,
+							  RelOptInfo *joinrel,
+							  bool only_pushed_down)
 {
 	ListCell   *lc;
 
@@ -1420,7 +1424,7 @@ restriction_is_constant_false(List *restrictlist, bool only_pushed_down)
 		RestrictInfo *rinfo = (RestrictInfo *) lfirst(lc);
 
 		Assert(IsA(rinfo, RestrictInfo));
-		if (only_pushed_down && !rinfo->is_pushed_down)
+		if (only_pushed_down && !RINFO_IS_PUSHED_DOWN(rinfo, joinrel->relids))
 			continue;
 
 		if (rinfo->clause && IsA(rinfo->clause, Const))
