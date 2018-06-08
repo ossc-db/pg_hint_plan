@@ -1,11 +1,11 @@
 #
 # pg_hint_plan: Makefile
 #
-# Copyright (c) 2012-2017, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+# Copyright (c) 2012-2018, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 #
 
 MODULES = pg_hint_plan
-HINTPLANVER = 1.1.5
+HINTPLANVER = 1.1.6
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R ut-fdw ut-T ut-fini
 
@@ -14,8 +14,9 @@ REGRESSION_EXPECTED = expected/init.out expected/base_plan.out expected/pg_hint_
 REGRESS_OPTS = --encoding=UTF8
 
 EXTENSION = pg_hint_plan
-DATA = pg_hint_plan--1.1.5.sql pg_hint_plan--1.1.4--1.1.5.sql \
-	pg_hint_plan--1.1.3--1.1.4.sql pg_hint_plan--1.1.2--1.1.3.sql
+DATA = pg_hint_plan--1.1.6.sql pg_hint_plan--1.1.5--1.1.6.sql \
+	pg_hint_plan--1.1.4--1.1.5.sql pg_hint_plan--1.1.3--1.1.4.sql \
+	pg_hint_plan--1.1.2--1.1.3.sql
 
 EXTRA_CLEAN = sql/ut-fdw.sql expected/ut-fdw.out
 
