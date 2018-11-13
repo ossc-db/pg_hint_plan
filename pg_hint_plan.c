@@ -91,12 +91,12 @@ PG_MODULE_MAGIC;
 
 #define HINT_ARRAY_DEFAULT_INITSIZE 8
 
-#define hint_ereport(str, detail) \
+#define hint_ereport(str, detail) hint_parse_ereport(str, detail)
+#define hint_parse_ereport(str, detail) \
 	do { \
-		ereport(pg_hint_plan_message_level,		\
-			(errmsg("pg_hint_plan%s: hint syntax error at or near \"%s\"", qnostr, (str)), \
+		ereport(pg_hint_plan_parse_message_level,		\
+			(errmsg("pg_hint_plan: hint syntax error at or near \"%s\"", (str)), \
 			 errdetail detail)); \
-		msgqno = qno; \
 	} while(0)
 
 #define skip_space(str) \
@@ -501,7 +501,8 @@ static int set_config_int32_option(const char *name, int32 value,
 /* GUC variables */
 static bool	pg_hint_plan_enable_hint = true;
 static int debug_level = 0;
-static int	pg_hint_plan_message_level = INFO;
+static int	pg_hint_plan_parse_message_level = INFO;
+static int	pg_hint_plan_debug_message_level = LOG;
 /* Default is off, to keep backward compatibility. */
 static bool	pg_hint_plan_enable_hint_table = false;
 
@@ -644,7 +645,7 @@ _PG_init(void)
 	DefineCustomEnumVariable("pg_hint_plan.parse_messages",
 							 "Message level of parse errors.",
 							 NULL,
-							 &pg_hint_plan_message_level,
+							 &pg_hint_plan_parse_message_level,
 							 INFO,
 							 parse_messages_level_options,
 							 PGC_USERSET,
@@ -656,8 +657,8 @@ _PG_init(void)
 	DefineCustomEnumVariable("pg_hint_plan.message_level",
 							 "Message level of debug messages.",
 							 NULL,
-							 &pg_hint_plan_message_level,
-							 INFO,
+							 &pg_hint_plan_debug_message_level,
+							 LOG,
 							 parse_messages_level_options,
 							 PGC_USERSET,
 							 0,
@@ -1235,7 +1236,7 @@ HintStateDump(HintState *hstate)
 
 	if (!hstate)
 	{
-		elog(LOG, "pg_hint_plan:\nno hint");
+		elog(pg_hint_plan_debug_message_level, "pg_hint_plan:\nno hint");
 		return;
 	}
 
@@ -1247,7 +1248,8 @@ HintStateDump(HintState *hstate)
 	desc_hint_in_state(hstate, &buf, "duplication hint", HINT_STATE_DUPLICATION, false);
 	desc_hint_in_state(hstate, &buf, "error hint", HINT_STATE_ERROR, false);
 
-	elog(LOG, "%s", buf.data);
+	ereport(pg_hint_plan_debug_message_level,
+			(errmsg ("%s", buf.data)));
 
 	pfree(buf.data);
 }
@@ -1259,7 +1261,7 @@ HintStateDump2(HintState *hstate)
 
 	if (!hstate)
 	{
-		elog(pg_hint_plan_message_level,
+		elog(pg_hint_plan_debug_message_level,
 			 "pg_hint_plan%s: HintStateDump: no hint", qnostr);
 		return;
 	}
@@ -1272,7 +1274,7 @@ HintStateDump2(HintState *hstate)
 	desc_hint_in_state(hstate, &buf, "}, {error hints", HINT_STATE_ERROR, true);
 	appendStringInfoChar(&buf, '}');
 
-	ereport(pg_hint_plan_message_level,
+	ereport(pg_hint_plan_debug_message_level,
 			(errmsg("%s", buf.data),
 			 errhidestmt(true),
 			 errhidecontext(true)));
@@ -2591,7 +2593,7 @@ set_config_int32_option(const char *name, int32 value, GucContext context)
 
 	if (snprintf(buf, 16, "%d", value) < 0)
 	{
-		ereport(pg_hint_plan_message_level,
+		ereport(pg_hint_plan_parse_message_level,
 				(errmsg ("Failed to convert integer to string: %d", value)));
 		return false;
 	}
@@ -2599,7 +2601,7 @@ set_config_int32_option(const char *name, int32 value, GucContext context)
 	return
 		set_config_option_noerror(name, buf, context,
 								  PGC_S_SESSION, GUC_ACTION_SAVE, true,
-								  pg_hint_plan_message_level);
+								  pg_hint_plan_parse_message_level);
 }
 
 /* setup scan method enforcement according to given options */
@@ -2618,7 +2620,7 @@ setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
 
 		result = set_config_option_noerror(hint->name, hint->value, context,
 										   PGC_S_SESSION, GUC_ACTION_SAVE, true,
-										   pg_hint_plan_message_level);
+										   pg_hint_plan_parse_message_level);
 		if (result != 0)
 			hint->base.state = HINT_STATE_USED;
 		else
@@ -2860,7 +2862,7 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query)
 			if (debug_level > 1)
 			{
 				if (current_hint_str)
-					ereport(pg_hint_plan_message_level,
+					ereport(pg_hint_plan_debug_message_level,
 							(errmsg("pg_hint_plan[qno=0x%x]: "
 									"post_parse_analyze_hook: "
 									"hints from table: \"%s\": "
@@ -2871,7 +2873,7 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query)
 							 errhidestmt(msgqno != qno),
 							 errhidecontext(msgqno != qno)));
 				else
-					ereport(pg_hint_plan_message_level,
+					ereport(pg_hint_plan_debug_message_level,
 							(errmsg("pg_hint_plan[qno=0x%x]: "
 									"no match found in table:  "
 									"application name = \"%s\", "
@@ -2911,13 +2913,13 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query)
 	{
 		if (debug_level == 1 &&
 			(stmt_name || strcmp(query_str, debug_query_string)))
-			ereport(pg_hint_plan_message_level,
+			ereport(pg_hint_plan_debug_message_level,
 					(errmsg("hints in comment=\"%s\"",
 							current_hint_str ? current_hint_str : "(none)"),
 					 errhidestmt(msgqno != qno),
 					 errhidecontext(msgqno != qno)));
 		else
-			ereport(pg_hint_plan_message_level,
+			ereport(pg_hint_plan_debug_message_level,
 					(errmsg("hints in comment=\"%s\", stmt=\"%s\", query=\"%s\", debug_query_string=\"%s\"",
 							current_hint_str ? current_hint_str : "(none)",
 							stmt_name, query_str, debug_query_string),
@@ -2945,7 +2947,7 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	if (!pg_hint_plan_enable_hint || hint_inhibit_level > 0)
 	{
 		if (debug_level > 1)
-			ereport(pg_hint_plan_message_level,
+			ereport(pg_hint_plan_debug_message_level,
 					(errmsg ("pg_hint_plan%s: planner: enable_hint=%d,"
 							 " hint_inhibit_level=%d",
 							 qnostr, pg_hint_plan_enable_hint,
@@ -3016,7 +3018,7 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 
 	if (debug_level > 1)
 	{
-		ereport(pg_hint_plan_message_level,
+		ereport(pg_hint_plan_debug_message_level,
 				(errhidestmt(msgqno != qno),
 				 errmsg("pg_hint_plan%s: planner", qnostr))); 
 		msgqno = qno;
@@ -3063,7 +3065,7 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 standard_planner_proc:
 	if (debug_level > 1)
 	{
-		ereport(pg_hint_plan_message_level,
+		ereport(pg_hint_plan_debug_message_level,
 				(errhidestmt(msgqno != qno),
 				 errmsg("pg_hint_plan%s: planner: no valid hint",
 						qnostr)));
@@ -3491,7 +3493,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 		initStringInfo(&rel_buf);
 		quote_value(&rel_buf, disprelname);
 
-		ereport(LOG,
+		ereport(pg_hint_plan_debug_message_level,
 				(errmsg("available indexes for %s(%s):%s",
 					 hint->base.keyword,
 					 rel_buf.data,
@@ -3621,7 +3623,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 	if (inhparent)
 	{
 		if (debug_level > 1)
-			ereport(pg_hint_plan_message_level,
+			ereport(pg_hint_plan_debug_message_level,
 					(errhidestmt(true),
 					 errmsg ("pg_hint_plan%s: setup_hint_enforcement"
 							 " skipping inh parent: relation=%u(%s), inhparent=%d,"
@@ -3740,7 +3742,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 			if (shint == current_hint_state->parent_scan_hint)
 				additional_message = " by parent hint";
 
-			ereport(pg_hint_plan_message_level,
+			ereport(pg_hint_plan_debug_message_level,
 					(errhidestmt(true),
 					 errmsg ("pg_hint_plan%s: setup_hint_enforcement"
 							 " index deletion%s:"
@@ -3770,7 +3772,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 	if (!shint && ! phint)
 	{
 		if (debug_level > 1)
-			ereport(pg_hint_plan_message_level,
+			ereport(pg_hint_plan_debug_message_level,
 					(errhidestmt (true),
 					 errmsg ("pg_hint_plan%s: setup_hint_enforcement"
 							 " no hint applied:"
