@@ -13,7 +13,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 9.5
 Name:       pg_hint_plan95
-Version:    1.1.6
+Version:    1.1.7
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -56,7 +56,8 @@ rm -rf %{buildroot}
 install -d %{buildroot}%{_libdir}
 install pg_hint_plan.so %{buildroot}%{_libdir}/pg_hint_plan.so
 install -d %{buildroot}%{_datadir}/extension
-install -m 644 pg_hint_plan--1.1.6.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.6.sql
+install -m 644 pg_hint_plan--1.1.7.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.7.sql
+install -m 644 pg_hint_plan--1.1.6--1.1.7.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.6--1.1.7.sql
 install -m 644 pg_hint_plan--1.1.5--1.1.6.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.5--1.1.6.sql
 install -m 644 pg_hint_plan--1.1.4--1.1.5.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.4--1.1.5.sql
 install -m 644 pg_hint_plan--1.1.3--1.1.4.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.3--1.1.4.sql
@@ -69,7 +70,8 @@ rm -rf %{buildroot}
 %defattr(0755,root,root)
 %{_libdir}/pg_hint_plan.so
 %defattr(0644,root,root)
-%{_datadir}/extension/pg_hint_plan--1.1.6.sql
+%{_datadir}/extension/pg_hint_plan--1.1.7.sql
+%{_datadir}/extension/pg_hint_plan--1.1.6--1.1.7.sql
 %{_datadir}/extension/pg_hint_plan--1.1.5--1.1.6.sql
 %{_datadir}/extension/pg_hint_plan--1.1.4--1.1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.1.3--1.1.4.sql
@@ -77,6 +79,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Tue Nov 13 2018 Kyotaro Horiguchi
+- Improvement of debug message emission.
 * Fri Jun 08 2018 Kyotaro Horiguchi
 - Fixed a crash bug.
 * Thu Jul 27 2017 Kyotaro Horiguchi
