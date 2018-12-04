@@ -307,6 +307,7 @@ struct HintState
 	/* for scan method hints */
 	ScanMethodHint **scan_hints;		/* parsed scan hints */
 	int				init_scan_mask;		/* initial value scan parameter */
+	PlannerInfo	   *current_root;		/* PlannerInfo for the followings */
 	Index			parent_relid;		/* inherit parent table relid */
 	ScanMethodHint *parent_hint;		/* inherit parent table scan hint */
 	List		   *parent_index_infos; /* information of inherit parent table's
@@ -858,6 +859,7 @@ HintStateCreate(void)
 	memset(hstate->num_hints, 0, sizeof(hstate->num_hints));
 	hstate->scan_hints = NULL;
 	hstate->init_scan_mask = 0;
+	hstate->current_root = NULL;
 	hstate->parent_relid = 0;
 	hstate->parent_hint = NULL;
 	hstate->parent_index_infos = NIL;
@@ -3201,7 +3203,11 @@ pg_hint_plan_get_relation_info(PlannerInfo *root, Oid relationObjectId,
 		return;
 	}
 
-	/* Find the parent for this relation */
+	/* Forget about the parent of another subquery */
+	if (root != current_hint->current_root)
+		current_hint->parent_relid = 0;
+
+	/* Find the parent for this relation other than the registered parent */
 	foreach (l, root->append_rel_list)
 	{
 		AppendRelInfo *appinfo = (AppendRelInfo *) lfirst(l);
@@ -3209,7 +3215,10 @@ pg_hint_plan_get_relation_info(PlannerInfo *root, Oid relationObjectId,
 		if (appinfo->child_relid == rel->relid)
 		{
 			if (current_hint->parent_relid != appinfo->parent_relid)
+			{
 				new_parent_relid = appinfo->parent_relid;
+				current_hint->current_root = root;
+			}
 			break;
 		}
 	}
