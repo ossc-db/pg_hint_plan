@@ -556,12 +556,6 @@ static HintState *current_hint_state = NULL;
  */
 static List *HintStateStack = NIL;
 
-/*
- * Holds statement name during executing EXECUTE command.  NULL for other
- * statements.
- */
-static char	   *stmt_name = NULL;
-
 static const HintParser parsers[] = {
 	{HINT_SEQSCAN, ScanMethodHintCreate, HINT_KEYWORD_SEQSCAN},
 	{HINT_INDEXSCAN, ScanMethodHintCreate, HINT_KEYWORD_INDEXSCAN},
@@ -2909,8 +2903,8 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query)
 
 	if (debug_level > 1)
 	{
-		if (debug_level == 1 &&
-			(stmt_name || strcmp(query_str, debug_query_string)))
+		if (debug_level == 1 && query_str && debug_query_string &&
+			strcmp(query_str, debug_query_string))
 			ereport(pg_hint_plan_debug_message_level,
 					(errmsg("hints in comment=\"%s\"",
 							current_hint_str ? current_hint_str : "(none)"),
@@ -2918,9 +2912,9 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query)
 					 errhidecontext(msgqno != qno)));
 		else
 			ereport(pg_hint_plan_debug_message_level,
-					(errmsg("hints in comment=\"%s\", stmt=\"%s\", query=\"%s\", debug_query_string=\"%s\"",
+					(errmsg("hints in comment=\"%s\", query=\"%s\", debug_query_string=\"%s\"",
 							current_hint_str ? current_hint_str : "(none)",
-							stmt_name, query_str, debug_query_string),
+							query_str, debug_query_string),
 					 errhidestmt(msgqno != qno),
 					 errhidecontext(msgqno != qno)));
 		msgqno = qno;
