@@ -259,12 +259,12 @@ not used hint:
 duplication hint:
 error hint:
 
-                      QUERY PLAN                       
--------------------------------------------------------
- Hash Join
-   Hash Cond: (p1.id = p2.id)
-   ->  Gather
-         Workers Planned: 1
+                   QUERY PLAN                    
+-------------------------------------------------
+ Gather
+   Workers Planned: 1
+   ->  Hash Join
+         Hash Cond: (p1.id = p2.id)
          ->  Append
                ->  Parallel Seq Scan on p1
                ->  Parallel Seq Scan on p1_c1
@@ -275,20 +275,18 @@ error hint:
                ->  Parallel Seq Scan on p1_c1_c2
                ->  Parallel Seq Scan on p1_c3_c1
                ->  Parallel Seq Scan on p1_c3_c2
-   ->  Hash
-         ->  Gather
-               Workers Planned: 1
+         ->  Hash
                ->  Append
-                     ->  Parallel Seq Scan on p2
-                     ->  Parallel Seq Scan on p2_c1
-                     ->  Parallel Seq Scan on p2_c2
-                     ->  Parallel Seq Scan on p2_c3
-                     ->  Parallel Seq Scan on p2_c4
-                     ->  Parallel Seq Scan on p2_c1_c1
-                     ->  Parallel Seq Scan on p2_c1_c2
-                     ->  Parallel Seq Scan on p2_c3_c1
-                     ->  Parallel Seq Scan on p2_c3_c2
-(27 rows)
+                     ->  Seq Scan on p2
+                     ->  Seq Scan on p2_c1
+                     ->  Seq Scan on p2_c2
+                     ->  Seq Scan on p2_c3
+                     ->  Seq Scan on p2_c4
+                     ->  Seq Scan on p2_c1_c1
+                     ->  Seq Scan on p2_c1_c2
+                     ->  Seq Scan on p2_c3_c1
+                     ->  Seq Scan on p2_c3_c2
+(25 rows)
 
 /*+Parallel(p1 8)Parallel(p2 0)*/
 EXPLAIN (COSTS false) SELECT * FROM p1 join p2 on p1.id = p2.id;
