@@ -31,7 +31,10 @@ TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	doc/* expected/*.out sql/*.sql sql/maskout.sh \
 	data/data.csv input/*.source output/*.source SPECS/*.spec
 
+ifeq ($(shell uname), SunOS)
+else
 LDFLAGS+=-Wl,--build-id
+endif
 
 installcheck: $(REGRESSION_EXPECTED)
 
