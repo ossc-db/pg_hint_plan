@@ -1,5 +1,5 @@
-# SPEC file for pg_hint_plans
-# Copyright(C) 2018 NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+# SPEC file for pg_hint_plan
+# Copyright(C) 2019 NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
 %define _pgdir   /usr/pgsql-10
 %define _bindir  %{_pgdir}/bin
@@ -11,7 +11,7 @@
   %define _sourcedir %(echo ${MAKE_ROOT})
 %endif
 
-## Set general information for pg_store_plans.
+## Set general information for pg_hint_plan.
 Summary:    Optimizer hint on PostgreSQL 10
 Name:       pg_hint_plan10
 Version:    1.3.2
