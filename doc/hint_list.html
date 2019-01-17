@@ -34,7 +34,7 @@
 <tr><td nowrap>IndexScan(table[ index...])</td>
   <td>Forces index scan on the table. Restricts to specified indexes if any. </td></tr>
 <tr><td nowrap>IndexOnlyScan(table[ index...])</td>
-  <td>Forces index only scan on the table. Rstricts to specfied indexes if any. Index scan may be used if index only scan is not available. Available for PostgreSQL 9.2 and later.</td></tr>
+  <td>Forces index only scan on the table. Restricts to specfied indexes if any. Index scan may be used if index only scan is not available.</td></tr>
 <tr><td nowrap>BitmapScan(table[ index...])</td>
   <td>Forces bitmap scan on the table. Restoricts to specfied indexes if any.</td></tr>
 <tr><td nowrap>NoSeqScan(table)</td>
@@ -42,10 +42,9 @@
 <tr><td nowrap>NoTidScan(table)</td>
   <td>Forces not to do TID scan on the table. </td></tr>
 <tr><td nowrap>NoIndexScan(table)</td>
-  <td>Forces not to do index scan and index only scan (For PostgreSQL
-  9.2 and later) on the table. </td></tr>
+  <td>Forces not to do index scan and index only scan on the table. </td></tr>
 <tr><td nowrap>NoIndexOnlyScan(table)</td>
-  <td>Forces not to do index only scan on the table. Available for PostgreSQL 9.2 and later.</td></tr>
+  <td>Forces not to do index only scan on the table.</td></tr>
 <tr><td nowrap>NoBitmapScan(table)</td>
   <td>Forces not to do bitmap scan on the table. </td></tr>
 

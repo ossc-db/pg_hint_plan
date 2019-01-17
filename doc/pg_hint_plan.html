@@ -108,16 +108,14 @@ postgres=# </pre>
 <tbody>
 <tr><td>pg_hint_plan.enable_hint</td>
   <td>Enbles or disables the function of pg_hint_plan.</td><td>on</td></tr>
+<tr><td>pg_hint_plan.enable_hint_table</td>
+  <td>Enbles or disables table-based hinting.</td><td>on</td></tr>
 <tr><td>pg_hint_plan.debug_print</td>
-  <td>Enables and select the verbosity of the debug output of pg_hint_plan. off, on, detailed and verbose are valid.</td><td>off</td></tr>
+  <td>Enables and select the verbosity of the debug output of pg_hint_plan. Valid options are off, on, detailed and verbose.</td><td>off</td></tr>
 <tr><td>pg_hint_plan.message_level</td>
   <td>Specifies the message level of debug prints. error, warning, notice, info, log, debug<n> are valid and fatal and panic are inhibited.</td><td>info</td></tr>
 </tbody>
 </table>
-<p>
-PostgreSQL 9.1 requires a custom variable class to be defined for those GUC parameters. See <a href="http://www.postgresql.org/docs/9.1/static/runtime-config-custom.html#GUC-CUSTOM-VARIABLE-CLASSES">custom_variable_classes</a> for details.
-</p>
-
 <h2 id="install">Installation</h2>
 This section describes the installation steps.
 <h3 id="build">building binary module</h3>
@@ -213,8 +211,9 @@ postgres-# SELECT * FROM table1 t1 WHERE key = 'value';
 </p>
 
 <h2 id="hint_syntax">Hint syntax</h2>
-<h3>Hint comment location</h3>
-<p>pg_hint_plan reads hints from only the first block comment, and any characters except alphabets, digits, spaces, underscores, commas and parentheses are not allowed before the comment. In the following example HashJoin(a b) and SeqScan(a) are recognized as Hint and IndexScan(a) and MergeJoin(a b) is not.  </p>
+<dl>
+<dt>Hint comment location</dt>
+<dd>pg_hint_plan reads hints from only the first block comment, and any characters except alphabets, digits, spaces, underscores, commas and parentheses are not allowed before the comment. In the following example HashJoin(a b) and SeqScan(a) are recognized as Hint and IndexScan(a) and MergeJoin(a b) is not.
 <pre>
 postgres=# /*+
 postgres*#    <span class="strong">HashJoin(a b)</span>
@@ -237,13 +236,50 @@ postgres-#   ORDER BY a.aid;
 (7 rows)
 
 postgres=# </pre>
-<h3>Escaping special chacaters in object names</h3>
-<p>The objects as the hint parameter should be enclosed by double quotes if they includes parentheses, double quotes and white spaces. The escaping rule is the same as PostgreSQL.
-</p>
-<h3>Distinction among table occurrences with the same name </h3>
-<p>Target name duplication caused by multiple occurrences of the same object or objects with the same name in different name spaces can be avoided by giving alias names for each occurrence in the target query and using them in hint phases.
+</dd>
+
+<dt>Using with PL/pgSQL</dt>
+<dd>pg_hint_plan works for queries in PL/pgSQL scripts with some restrictions.
+<ul>
+ <li>Hints affect only on the following kind of queires.
+ <ul>
+  <li>Queries that returns one row. (SELECT, INSERT, UPDATE and DELETE)</li>
+  <li>Queries that returns multiple rows. (RETURN QUERY)</li>
+  <li>Dynamic SQL statements. (EXECUTE)</li>
+  <li>Cursor open. (OPEN)</li>
+  <li>Loop over result of a query (FOR)</li>
+ </ul>
+
+ <li>A hint comment have to be placed after the first word in a query
+     as the following since preceding comments are not sent as a part
+     of the query.</li>
+</ul>
+<pre>
+postgres=# CREATE FUNCTION hints_func(integer) RETURNS integer AS $$
+postgres$# DECLARE
+postgres$#     id  integer;
+postgres$#     cnt integer;
+postgres$# BEGIN
+postgres$#     SELECT <b><u>/*+ NoIndexScan(a) */</u></b> aid
+postgres$#         INTO id FROM pgbench_accounts a WHERE aid = $1;
+postgres$#     SELECT <b><u>/*+ SeqScan(a) */</u></b> count(*)
+postgres$#         INTO cnt FROM pgbench_accounts a;
+postgres$#     RETURN id + cnt;
+postgres$# END;
+postgres$# $$ LANGUAGE plpgsql;
+</pre>
+</dd>
+
+<dt>Letter case in a hinted object</dt>
+<dd>Unlike the way PostgreSQL handles object names, pg_hint_plan compares bare object names in hints against the database internal object names in case sensitive way. Therefore an object name TBL in a hint matches only "TBL" in database and does not match any unquoted names like TBL, tbl or Tbl.
+</dd>
+
+<dt>Escaping special chacaters in object names</dt>
+<dd>The objects as the hint parameter should be enclosed by double quotes if they includes parentheses, double quotes and white spaces. The escaping rule is the same as PostgreSQL.
+</dd>
+<dt>Distinction among table occurrences with the same name </dt>
+<dd>Target name duplication caused by multiple occurrences of the same object or objects with the same name in different name spaces can be avoided by giving alias names for each occurrence in the target query and using them in hint phases.
 The example below, the first SQL statement results in error from using a table name appeared twice in the target query, while the second example works since each occurrence of table t1 is given a distinct alias name and specified in the HashJoin hint using it.
-</p>
 <pre>
 postgres=# /*+ <span class="strong">HashJoin(t1 t1)</span>*/
 postgres-# EXPLAIN SELECT * FROM s1.t1
@@ -273,28 +309,42 @@ postgres-# JOIN public.t1 pt ON (st.id=pt.id);
    ->  Hash  (cost=34.00..34.00 rows=2400 width=4)
          ->  Seq Scan on t1 pt  (cost=0.00..34.00 rows=2400 width=4)
 (5 行)
+</dd>
 
-postgres=#</pre>
-</p>
-<h2 id="restrictions">Restrictions</h2>
-<h3>Limitations on multiple VALUES lists in FROM clauses</h3>
-<p>All occurences of VALUES lists in FROM clauses in a query has the same name "*VALUES*" irrespective of aliases syntactically given to them or shown in explain descriptions. So it cannot be hinted at all if appeares twice or more in a target query.  </p>
-<h3>Hinting on inheritance children</h3>
-<p>Inheritnce children cannot be hinted individually. They share the same hints on their parent.</p>
+<dt>Underlying tables of views or rules</dt>
+<dd>Hints are not applicable on views itself, but they can affect the
+queries within if the object names match the object names in the
+expanded query on the view. Assigning aliases to the tables in a view
+enables them to be manipulated from outside the view.
+<pre>
+<b>postgres=#</b> CREATE VIEW v1 AS SELECT * FROM <b><u>t2</u></b>;
+<b>postgres=#</b> EXPLAIN <b>/*+ HashJoin(t1 v1) */</b>
+          SELECT * FROM t1 JOIN v1 ON (c1.a = v1.a);
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Hash Join  (cost=3.27..18181.67 rows=101 width=8)
+   Hash Cond: (t1.a = t2.a)
+   ->  Seq Scan on t1  (cost=0.00..14427.01 rows=1000101 width=4)
+   ->  Hash  (cost=2.01..2.01 rows=101 width=4)
+         ->  Seq Scan on t2  (cost=0.00..2.01 rows=101 width=4)
+</pre>
+</dd>
 
-<h3>Setting pg_hint_plan parameters by Set hints</h3>
-<p>pg_hint_plan paramters changes the behavior of itself so some parameters doesn't work as expected.</p>
-<ul>
-<li>Hints to change enable_hint, enable_hint_tables are ignored, but they are reported as "used hints" in debug logs.</li>
-<li>Setting debug_print and message_level works from midst of the processing of the target query.</li>
-</ul>
+<dt>Inheritance tables</dt>
+<dd>Hints can point only the parent of an inheritance tables and the
+hint affect all the inheritance. Hints simultaneously point directly
+to children are not in effect.
+</dd>
 
+<dt>Hinting on multistatements</dt>
+<dd>One multistatement can have exactly one hint comment and the hints affects all of the individual statement in the multistatement. Notice that the seemingly multistatement on the interactive interface of psql is internally a sequence of single statements so hints affects only on the statement just following.</dd>
 
-<h2 id="technics">Technics to hint on desired targets</h2>
-<h3>Hinting on objecects implicitly used in the target query</h3>
-<p>Hints are effective on any objects with the target name even if they aren't aparent in the query, specifically objects in views. For that reason, you should create different views in which targetted objects have distinct aliases if you want to hint them differently from the first view.</p>
-<p>In the following examples, the first query is assigning the same name "t1" on the two occurrences of the table1 so the hint SeqScan(t1) affects both scans. On the other hand the second assignes the different name 't3' on the one of them so the hint affects only on the rest one.</p>
-<p>This mechanism also applies on rewritten queries by rules.</p>
+<dt>VALUES expressions</dt>
+<dd>VALUES expressions in FROM clause are named as *VALUES* internally
+so it is hintable if it is the only VALUES in a query. Two or more
+VALUES expressions in a query seems distinguishable looking its
+explain result. But in reality it is mere a cosmetic and they are not
+distinguisable.
 <pre>
 postgres=# CREATE VIEW view1 AS SELECT * FROM table1 <span class="strong">t1</span>;
 CREATE TABLE
@@ -321,14 +371,15 @@ postgres=# EXPLAIN SELECT * FROM table1 <span class="strong">t3</span> JOIN view
 (5 rows)
 
 </pre>
-<h3>Hinting on the hinheritance children</h3>
-<p>Hints targeted on inheritance parents automatically affect on all their own children. Child tables cannot have their own hint specified. </p>
+</dd>
+<dt>Hinting on the hinheritance children</dt>
+<dd>Hints targeted on inheritance parents automatically affect on all their own children. Child tables cannot have their own hint specified. </dd>
 
-<h3>Scope of hints on multistatement</h3>
-<p>One multistatement description can have exactly one hint comment and the hints affects all of the individual statement in the multistatement. Notice that the seemingly multistatement on the interactive interface of psql is internally a sequence of single statements so hints affects only on the statement just following. Conversely, every single statement have their own hint comments affect on them.</p>
+<dt>Scope of hints on multistatement</dt>
+<dd>One multistatement description can have exactly one hint comment and the hints affects all of the individual statement in the multistatement. Notice that the seemingly multistatement on the interactive interface of psql is internally a sequence of single statements so hints affects only on the statement just following. Conversely, every single statement have their own hint comments affect on them.</dd>
 
-<h3>Subqueries in some contexts</h3>
-<p>Subqueries in the following context also can be hinted.</p>
+<dt>Subqueries in some contexts</dt>
+<dd>Subqueries in the following context also can be hinted.
 <pre>
 IN (SELECT ... {LIMIT | OFFSET ...} ...)
 = ANY (SELECT ... {LIMIT | OFFSET ...} ...)
@@ -351,49 +402,51 @@ postgres=#   WHERE aid IN (SELECT bid FROM pgbench_accounts a2 LIMIT 10);
                ->  Seq Scan on pgbench_accounts a2  (cost=0.00..2640.00 rows=100000 width=4)
 (6 rows)
 </pre>
+</dd>
 
-<h3>Using IndexOnlyScan hint (PostgreSQL 9.2 and later)</h3>
-<p>You shoud explicitly specify an index that can perform index only scan if you put IndexOnlyScan hint on a table that have other indexes that cannot perform index only scan. Or pg_hint_plan may select them. </p>
+<dt>Using IndexOnlyScan hint</dt>
+<dd>You shoud explicitly specify an index that can perform index only scan if you put IndexOnlyScan hint on a table that have other indexes that cannot perform index only scan. Or pg_hint_plan may select them. </dd>
 
-<h3>Precaution points for NoIndexScan hint (PostgreSQL 9.2 and later)</h3>
-<p>NoIndexScan hint involes NoIndexOnlyScan.</p>
-
+<dt>Using NoIndexScan hint</dt>
+<dd>NoIndexScan hint involes NoIndexOnlyScan.</dd>
+</dl>
 
 <h2 id="errors">Errors of hints</h2>
-<p>pg_hint_plan stops parsing on any error and uses hints already parsed on the most cases. Followings are the typical errors.</p>
-<h3>Syntax errors </h3>
-<p>Any syntactical errors or wrong hint names are reported as an syntax error. These errors are reported in the server log with the message level which specified by pg_hint_plan.message_level if pg_hint_plan.debug_print is on and aboves.</p>
-<h3>Object misspecifications</h3>
-<p>Object misspecifications results silent ingorance of the hints. This kind of error is reported as "not used hints" in the server log by the same condtion to syntax errors.</p>
+<dl>pg_hint_plan stops parsing on any error and uses hints already parsed on the most cases. Followings are the typical errors.
+<dt>Syntax errors </dt>
+<dd>Any syntactical errors or wrong hint names are reported as an syntax error. These errors are reported in the server log with the message level which specified by pg_hint_plan.message_level if pg_hint_plan.debug_print is on and aboves.</dd>
+<dt>Object misspecifications</dt>
+<dd>Object misspecifications results silent ingorance of the hints. This kind of error is reported as "not used hints" in the server log by the same condtion to syntax errors.</dd>
 
-<h3>Redundant or conflicting hints</h3>
-<p>The last hint will be active when redundant hints or hints conflicting with each other. This kind of error is reported as "duplication hints" in the server log by the same condition to syntax errors.</p>
+<dt>Redundant or conflicting hints</dt>
+<dd>The last hint will be active when redundant hints or hints conflicting with each other. This kind of error is reported as "duplication hints" in the server log by the same condition to syntax errors.</dd>
 
-<h3>Nested comments</h3>
-<p>Hint comment cannot include another block comment within. If pg_hint_plan finds it, differently from other erros, it stops parsing and abandans all hints already parsed. This kind of error is reported in the same manner as other errors. </p>
+<dt>Nested comments</dt>
+<dd>Hint comment cannot include another block comment within. If pg_hint_plan finds it, differently from other erros, it stops parsing and abandans all hints already parsed. This kind of error is reported in the same manner as other errors. </dd>
+</dl>
 
 <h2 id="func_limits">Functional limitations</h2>
-<h3>Influences of some planner GUC parameters</h3>
-<p>The planner does not try to consider joining order for FROM clause entries more than from_collapse_limit. pg_hint_plan cannot affect joining order as expected for the case.</p>
+<dl>
+<dt>Influences of some planner GUC parameters</dt>
+<dd>The planner does not try to consider joining order for FROM clause entries more than from_collapse_limit. pg_hint_plan cannot affect joining order as expected for the case.</dd>
 
-<h3>Cases that pg_hint_plan essentially cannot affect </h3>
-<p>By the nature of pg_hint_plan, it cannot affect some cases that out of scope of the planner like following.</p>
+<dt>Hints trying to enforce unexecutable plans </dt>
+<dd>pg_hint_plan doesn't enforce plans that cannot be executed.</dd>
 <ul>
 <li>FULL OUTER JOIN to use nested loop</li>
 <li>To use indexes that does not have columns used in quals</li>
 <li>To do TID scans for queries without ctid conditions</li>
 </ul>
+</dd>
 
-<h3>Queries in ECPG</h3>
-<p>ECPG removes comments in queries written as embedded SQLs so hints cannot be passed form those queries. The only exception is that EXECUTE command passes given string unmodifed. Please consider hint tables for this case.</p>
-
-<h3>Effects on query fingerprints</h3>
-<p>The same queries with different commnets yields the same fingerprint by pg_stat_statements on PostgreSQL 9.2 and later, but they yield different fingerprints on 9.1 and earlier, so the same queires with different hints are summerized as separate queries on such versions.</p>
+<dt>Queries in ECPG</dt>
+<dd>ECPG removes comments in queries written as embedded SQLs so hints cannot be passed form those queries. The only exception is that EXECUTE command passes given string unmodifed. Please consider using hint tables in the case.</dd>
+</dl>
 
 <h2 id="requirement">Requirements</h2>
 <dl>
 <dt>PostgreSQL versions tested</dt>
-  <dd>Version 9.4</dd>
+  <dd>Version 9.4-11</dd>
 <dt>OS versions tested</dt>
   <dd>RHEL 7.5</dd>
 </dl>
