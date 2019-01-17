@@ -312,29 +312,6 @@ postgres-# JOIN public.t1 pt ON (st.id=pt.id);
          ->  Seq Scan on t1 pt  (cost=0.00..34.00 rows=2400 width=4)
 (5 行)
 
-<<<<<<< HEAD
-postgres=#</pre>
-</p>
-<h2 id="restrictions">Restrictions</h2>
-<h3>Limitations on multiple VALUES lists in FROM clauses</h3>
-<p>All occurences of VALUES lists in FROM clauses in a query has the same name "*VALUES*" irrespective of aliases syntactically given to them or shown in explain descriptions. So it cannot be hinted at all if appeares twice or more in a target query.  </p>
-<h3>Hinting on inheritance children</h3>
-<p>Inheritnce children cannot be hinted individually. They share the same hints on their parent.</p>
-
-<h3>Setting pg_hint_plan parameters by Set hints</h3>
-<p>pg_hint_plan paramters changes the behavior of itself so some parameters doesn't work as expected.</p>
-<ul>
-<li>Hints to change enable_hint, enable_hint_tables are ignored, but they are reported as "used hints" in debug logs.</li>
-<li>Setting debug_print and message_level works from midst of the processing of the target query.</li>
-</ul>
-
-
-<h2 id="technics">Technics to hint on desired targets</h2>
-<h3>Hinting on objecects implicitly used in the target query</h3>
-<p>Hints are effective on any objects with the target name even if they aren't aparent in the query, specifically objects in views. For that reason, you should create different views in which targetted objects have distinct aliases if you want to hint them differently from the first view.</p>
-<p>In the following examples, the first query is assigning the same name "t1" on the two occurrences of the table1 so the hint SeqScan(t1) affects both scans. On the other hand the second assignes the different name 't3' on the one of them so the hint affects only on the rest one.</p>
-<p>This mechanism also applies on rewritten queries by rules.</p>
-=======
 <h3>Underlying tables of views or rules</h3>
 <dd>Hints are not applicable on views itself, but they can affect the
 queries within if the object names match the object names in the
@@ -369,7 +346,6 @@ so it is hintable if it is the only VALUES in a query. Two or more
 VALUES expressions in a query seems distinguishable looking its
 explain result. But in reality it is mere a cosmetic and they are not
 distinguisable.
->>>>>>> c6204a7... Added a notice in the manual.
 <pre>
 postgres=# CREATE VIEW view1 AS SELECT * FROM table1 <span class="strong">t1</span>;
 CREATE TABLE
@@ -430,18 +406,12 @@ postgres=#   WHERE aid IN (SELECT bid FROM pgbench_accounts a2 LIMIT 10);
 <h3>Using IndexOnlyScan hint (PostgreSQL 9.2 and later)</h3>
 <p>You shoud explicitly specify an index that can perform index only scan if you put IndexOnlyScan hint on a table that have other indexes that cannot perform index only scan. Or pg_hint_plan may select them. </p>
 
-<<<<<<< HEAD
-<h3>Precaution points for NoIndexScan hint (PostgreSQL 9.2 and later)</h3>
-<p>NoIndexScan hint involes NoIndexOnlyScan.</p>
-
-=======
 <h3>Parallel hint and UNION</h3>
 <dd>A UNION can run in parallel only when all underlying subqueries
 are parallel-safe. Conversely enforcing parallel on any of
 the subqueries let a parallel-executable UNION run in
 parallel. Meanwhile, a parallel hint with zero workers hinhibits a scan
 from executed in parallel.</dd>
->>>>>>> c6204a7... Added a notice in the manual.
 
 <h2 id="errors">Errors of hints</h2>
 <p>pg_hint_plan stops parsing on any error and uses hints already parsed on the most cases. Followings are the typical errors.</p>
@@ -477,9 +447,9 @@ from executed in parallel.</dd>
 <h2 id="requirement">Requirements</h2>
 <dl>
 <dt>PostgreSQL versions tested</dt>
-  <dd>Version 9.1, 9.2, 9.3, 9.4</dd>
+  <dd>Version 9.5</dd>
 <dt>OS versions tested</dt>
-  <dd>RHEL 6.5, 7.0</dd>
+  <dd>RHEL 7.5</dd>
 </dl>
 
 <h2 id="seealso">See also</h2>
@@ -493,19 +463,6 @@ from executed in parallel.</dd>
   <a href="pg_hint_plan.html">pg_hint_plan</a>
 </div>
 
-<p class="footer">Copyright (c) 2012, NIPPON TELEGRAPH AND TELEPHONE CORPORATION</p>
-
-<!--
-<script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script><script src="pg_statsinfo-ja_files/ga.js" type="text/javascript"></script>
-<script type="text/javascript">
-try{
-var pageTracker = _gat._getTracker("UA-10244036-6");
-pageTracker._trackPageview();
-} catch(err) {}
-</script>
--->
+<p class="footer">Copyright (c) 2012-2019, NIPPON TELEGRAPH AND TELEPHONE CORPORATION</p>
 </body>
 </html>
