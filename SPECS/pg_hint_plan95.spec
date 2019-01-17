@@ -10,10 +10,10 @@
   %define _sourcedir %(echo ${MAKE_ROOT})
 %endif
 
-## Set general information for pg_store_plans.
+## Set general information for pg_hint_plan.
 Summary:    Optimizer hint on PostgreSQL 9.5
 Name:       pg_hint_plan95
-Version:    1.1.7
+Version:    1.1.8
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -62,7 +62,8 @@ rm -rf %{buildroot}
 %defattr(0755,root,root)
 %{_libdir}/pg_hint_plan.so
 %defattr(0644,root,root)
-%{_datadir}/extension/pg_hint_plan--1.1.7.sql
+%{_datadir}/extension/pg_hint_plan--1.1.8.sql
+%{_datadir}/extension/pg_hint_plan--1.1.7--1.1.8.sql
 %{_datadir}/extension/pg_hint_plan--1.1.6--1.1.7.sql
 %{_datadir}/extension/pg_hint_plan--1.1.5--1.1.6.sql
 %{_datadir}/extension/pg_hint_plan--1.1.4--1.1.5.sql
@@ -71,6 +72,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Thu Jan 17 2019 Kyotaro Horiguchi
+- Fixed some bugs. Version 1.1.8.
 * Tue Nov 13 2018 Kyotaro Horiguchi
 - Improvement of debug message emission.
 * Fri Jun 08 2018 Kyotaro Horiguchi
