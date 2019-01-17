@@ -54,16 +54,7 @@ make USE_PGXS=1 %{?_smp_mflags}
 ## Set variables for install
 %install
 rm -rf %{buildroot}
-install -d %{buildroot}%{_libdir}
-install pg_hint_plan.so %{buildroot}%{_libdir}/pg_hint_plan.so
-install -d %{buildroot}%{_datadir}/extension
-install -m 644 pg_hint_plan--1.2.4.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.2.4.sql
-install -m 644 pg_hint_plan--1.2.3--1.2.4.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.2.3--1.2.4.sql
-install -m 644 pg_hint_plan--1.2.2--1.2.3.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.2.2--1.2.3.sql
-install -m 644 pg_hint_plan--1.2.1--1.2.2.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.2.1--1.2.2.sql
-install -m 644 pg_hint_plan--1.2.0--1.2.1.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.2.0--1.2.1.sql
-install -m 644 pg_hint_plan--1.1.3--1.2.0.sql %{buildroot}%{_datadir}/extension/pg_hint_plan--1.1.3--1.2.0.sql
-install -m 644 pg_hint_plan.control %{buildroot}%{_datadir}/extension/pg_hint_plan.control
+make install DESTDIR=%{buildroot}
 
 %clean
 rm -rf %{buildroot}
