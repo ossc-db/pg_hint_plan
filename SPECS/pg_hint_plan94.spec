@@ -13,7 +13,7 @@
 ## Set general information for pg_hint_plan.
 Summary:    Optimizer hint for PostgreSQL 9.4
 Name:       pg_hint_plan94
-Version:    1.1.7
+Version:    1.1.8
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -66,16 +66,19 @@ rm -rf %{buildroot}
 %defattr(0755,root,root)
 %{_libdir}/pg_hint_plan.so
 %defattr(0644,root,root)
-%{_datadir}/extension/pg_hint_plan--1.1.2--1.1.3.sql
-%{_datadir}/extension/pg_hint_plan--1.1.3--1.1.4.sql
-%{_datadir}/extension/pg_hint_plan--1.1.4--1.1.5.sql
-%{_datadir}/extension/pg_hint_plan--1.1.5--1.1.6.sql
+%{_datadir}/extension/pg_hint_plan--1.1.8.sql
+%{_datadir}/extension/pg_hint_plan--1.1.7--1.1.8.sql
 %{_datadir}/extension/pg_hint_plan--1.1.6--1.1.7.sql
-%{_datadir}/extension/pg_hint_plan--1.1.7.sql
+%{_datadir}/extension/pg_hint_plan--1.1.5--1.1.6.sql
+%{_datadir}/extension/pg_hint_plan--1.1.4--1.1.5.sql
+%{_datadir}/extension/pg_hint_plan--1.1.3--1.1.4.sql
+%{_datadir}/extension/pg_hint_plan--1.1.2--1.1.3.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 # History of pg_hint_plan.
 %changelog
+* Thu Jan 17 2019 Kyotaro Horiguchi
+- Fixed some bugs. Version 1.1.8.
 * Tue Nov 13 2018 Kyotaro Horiguchi
 - Improvement of debug message emission.
 * Fri Jun 08 2018 Kyotaro Horiguchi
