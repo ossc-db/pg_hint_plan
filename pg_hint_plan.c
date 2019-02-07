@@ -3323,6 +3323,33 @@ regexpeq(const char *s1, const char *s2)
 	return DatumGetBool(result);
 }
 
+/* Remove index paths by IndexOptInfo struct */
+static List *
+restrict_indexes_paths(List *pathlist, IndexOptInfo *indexinfo)
+{
+	ListCell   *lc;
+	List	   *list = pathlist;
+
+	lc = list_head(list);
+	while (lc)
+	{
+		Path	   *path = (Path *) lfirst(lc);
+
+		/* must advance lc before list_delete possibly pfree's it */
+		lc = lnext(lc);
+
+		if (path->pathtype == T_IndexScan ||
+			path->pathtype == T_IndexOnlyScan)
+		{
+			IndexPath  *index_path = (IndexPath *) path;
+
+			if (index_path->indexinfo == indexinfo)
+				list = list_delete_ptr(list, index_path);
+		}
+	}
+
+	return list;
+}
 
 /* Remove indexes instructed not to use by hint. */
 static void
@@ -3343,6 +3370,16 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 	if (hint->enforce_mask == ENABLE_SEQSCAN ||
 		hint->enforce_mask == ENABLE_TIDSCAN)
 	{
+		ListCell   *lc;
+
+		foreach(lc, rel->indexlist)
+		{
+			rel->pathlist = restrict_indexes_paths(rel->pathlist,
+												   (IndexOptInfo *) lfirst(lc));
+			rel->partial_pathlist = restrict_indexes_paths(rel->partial_pathlist,
+												   (IndexOptInfo *) lfirst(lc));
+		}
+
 		list_free_deep(rel->indexlist);
 		rel->indexlist = NIL;
 		hint->base.state = HINT_STATE_USED;
