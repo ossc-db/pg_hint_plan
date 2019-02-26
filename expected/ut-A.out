@@ -2101,6 +2101,8 @@ ERROR:  pg_hint_plan: hint syntax error at or near ""
 DETAIL:  Opening parenthesis is necessary.
 SET client_min_messages TO fatal;
 /*+Set*/SELECT 1;
+ERROR:  pg_hint_plan: hint syntax error at or near ""
+DETAIL:  Opening parenthesis is necessary.
 -- No. A-8-4-11
 RESET client_min_messages;
 SET pg_hint_plan.parse_messages TO DEFAULT;
@@ -3311,6 +3313,7 @@ NestLoop(t1 t1)
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3344,7 +3347,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 SET pg_hint_plan.parse_messages TO error;
@@ -3355,6 +3357,7 @@ DETAIL:  Relation name "t1" is duplicated.
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3388,7 +3391,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)*/
@@ -3418,6 +3420,7 @@ error hint:
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3451,7 +3454,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 SET pg_hint_plan.parse_messages TO error;
@@ -3462,6 +3464,7 @@ DETAIL:  Relation name "t1" is duplicated.
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3495,7 +3498,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 EXPLAIN (COSTS false) EXECUTE p1;
@@ -3514,6 +3516,7 @@ EXPLAIN (COSTS false) EXECUTE p1;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3547,7 +3550,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 SET pg_hint_plan.parse_messages TO error;
@@ -3589,6 +3591,7 @@ EXPLAIN (COSTS false) EXECUTE p1;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3622,7 +3625,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 -- No. A-12-1-4
@@ -3630,6 +3632,7 @@ SELECT name, setting FROM settings;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3663,7 +3666,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 SET pg_hint_plan.parse_messages TO error;
@@ -3683,6 +3685,7 @@ EXPLAIN (COSTS false) EXECUTE p1;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3716,7 +3719,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 DEALLOCATE p1;
@@ -3751,6 +3753,7 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3784,7 +3787,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
@@ -3811,6 +3813,7 @@ error hint:
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3844,7 +3847,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3873,6 +3875,7 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3906,7 +3909,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 BEGIN;
@@ -3936,6 +3938,7 @@ BEGIN;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -3969,7 +3972,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3999,6 +4001,7 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | log
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -4032,7 +4035,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | log
 (34 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
@@ -4063,6 +4065,7 @@ LOAD 'pg_hint_plan';
 SELECT name, setting FROM settings;
             name            |  setting  
 ----------------------------+-----------
+ client_min_messages        | notice
  geqo                       | on
  geqo_effort                | 5
  geqo_generations           | 0
@@ -4096,7 +4099,6 @@ SELECT name, setting FROM settings;
  enable_seqscan             | on
  enable_sort                | on
  enable_tidscan             | on
- client_min_messages        | notice
 (34 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
