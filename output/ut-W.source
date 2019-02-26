@@ -247,7 +247,7 @@ error hint:
 (9 rows)
 
 -- Joins on inheritance tables
-SET parallel_setup_cost to 0;
+SET parallel_setup_cost to 100;
 SET parallel_tuple_cost to 0;
 SET min_parallel_relation_size to 0;
 /*+Parallel(p1 8)*/

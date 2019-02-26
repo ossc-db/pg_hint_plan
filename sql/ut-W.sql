@@ -64,7 +64,7 @@ EXPLAIN (COSTS false) SELECT * FROM p1_c1_c1 join p2_c1_c1 on p1_c1_c1.id = p2_c
 
 
 -- Joins on inheritance tables
-SET parallel_setup_cost to 0;
+SET parallel_setup_cost to 100;
 SET parallel_tuple_cost to 0;
 SET min_parallel_relation_size to 0;
 /*+Parallel(p1 8)*/
