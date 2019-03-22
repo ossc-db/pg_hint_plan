@@ -2099,6 +2099,8 @@ ERROR:  pg_hint_plan: hint syntax error at or near ""
 DETAIL:  Opening parenthesis is necessary.
 SET client_min_messages TO fatal;
 /*+Set*/SELECT 1;
+ERROR:  pg_hint_plan: hint syntax error at or near ""
+DETAIL:  Opening parenthesis is necessary.
 -- No. A-8-4-11
 RESET client_min_messages;
 SET pg_hint_plan.parse_messages TO DEFAULT;
