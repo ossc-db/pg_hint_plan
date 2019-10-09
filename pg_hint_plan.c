@@ -451,6 +451,7 @@ static int	pg_hint_plan_debug_message_level = LOG;
 static bool	pg_hint_plan_enable_hint_table = false;
 
 static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
+static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
 static int hint_inhibit_level = 0;			/* Inhibit hinting if this is above 0 */
 											/* (This could not be above 1)        */
 
@@ -2669,6 +2670,7 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	int				save_nestlevel;
 	PlannedStmt	   *result;
 	HintState	   *hstate;
+	const char	   *prev_hint_str;
 
 	/*
 	 * Use standard planner if pg_hint_plan is disabled or current nesting 
@@ -2696,9 +2698,6 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	if (plpgsql_recurse_level > 0)
 	{
 		MemoryContext oldcontext;
-
-		if (current_hint_str)
-			pfree((void *)current_hint_str);
 
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 		current_hint_str =
@@ -2765,10 +2764,21 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	 */
 	PG_TRY();
 	{
+		/*
+		 * The planner call below may replace current_hint_str. Store and
+		 * restore it so that the subsequent planning in the upper level
+		 * doesn't get confused.
+		 */
+		recurse_level++;
+		prev_hint_str = current_hint_str;
+
 		if (prev_planner)
 			result = (*prev_planner) (parse, cursorOptions, boundParams);
 		else
 			result = standard_planner(parse, cursorOptions, boundParams);
+
+		current_hint_str = prev_hint_str;
+		recurse_level--;
 	}
 	PG_CATCH();
 	{
@@ -2776,6 +2786,8 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 		 * Rollback changes of GUC parameters, and pop current hint context
 		 * from hint stack to rewind the state.
 		 */
+		current_hint_str = prev_hint_str;
+		recurse_level--;
 		AtEOXact_GUC(true, save_nestlevel);
 		pop_hint();
 		PG_RE_THROW();
@@ -2786,7 +2798,7 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	/*
 	 * current_hint_str is useless after planning of the top-level query.
 	 */
-	if (plpgsql_recurse_level < 1 && current_hint_str)
+	if (recurse_level < 1 && current_hint_str)
 	{
 		pfree((void *)current_hint_str);
 		current_hint_str = NULL;
