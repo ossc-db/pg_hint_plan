@@ -3019,8 +3019,11 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 		MemoryContext oldcontext;
 
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
-		current_hint_str =
-			get_hints_from_comment((char *)error_context_stack->arg);
+		 if(error_context_stack != NULL)
+			 current_hint_str =
+			 	get_hints_from_comment((char *)(error_context_stack->arg));
+		else
+			current_hint_str = NULL;
 		MemoryContextSwitchTo(oldcontext);
 	}
 
