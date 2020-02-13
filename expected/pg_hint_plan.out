@@ -10,13 +10,13 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;
 (4 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.val = t2.val;
-                QUERY PLAN                 
--------------------------------------------
- Merge Join
-   Merge Cond: (t2.val = t1.val)
-   ->  Index Scan using t2_val on t2
-   ->  Materialize
-         ->  Index Scan using t1_val on t1
+           QUERY PLAN           
+--------------------------------
+ Hash Join
+   Hash Cond: (t2.val = t1.val)
+   ->  Seq Scan on t2
+   ->  Hash
+         ->  Seq Scan on t1
 (5 rows)
 
 LOAD 'pg_hint_plan';
@@ -31,13 +31,13 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;
 (4 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.val = t2.val;
-                QUERY PLAN                 
--------------------------------------------
- Merge Join
-   Merge Cond: (t2.val = t1.val)
-   ->  Index Scan using t2_val on t2
-   ->  Materialize
-         ->  Index Scan using t1_val on t1
+           QUERY PLAN           
+--------------------------------
+ Hash Join
+   Hash Cond: (t2.val = t1.val)
+   ->  Seq Scan on t2
+   ->  Hash
+         ->  Seq Scan on t1
 (5 rows)
 
 /*+ Test (t1 t2) */
@@ -8187,6 +8187,12 @@ END;
 $$ VOLATILE LANGUAGE plpgsql;
 vacuum analyze t1;
 SET pg_hint_plan.enable_hint = false;
+SELECT pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 SELECT reset_stats_and_wait();
  reset_stats_and_wait 
 ----------------------
@@ -8212,6 +8218,12 @@ SELECT relname, seq_scan > 0 as seq_scan, idx_scan > 0 as idx_scan FROM pg_stat_
 (1 row)
 
 SET pg_hint_plan.enable_hint = true;
+SELECT pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 SELECT reset_stats_and_wait();
  reset_stats_and_wait 
 ----------------------
@@ -8260,6 +8272,12 @@ BEGIN
 END;
 $$ VOLATILE LANGUAGE plpgsql;
 SET pg_hint_plan.enable_hint = false;
+SELECT pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 SELECT reset_stats_and_wait();
  reset_stats_and_wait 
 ----------------------
@@ -8287,6 +8305,12 @@ SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables WHERE schemaname = '
 (2 rows)
 
 SET pg_hint_plan.enable_hint = true;
+SELECT pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
 SELECT reset_stats_and_wait();
  reset_stats_and_wait 
 ----------------------
