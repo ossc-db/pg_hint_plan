@@ -451,6 +451,7 @@ static int	pg_hint_plan_debug_message_level = LOG;
 static bool	pg_hint_plan_enable_hint_table = false;
 
 static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
+static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
 static int hint_inhibit_level = 0;			/* Inhibit hinting if this is above 0 */
 											/* (This could not be above 1)        */
 
@@ -1678,7 +1679,7 @@ get_query_string(ParseState *pstate, Query *query, Query **jumblequery)
 	 * case of DESCRIBE message handling or EXECUTE command. We may still see a
 	 * candidate top-level query in pstate in the case.
 	 */
-	if (!p && pstate)
+	if (pstate && pstate->p_sourcetext)
 		p = pstate->p_sourcetext;
 
 	/* We don't see a query string, return NULL */
@@ -1755,13 +1756,24 @@ get_query_string(ParseState *pstate, Query *query, Query **jumblequery)
 			PreparedStatement  *entry;
 
 			entry = FetchPreparedStatement(stmt->name, true);
-			p = entry->plansource->query_string;
-			target_query = (Query *) linitial (entry->plansource->query_list);
+
+			if (entry->plansource->is_valid)
+			{
+				p = entry->plansource->query_string;
+				target_query = (Query *) linitial (entry->plansource->query_list);
+			}
+			else
+			{
+				/* igonre the hint for EXECUTE if invalidated */
+				p = NULL;
+				target_query = NULL;
+			}
 		}
 			
 		/* JumbleQuery accespts only a non-utility Query */
-		if (!IsA(target_query, Query) ||
-			target_query->utilityStmt != NULL)
+		if (target_query &&
+			(!IsA(target_query, Query) ||
+			 target_query->utilityStmt != NULL))
 			target_query = NULL;
 
 		if (jumblequery)
@@ -2598,6 +2610,14 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		current_hint_str = get_hints_from_comment(query_str);
 		MemoryContextSwitchTo(oldcontext);
 	}
+	else
+	{
+		/*
+		 * Failed to get query. We would be in fetching invalidated
+		 * plancache. Try the next chance.
+		 */
+		current_hint_retrieved = false;
+	}
 
 	if (debug_level > 1)
 	{
@@ -2664,6 +2684,7 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	int				save_nestlevel;
 	PlannedStmt	   *result;
 	HintState	   *hstate;
+	const char 	   *prev_hint_str = NULL;
 
 	/*
 	 * Use standard planner if pg_hint_plan is disabled or current nesting 
@@ -2756,8 +2777,17 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	}
 
 	/*
-	 * Use PG_TRY mechanism to recover GUC parameters and current_hint to the
-	 * state when this planner started when error occurred in planner.
+	 * The planner call below may replace current_hint_str. Store and restore
+	 * it so that the subsequent planning in the upper level doesn't get
+	 * confused.
+	 */
+	recurse_level++;
+	prev_hint_str = current_hint_str;
+	current_hint_str = NULL;
+	
+	/*
+	 * Use PG_TRY mechanism to recover GUC parameters and current_hint_state to
+	 * the state when this planner started when error occurred in planner.
 	 */
 	PG_TRY();
 	{
@@ -2765,6 +2795,9 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 			result = (*prev_planner) (parse, cursorOptions, boundParams);
 		else
 			result = standard_planner(parse, cursorOptions, boundParams);
+
+		current_hint_str = prev_hint_str;
+		recurse_level--;
 	}
 	PG_CATCH();
 	{
@@ -2772,6 +2805,8 @@ pg_hint_plan_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 		 * Rollback changes of GUC parameters, and pop current hint context
 		 * from hint stack to rewind the state.
 		 */
+		current_hint_str = prev_hint_str;
+		recurse_level--;
 		AtEOXact_GUC(true, save_nestlevel);
 		pop_hint();
 		PG_RE_THROW();
