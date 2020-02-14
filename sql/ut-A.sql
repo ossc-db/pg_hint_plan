@@ -1152,6 +1152,11 @@ CREATE OR REPLACE FUNCTION recall_planner() RETURNS int AS $$
 $$ LANGUAGE SQL IMMUTABLE;
 
 --No.13-4-1
+-- recall_planner() is reduced to constant while planning using the
+-- hint defined in the function. Then the outer query is planned based
+-- on the following hint. pg_hint_plan shows the log for the function
+-- but the resulting explain output doesn't contain the corresponding
+-- plan.
 /*+HashJoin(t_1 t_2)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
@@ -1159,6 +1164,7 @@ EXPLAIN (COSTS false)
   ORDER BY t_1.c1;
 
 --No.13-4-2
+--See description for No.13-4-1
 /*+HashJoin(st_1 st_2)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 st_1
@@ -1166,6 +1172,7 @@ EXPLAIN (COSTS false)
   ORDER BY st_1.c1;
 
 --No.13-4-3
+--See description for No.13-4-1
 /*+HashJoin(t_1 t_2)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 st_1
@@ -1173,6 +1180,7 @@ EXPLAIN (COSTS false)
   ORDER BY st_1.c1;
 
 --No.13-4-4
+--See description for No.13-4-1
 /*+HashJoin(st_1 st_2)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
@@ -1180,6 +1188,8 @@ EXPLAIN (COSTS false)
   ORDER BY t_1.c1;
 
 --No.13-4-5
+-- See description for No.13-4-1. No joins in ths plan, so
+-- pg_hint_plan doesn't complain on the wrongly written error hint.
 /*+HashJoin(t_1 t_1)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
@@ -1205,6 +1215,7 @@ EXPLAIN (COSTS false)
 DROP FUNCTION recall_planner_one_t(int);
 
 --No.13-4-7
+-- See description for No.13-4-1. Complains on the wrongly written hint.
 /*+HashJoin(t_1 t_1)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
@@ -1217,3 +1228,27 @@ EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
    JOIN s1.t2 t_2 ON (t_1.c1 = t_2.c1)
   ORDER BY t_1.c1;
+
+--No.14-1-1 plancache invalidation
+CREATE TABLE s1.tpc AS SELECT a FROM generate_series(0, 999) a;
+CREATE INDEX ON s1.tpc(a);
+PREPARE p1 AS SELECT * FROM s1.tpc WHERE a < 999;
+/*+ IndexScan(tpc) */PREPARE p2 AS SELECT * FROM s1.tpc WHERE a < 999;
+/*+ SeqScan(tpc) */PREPARE p3(int) AS SELECT * FROM s1.tpc WHERE a = $1;
+EXPLAIN EXECUTE p1;
+EXPLAIN EXECUTE p2;
+EXPLAIN EXECUTE p3(500);
+-- The DROP invalidates the plan caches
+DROP TABLE s1.tpc;
+EXPLAIN EXECUTE p1;
+EXPLAIN EXECUTE p2;
+EXPLAIN EXECUTE p3(500);
+CREATE TABLE s1.tpc AS SELECT a FROM generate_series(0, 999) a;
+CREATE INDEX ON s1.tpc(a);
+EXPLAIN EXECUTE p1;
+EXPLAIN EXECUTE p2;
+EXPLAIN EXECUTE p3(500);
+DEALLOCATE p1;
+DEALLOCATE p2;
+DEALLOCATE p3;
+DROP TABLE s1.tpc;
