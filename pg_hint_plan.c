@@ -4557,12 +4557,8 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 		list_free_deep(rel->pathlist);
 		rel->pathlist = NIL;
 
-		/* Remove all the partial paths if Parallel hint is specfied */
-		if ((found_hints & HINT_BM_PARALLEL) && rel->partial_pathlist)
-		{
-			list_free_deep(rel->partial_pathlist);
-			rel->partial_pathlist = NIL;
-		}
+		list_free_deep(rel->partial_pathlist);
+		rel->partial_pathlist = NIL;
 
 		/* Regenerate paths with the current enforcement */
 		set_plain_rel_pathlist(root, rel, rte);
