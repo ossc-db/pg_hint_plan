@@ -4262,7 +4262,12 @@ NOTICE:  nested_planner(3)
 NOTICE:  nested_planner(2)
 NOTICE:  nested_planner(1)
 LOG:  pg_hint_plan:
-no hint
+used hint:
+IndexScan(t_1)
+not used hint:
+duplication hint:
+error hint:
+
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(t_1)

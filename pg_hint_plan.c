@@ -3197,9 +3197,14 @@ standard_planner_proc:
 	}
 	current_hint_state = NULL;
 	if (prev_planner)
-		return (*prev_planner) (parse, cursorOptions, boundParams);
+		result = (*prev_planner) (parse, cursorOptions, boundParams);
 	else
-		return standard_planner(parse, cursorOptions, boundParams);
+		result = standard_planner(parse, cursorOptions, boundParams);
+
+	if(HintStateStack != NIL)
+		current_hint_state = (HintState *) lfirst(list_head(HintStateStack));
+
+	return result;
 }
 
 /*
