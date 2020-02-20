@@ -3,7 +3,6 @@
  * core.c
  *	  Routines copied from PostgreSQL core distribution.
  *
-
  * The main purpose of this files is having access to static functions in core.
  * Another purpose is tweaking functions behavior by replacing part of them by
  * macro definitions. See at the end of pg_hint_plan.c for details. Anyway,
@@ -1263,20 +1262,15 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 				{
 					SpecialJoinInfo *sjinfo = (SpecialJoinInfo *) lfirst(l);
 
+					/* ignore full joins --- their ordering is predetermined */
+					if (sjinfo->jointype == JOIN_FULL)
+						continue;
+
 					if (bms_overlap(sjinfo->min_lefthand, join_plus_rhs) &&
 						!bms_is_subset(sjinfo->min_righthand, join_plus_rhs))
 					{
 						join_plus_rhs = bms_add_members(join_plus_rhs,
 													  sjinfo->min_righthand);
-						more = true;
-					}
-					/* full joins constrain both sides symmetrically */
-					if (sjinfo->jointype == JOIN_FULL &&
-						bms_overlap(sjinfo->min_righthand, join_plus_rhs) &&
-						!bms_is_subset(sjinfo->min_lefthand, join_plus_rhs))
-					{
-						join_plus_rhs = bms_add_members(join_plus_rhs,
-														sjinfo->min_lefthand);
 						more = true;
 					}
 				}
@@ -1386,7 +1380,9 @@ mark_dummy_rel(RelOptInfo *rel)
 	rel->partial_pathlist = NIL;
 
 	/* Set up the dummy path */
-	add_path(rel, (Path *) create_append_path(rel, NIL, NULL, 0));
+	add_path(rel, (Path *) create_append_path(rel, NIL,
+											  rel->lateral_relids,
+											  0));
 
 	/* Set or update cheapest_total_path and related fields */
 	set_cheapest(rel);
