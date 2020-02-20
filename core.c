@@ -336,7 +336,7 @@ add_paths_to_append_rel(PlannerInfo *root, RelOptInfo *rel,
 	/*
 	 * Consider an append of partial unordered, unparameterized partial paths.
 	 */
-	if (partial_subpaths_valid)
+	if (partial_subpaths_valid && partial_subpaths != NIL)
 	{
 		AppendPath *appendpath;
 		ListCell   *lc;
@@ -1313,20 +1313,15 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 				{
 					SpecialJoinInfo *sjinfo = (SpecialJoinInfo *) lfirst(l);
 
+					/* ignore full joins --- their ordering is predetermined */
+					if (sjinfo->jointype == JOIN_FULL)
+						continue;
+
 					if (bms_overlap(sjinfo->min_lefthand, join_plus_rhs) &&
 						!bms_is_subset(sjinfo->min_righthand, join_plus_rhs))
 					{
 						join_plus_rhs = bms_add_members(join_plus_rhs,
 														sjinfo->min_righthand);
-						more = true;
-					}
-					/* full joins constrain both sides symmetrically */
-					if (sjinfo->jointype == JOIN_FULL &&
-						bms_overlap(sjinfo->min_righthand, join_plus_rhs) &&
-						!bms_is_subset(sjinfo->min_lefthand, join_plus_rhs))
-					{
-						join_plus_rhs = bms_add_members(join_plus_rhs,
-														sjinfo->min_lefthand);
 						more = true;
 					}
 				}
@@ -1429,7 +1424,9 @@ mark_dummy_rel(RelOptInfo *rel)
 	rel->partial_pathlist = NIL;
 
 	/* Set up the dummy path */
-	add_path(rel, (Path *) create_append_path(rel, NIL, NULL, 0, NIL));
+	add_path(rel, (Path *) create_append_path(rel, NIL,
+											  rel->lateral_relids,
+											  0, NIL));
 
 	/* Set or update cheapest_total_path and related fields */
 	set_cheapest(rel);
