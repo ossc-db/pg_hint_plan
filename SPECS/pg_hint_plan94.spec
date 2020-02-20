@@ -13,7 +13,7 @@
 ## Set general information for pg_hint_plan.
 Summary:    Optimizer hint for PostgreSQL 9.4
 Name:       pg_hint_plan94
-Version:    1.1.8
+Version:    1.1.9
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -40,7 +40,6 @@ Note that this package is available for only PostgreSQL 9.4.
 
 ## pre work for build pg_hint_plan
 %prep
-PATH=/usr/pgsql-9.4/bin:$PATH
 if [ "${MAKE_ROOT}" != "" ]; then
   pushd ${MAKE_ROOT}
   make clean %{name}-%{version}.tar.gz
@@ -66,7 +65,8 @@ rm -rf %{buildroot}
 %defattr(0755,root,root)
 %{_libdir}/pg_hint_plan.so
 %defattr(0644,root,root)
-%{_datadir}/extension/pg_hint_plan--1.1.8.sql
+%{_datadir}/extension/pg_hint_plan--1.1.9.sql
+%{_datadir}/extension/pg_hint_plan--1.1.8--1.1.9.sql
 %{_datadir}/extension/pg_hint_plan--1.1.7--1.1.8.sql
 %{_datadir}/extension/pg_hint_plan--1.1.6--1.1.7.sql
 %{_datadir}/extension/pg_hint_plan--1.1.5--1.1.6.sql
@@ -77,6 +77,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Thu Feb 20 2020 Kyotaro Horiguchi
+- Fixed some bugs. Version 1.1.9.
 * Thu Jan 17 2019 Kyotaro Horiguchi
 - Fixed some bugs. Version 1.1.8.
 * Tue Nov 13 2018 Kyotaro Horiguchi
