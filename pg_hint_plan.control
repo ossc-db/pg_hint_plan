@@ -1,6 +1,6 @@
 # pg_hint_plan extension
 
 comment = ''
-default_version = '1.2.5'
+default_version = '1.2.6'
 relocatable = false
 schema = hint_plan
