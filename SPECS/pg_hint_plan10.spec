@@ -14,7 +14,7 @@
 ## Set general information for pg_hint_plan.
 Summary:    Optimizer hint on PostgreSQL 10
 Name:       pg_hint_plan10
-Version:    1.3.3
+Version:    1.3.5
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -66,11 +66,14 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.3.0--1.3.1.sql
 %{_datadir}/extension/pg_hint_plan--1.3.1--1.3.2.sql
 %{_datadir}/extension/pg_hint_plan--1.3.2--1.3.3.sql
-%{_datadir}/extension/pg_hint_plan--1.3.3.sql
+%{_datadir}/extension/pg_hint_plan--1.3.3--1.3.5.sql
+%{_datadir}/extension/pg_hint_plan--1.3.5.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 # History of pg_hint_plan.
 %changelog
+* Thu Feb 21 2020 Kyotaro Horiguchi
+- Fix some bugs. Version 1.3.5.
 * Thu Jan 17 2019 Kyotaro Horiguchi
 - Fix some bugs. Version 1.3.3.
 * Tue Nov 13 2018 Kyotaro Horiguchi
