@@ -9085,3 +9085,34 @@ error hint:
 ----+-----
 (0 rows)
 
+-- all hint types together
+/*+ SeqScan(t1) MergeJoin(t1 t2) Leading(t1 t2) Rows(t1 t2 +10) Parallel(t1 8 hard) Set(random_page_cost 2.0)*/
+EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
+DEBUG:  adjusted rows 1000 to 1010
+DEBUG:  pg_hint_plan:
+used hint:
+SeqScan(t1)
+MergeJoin(t1 t2)
+Leading(t1 t2)
+Set(random_page_cost 2.0)
+Rows(t1 t2 +10)
+Parallel(t1 8 hard)
+not used hint:
+duplication hint:
+error hint:
+
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Nested Loop  (cost=10000000664.81..10000000875.37 rows=10 width=24)
+   ->  Merge Join  (cost=664.67..713.16 rows=1010 width=16)
+         Merge Cond: (t2.id = t1.id)
+         ->  Index Scan using t2_pkey on t2  (cost=0.28..31.27 rows=1000 width=8)
+         ->  Sort  (cost=664.39..689.39 rows=10000 width=8)
+               Sort Key: t1.id
+               ->  Gather  (cost=0.00..0.00 rows=10000 width=8)
+                     Workers Planned: 8
+                     ->  Parallel Seq Scan on t1  (cost=0.00..0.00 rows=2500 width=8)
+   ->  Index Scan using t3_pkey on t3  (cost=0.14..0.16 rows=1 width=8)
+         Index Cond: (id = t1.id)
+(11 rows)
+
