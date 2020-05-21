@@ -231,7 +231,7 @@ static char qnostr[32];
 static const char *current_hint_str = NULL;
 
 /*
- * However we usually take a hint stirng in post_parse_analyze_hook, we still
+ * However we usually take a hint string in post_parse_analyze_hook, we still
  * need to do so in planner_hook when client starts query execution from the
  * bind message on a prepared query. This variable prevent duplicate and
  * sometimes harmful hint string retrieval.
@@ -1807,11 +1807,11 @@ get_hints_from_table(const char *client_query, const char *client_application)
 }
 
 /*
- * Get client-supplied query string. Addtion to that the jumbled query is
+ * Get client-supplied query string. Addition to that the jumbled query is
  * supplied if the caller requested. From the restriction of JumbleQuery, some
- * kind of query needs special amendments. Reutrns NULL if this query doesn't
+ * kind of query needs special amendments. Returns NULL if this query doesn't
  * change the current hint. This function returns NULL also when something
- * wrong has happend and let the caller continue using the current hints.
+ * wrong has happened and let the caller continue using the current hints.
  */
 static const char *
 get_query_string(ParseState *pstate, Query *query, Query **jumblequery)
@@ -1899,13 +1899,13 @@ get_query_string(ParseState *pstate, Query *query, Query **jumblequery)
 			}
 			else
 			{
-				/* igonre the hint for EXECUTE if invalidated */
+				/* ignore the hint for EXECUTE if invalidated */
 				p = NULL;
 				target_query = NULL;
 			}
 		}
 			
-		/* JumbleQuery accespts only a non-utility Query */
+		/* JumbleQuery accepts only a non-utility Query */
 		if (target_query &&
 			(!IsA(target_query, Query) ||
 			 target_query->utilityStmt != NULL))
@@ -2406,7 +2406,7 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 		i++;
 	}
 
-	/* Retieve rows estimation */
+	/* Retrieve rows estimation */
 	rows_str = list_nth(name_list, hint->nrels);
 	hint->rows_str = rows_str;		/* store as-is for error logging */
 	if (rows_str[0] == '#')
@@ -2824,7 +2824,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 	if (hint_inhibit_level > 0)
 		return;
 
-	/* We alredy have one, don't parse it again. */
+	/* We already have one, don't parse it again. */
 	if (current_hint_retrieved)
 		return;
 
@@ -2936,7 +2936,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 			}
 		}
 
-		/* retrun if we have hint here */
+		/* return if we have hint here */
 		if (current_hint_str)
 			return;
 	}
@@ -3357,7 +3357,7 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 }
 
 /*
- * regexeq
+ * regexpeq
  *
  * Returns TRUE on match, FALSE on no match.
  *
@@ -3756,7 +3756,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 
 	/*
 	 * We could register the parent relation of the following children here
-	 * when inhparent == true but inheritnce planner doesn't call this function
+	 * when inhparent == true but inheritance planner doesn't call this function
 	 * for parents. Since we cannot distinguish who called this function we
 	 * cannot do other than always seeking the parent regardless of who called
 	 * this function.
