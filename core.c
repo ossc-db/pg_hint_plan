@@ -3,7 +3,6 @@
  * core.c
  *	  Routines copied from PostgreSQL core distribution.
  *
-
  * The main purpose of this files is having access to static functions in core.
  * Another purpose is tweaking functions behavior by replacing part of them by
  * macro definitions. See at the end of pg_hint_plan.c for details. Anyway,
@@ -13,21 +12,20 @@
  *
  * src/backend/optimizer/path/allpaths.c
  *
- *	static functions:
- *     set_plain_rel_pathlist()
- *     create_plain_partial_paths()
- *     set_append_rel_pathlist()
- *     add_paths_to_append_rel()
- *     generate_mergeappend_paths()
- *     get_cheapest_parameterized_child_path()
- *     accumulate_append_subpath()
- *
  *  public functions:
  *     standard_join_search(): This funcion is not static. The reason for
  *        including this function is make_rels_by_clause_joins. In order to
  *        avoid generating apparently unwanted join combination, we decided to
  *        change the behavior of make_join_rel, which is called under this
  *        function.
+ *
+ *	static functions:
+ *	   set_plain_rel_pathlist()
+ *	   create_plain_partial_paths()
+ *	   set_append_rel_pathlist()
+ *	   add_paths_to_append_rel()
+ *	   generate_mergeappend_paths()
+ *	   get_cheapest_parameterized_child_path()
  *
  * src/backend/optimizer/path/joinrels.c
  *
@@ -43,13 +41,15 @@
  *     mark_dummy_rel()
  *     restriction_is_constant_false()
  *
- *
  * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  *-------------------------------------------------------------------------
  */
 
+static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
+							RelOptInfo *rel2, RelOptInfo *joinrel,
+							SpecialJoinInfo *sjinfo, List *restrictlist);
 
 /*
  * set_plain_rel_pathlist
@@ -163,6 +163,7 @@ set_append_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 	/* Add paths to the "append" relation. */
 	add_paths_to_append_rel(root, rel, live_childrels);
 }
+
 
 /*
  * add_paths_to_append_rel
