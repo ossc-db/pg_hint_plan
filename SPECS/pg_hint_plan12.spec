@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 12
 Name:       pg_hint_plan12
-Version:    1.3.6
+Version:    1.3.7
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 12.
 
 %package llvmjit
 Requires: postgresql12-server, postgresql12-llvmjit
-Requires: pg_hint_plan12 = 1.3.6
+Requires: pg_hint_plan12 = 1.3.7
 Summary:  Just-in-time compilation support for pg_hint_plan12
 
 %description llvmjit
@@ -73,7 +73,8 @@ rm -rf %{buildroot}
 %defattr(0755,root,root)
 %{_libdir}/pg_hint_plan.so
 %defattr(0644,root,root)
-%{_datadir}/extension/pg_hint_plan--1.3.6.sql
+%{_datadir}/extension/pg_hint_plan--1.3.7.sql
+%{_datadir}/extension/pg_hint_plan--1.3.6--1.3.7.sql
 %{_datadir}/extension/pg_hint_plan--1.3.5--1.3.6.sql
 %{_datadir}/extension/pg_hint_plan.control
 
@@ -86,19 +87,9 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Thu Oct 29 2020 Kyotaro Horiguchi
+- Fix a bug. Version 1.3.7.
 * Wed Aug 5 2020 Kyotaro Horiguchi
 - Fix some bugs. Version 1.3.6.
 * Thu Feb 20 2020 Kyotaro Horiguchi
 - Support PostgreSQL 12. Fix some bugs. Version 1.3.5.
-* Thu Jan 17 2019 Kyotaro Horiguchi
-- Fix some bugs. Version 1.3.4.
-* Tue Nov 13 2018 Kyotaro Horiguchi
-- Support PostgreSQL 11. Version 1.3.2.
-* Fri Jun 08 2018 Kyotaro Horiguchi
-- Fixed a crash bug. Version 1.3.1.
-* Tue Oct 10 2017 Kyotaro Horiguchi
-- Support PostgreSQL 10. Version 1.3.0.
-* Tue Feb 7 2017 Kyotaro Horiguchi
-- Added new hint Parallel. Version 1.2.0.
-* Thu Jul 21 2016 Kyotaro Horiguchi
-- Support PostgreSQL 9.6
