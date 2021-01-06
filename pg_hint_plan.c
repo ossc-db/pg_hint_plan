@@ -668,7 +668,7 @@ _PG_init(void)
 							 "Message level of debug messages.",
 							 NULL,
 							 &pg_hint_plan_debug_message_level,
-							 LOG,
+							 INFO,
 							 parse_messages_level_options,
 							 PGC_USERSET,
 							 0,
