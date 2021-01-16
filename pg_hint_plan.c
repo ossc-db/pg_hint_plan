@@ -2995,7 +2995,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 
 	if (debug_level > 1)
 	{
-		if (debug_level == 1 && query_str && debug_query_string &&
+		if (debug_level == 2 && query_str && debug_query_string &&
 			strcmp(query_str, debug_query_string))
 			ereport(pg_hint_plan_debug_message_level,
 					(errmsg("hints in comment=\"%s\"",
@@ -3645,7 +3645,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 		pfree(indexname);
 	}
 
-	if (debug_level == 1)
+	if (debug_level > 0)
 	{
 		StringInfoData  rel_buf;
 		char *disprelname = "";
