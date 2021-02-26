@@ -3197,10 +3197,13 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	/*
 	 * current_hint_str is useless after planning of the top-level query.
 	 */
-	if (recurse_level < 1 && current_hint_str)
+	if (recurse_level < 1)
 	{
-		pfree((void *)current_hint_str);
-		current_hint_str = NULL;
+		if (current_hint_str)
+		{
+			pfree((void *)current_hint_str);
+			current_hint_str = NULL;
+		}
 		current_hint_retrieved = false;
 	}
 
@@ -3239,6 +3242,8 @@ standard_planner_proc:
 	/* The upper-level planner still needs the current hint state */
 	if (HintStateStack != NIL)
 		current_hint_state = (HintState *) lfirst(list_head(HintStateStack));
+
+	current_hint_retrieved = false;
 
 	return result;
 }
