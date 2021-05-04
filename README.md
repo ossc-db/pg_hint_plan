@@ -311,7 +311,7 @@ One multistatement can have exactly one hint comment and the hints affects all o
 
 #### VALUES expressions
 
-`VALUES` expressions in `FROM` clause are named as `*VALUES*` internally so it is hintable if it is the only `VALUES` in a query. Two or more `VALUES` expressions in a query seems distinguishable looking its explain result. But in reality it is mere a cosmetic and they are not distinguisable.
+`VALUES` expressions in `FROM` clause are named as `*VALUES*` internally so it is hintable if it is the only `VALUES` in a query. Two or more `VALUES` expressions in a query seem distinguishable looking at its explain result. But in reality, it is merely a cosmetic and they are not distinguishable.
 
     postgres=# /*+ MergeJoin(*VALUES*_1 *VALUES*) */
           EXPLAIN SELECT * FROM (VALUES (1, 1), (2, 2)) v (a, b)
