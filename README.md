@@ -79,7 +79,7 @@ The following example shows how to operate with the hint table.
     DELETE 1
     postgres=#
 
-The hint table is owned by the creator user and having the default previledges at the time of creation. during `CREATE EXTENSION`. Table hints are prioritized than comment hits.
+The hint table is owned by the creator user and having the default privileges at the time of creation. during `CREATE EXTENSION`. Table hints are prioritized over comment hits.
 
 ### The types of hints
 
