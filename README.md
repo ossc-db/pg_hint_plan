@@ -178,7 +178,7 @@ This section describes the installation steps.
 
 ### building binary module
 
-Simply run `make` in the top of the source tree, then `make install` as appropriate user. The `PATH` environment variable should be set properly for the target PostgreSQL for this process.
+Simply run `make` at the top of the source tree, then `make install` as an appropriate user. The `PATH` environment variable should be set properly for the target PostgreSQL for this process.
 
     $ tar xzvf pg_hint_plan-1.x.x.tar.gz
     $ cd pg_hint_plan-1.x.x
