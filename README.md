@@ -83,7 +83,7 @@ The hint table is owned by the creator user and having the default privileges at
 
 ### The types of hints
 
-Hinting phrases are classified into six types based on what kind of object and how they can affect planning. Scaning methods, join methods, joining order, row number correction, parallel query and GUC setting. You will see the lists of hint phrases of each type in [Hint list](#hints-list).
+Hinting phrases are classified into six types based on what kind of object and how they can affect planning. Scanning methods, join methods, joining order, row number correction, parallel query, and GUC setting. You will see the lists of hint phrases of each type in [Hint list](#hints-list).
 
 #### Hints for scan methods
 
