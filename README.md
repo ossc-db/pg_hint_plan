@@ -375,7 +375,7 @@ A `UNION` can run in parallel only when all underlying subqueries are parallel-s
 
 #### Syntax errors
 
-Any syntactical errors or wrong hint names are reported as a syntax error. These errors are reported in the server log with the message level specified by pg\_hint\_plan.message\_level if pg\_hint\_plan.debug\_print is on and above.
+Any syntactical errors or wrong hint names are reported as a syntax error. These errors are reported in the server log with the message level specified by `pg_hint_plan.message_level` if `pg_hint_plan.debug_print` is on and above.
 
 #### Object misspecifications
 
