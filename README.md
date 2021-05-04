@@ -379,7 +379,7 @@ Any syntactical errors or wrong hint names are reported as a syntax error. These
 
 #### Object misspecifications
 
-Object misspecifications results silent ingorance of the hints. This kind of error is reported as "not used hints" in the server log by the same condtion to syntax errors.
+Object misspecifications result in silent ignorance of the hints. This kind of error is reported as "not used hints" in the server log by the same condition as syntax errors.
 
 #### Redundant or conflicting hints
 
