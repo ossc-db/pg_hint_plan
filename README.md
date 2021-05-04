@@ -409,7 +409,7 @@ ECPG removes comments in queries written as embedded SQLs so hints cannot be pas
 
 #### Work with `pg_stat_statements`
 
-`pg_stat_statements` generates a query id ignoring comments. As the result the identical queires with different hints are summerized as the same query.
+`pg_stat_statements` generates a query id ignoring comments. As the result, the identical queries with different hints are summarized as the same query.
 
 ## Requirements
 
