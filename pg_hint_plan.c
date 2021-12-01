@@ -1014,7 +1014,7 @@ HintStateDelete(HintState *hstate)
 	if (hstate->hint_str)
 		pfree(hstate->hint_str);
 
-	for (i = 0; i < hstate->num_hints[HINT_TYPE_SCAN_METHOD]; i++)
+	for (i = 0; i < hstate->nall_hints; i++)
 		hstate->all_hints[i]->delete_func(hstate->all_hints[i]);
 	if (hstate->all_hints)
 		pfree(hstate->all_hints);
