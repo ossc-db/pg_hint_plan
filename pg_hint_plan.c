@@ -3645,7 +3645,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 		pfree(indexname);
 	}
 
-	if (debug_level == 1)
+	if (debug_level > 0)
 	{
 		StringInfoData  rel_buf;
 		char *disprelname = "";
