@@ -1012,6 +1012,13 @@ SELECT pg_sleep(1);
 -- the index scan happened while planning.
 SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables WHERE schemaname = 'public' AND (relname = 'p1_c1' OR relname = 'p1_c2');
 
+-- Make sure the reference to validly non-existent prepared statement
+-- doesn't harm
+CREATE FUNCTION ppf() RETURNS void AS $$
+PREPARE pp1 AS SELECT 1;
+EXECUTE pp1;
+$$ LANGUAGE sql;
+
 -- Subqueries on inheritance tables under UNION
 EXPLAIN (COSTS off) SELECT val FROM p1 WHERE val < 1000
 UNION ALL
