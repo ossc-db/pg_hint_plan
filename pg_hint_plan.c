@@ -1892,9 +1892,14 @@ get_query_string(ParseState *pstate, Query *query, Query **jumblequery)
 			ExecuteStmt *stmt = (ExecuteStmt *)target_query;
 			PreparedStatement  *entry;
 
-			entry = FetchPreparedStatement(stmt->name, true);
+			/*
+			 * Silently ignore nonexistent prepared statements.  This may
+			 * happen for EXECUTE within a function definition.  Otherwise the
+			 * execution will fail anyway.
+			 */
+			entry = FetchPreparedStatement(stmt->name, false);
 
-			if (entry->plansource->is_valid)
+			if (entry && entry->plansource->is_valid)
 			{
 				p = entry->plansource->query_string;
 				target_query = (Query *) linitial (entry->plansource->query_list);
