@@ -4863,58 +4863,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 }
 
 /*
- * set_rel_pathlist
- *	  Build access paths for a base relation
- *
- * This function was copied and edited from set_rel_pathlist() in
- * src/backend/optimizer/path/allpaths.c in order not to copy other static
- * functions not required here.
- */
-static void
-set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
-				 Index rti, RangeTblEntry *rte)
-{
-	if (IS_DUMMY_REL(rel))
-	{
-		/* We already proved the relation empty, so nothing more to do */
-	}
-	else if (rte->inh)
-	{
-		/* It's an "append relation", process accordingly */
-		set_append_rel_pathlist(root, rel, rti, rte);
-	}
-	else
-	{
-		if (rel->rtekind == RTE_RELATION)
-		{
-			if (rte->relkind == RELKIND_RELATION)
-			{
-				if(rte->tablesample != NULL)
-					elog(ERROR, "sampled relation is not supported");
-
-				/* Plain relation */
-				set_plain_rel_pathlist(root, rel, rte);
-			}
-			else
-				elog(ERROR, "unexpected relkind: %c", rte->relkind);
-		}
-		else
-			elog(ERROR, "unexpected rtekind: %d", (int) rel->rtekind);
-	}
-
-	/*
-	 * Allow a plugin to editorialize on the set of Paths for this base
-	 * relation.  It could add new paths (such as CustomPaths) by calling
-	 * add_path(), or delete or modify paths added by the core code.
-	 */
-	if (set_rel_pathlist_hook)
-		(*set_rel_pathlist_hook) (root, rel, rti, rte);
-
-	/* Now find the cheapest of the paths for this rel */
-	set_cheapest(rel);
-}
-
-/*
  * stmt_beg callback is called when each query in PL/pgSQL function is about
  * to be executed.  At that timing, we save query string in the global variable
  * plpgsql_query_string to use it in planner hook.  It's safe to use one global
@@ -4949,6 +4897,13 @@ void plpgsql_query_erase_callback(ResourceReleasePhase phase,
 	/* Cancel plpgsql nest level*/
 	plpgsql_recurse_level = 0;
 }
+
+/* include core static functions */
+static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
+										RelOptInfo *rel2, RelOptInfo *joinrel,
+										SpecialJoinInfo *sjinfo, List *restrictlist);
+static void set_append_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
+									Index rti, RangeTblEntry *rte);
 
 #define standard_join_search pg_hint_plan_standard_join_search
 #define join_search_one_level pg_hint_plan_join_search_one_level
