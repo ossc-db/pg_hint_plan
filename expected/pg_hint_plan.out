@@ -9122,3 +9122,69 @@ error hint:
          Index Cond: (id = t1.id)
 (11 rows)
 
+-- Test enable_state_hint_extractor=on
+do
+$$
+begin
+execute $prepare$ prepare test_hint_extractor(numeric[]) as 
+with recursive 
+dual as (select 'x' dummy, E'\'/*+fake*/' dummy2, $test_string$x /*+test/*/*+ '''E'''''''--*/x$test_string$ as dummy3, 5 dummy_num), 
+hier as (
+select * from dual d1 where d1.dummy_num =any($1) 
+union all 
+select /*+NestLoop(d2 d3) /*MergeJoin(d2 d3) this hint is not actual more*/ */ d2.* from dual d2, dual d3 where d2.dummy=d3.dummy
+union all 
+select /*+HashJoin(h2 h3) */ h2.* from hier h2, dual h3 where h3.dummy=h2.dummy and h2.dummy  is null)
+select --+MergeJoin(h4 d5)
+* from hier h4, dual d5 where h4.dummy = d5.dummy 
+$prepare$;
+end;
+$$;
+begin;
+select set_config('pg_hint_plan.enable_state_hint_extractor', 'on', true);
+ set_config 
+------------
+ on
+(1 row)
+
+explain (costs off) execute test_hint_extractor(array[1,2,3]);
+DEBUG:  pg_hint_plan:
+used hint:
+NestLoop(d2 d3)
+MergeJoin(d5 h4)
+HashJoin(h2 h3)
+not used hint:
+duplication hint:
+error hint:
+
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Merge Join
+   Merge Cond: (h4.dummy = d5.dummy)
+   CTE dual
+     ->  Result
+   CTE hier
+     ->  Recursive Union
+           ->  Append
+                 ->  CTE Scan on dual d1
+                       Filter: ((dummy_num)::numeric = ANY ('{1,2,3}'::numeric[]))
+                 ->  Nested Loop
+                       Join Filter: (d2.dummy = d3.dummy)
+                       ->  CTE Scan on dual d2
+                       ->  CTE Scan on dual d3
+           ->  Hash Join
+                 Hash Cond: (h2.dummy = h3.dummy)
+                 ->  WorkTable Scan on hier h2
+                       Filter: (dummy IS NULL)
+                 ->  Hash
+                       ->  CTE Scan on dual h3
+   ->  Sort
+         Sort Key: h4.dummy
+         ->  CTE Scan on hier h4
+   ->  Sort
+         Sort Key: d5.dummy
+         ->  CTE Scan on dual d5
+(25 rows)
+
+commit;
+deallocate test_hint_extractor;
