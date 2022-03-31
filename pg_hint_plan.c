@@ -519,6 +519,7 @@ static int	pg_hint_plan_parse_message_level = INFO;
 static int	pg_hint_plan_debug_message_level = LOG;
 /* Default is off, to keep backward compatibility. */
 static bool	pg_hint_plan_enable_hint_table = false;
+static bool	pg_hint_plan_ignore_unrecognized_hints = false;
 
 static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
 static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
@@ -680,6 +681,17 @@ _PG_init(void)
 							 "Let pg_hint_plan look up the hint table.",
 							 NULL,
 							 &pg_hint_plan_enable_hint_table,
+							 false,
+							 PGC_USERSET,
+							 0,
+							 NULL,
+							 NULL,
+							 NULL);
+
+	DefineCustomBoolVariable("pg_hint_plan.ignore_unrecognized_hints",
+							 "Continue hint processing in case of unrecognized/unsupported hints.",
+							 "This option lets pg_hint_plan to ignore unrecognized hints and continue hint processing.",
+							 &pg_hint_plan_ignore_unrecognized_hints,
 							 false,
 							 PGC_USERSET,
 							 0,
@@ -1649,6 +1661,55 @@ parse_parentheses(const char *str, List **name_list, HintKeyword keyword)
 	return str;
 }
 
+static inline const char *
+skip_to_parenthesis_end(const char *from)
+{
+	char check;
+	int open_count = 0;
+	const char *next = from;
+
+	if (!next || (check = *next) != '(')
+	{
+		return from;
+	}
+
+	do
+	{
+		if (check == '(')
+		{
+			open_count++;
+		}
+		else if (check == ')')
+		{
+			open_count--;
+		}
+	}
+	while ((check = *(++next)) && open_count > 0);
+
+	return next;
+}
+
+static inline const char *
+skip_unrecognized_hint(const char *str)
+{
+	if (pg_hint_plan_ignore_unrecognized_hints)
+	{
+		const char *next = str;
+		if(*next)
+		{
+			next = skip_to_parenthesis_end(next);
+			skip_space(next);
+			if (next == str)
+			{
+				next = skip_to_parenthesis_end(++next);
+				skip_space(next);
+			}
+		}
+		return next;
+	}
+	return NULL;
+}
+
 static void
 parse_hints(HintState *hstate, Query *parse, const char *str)
 {
@@ -1713,10 +1774,18 @@ parse_hints(HintState *hstate, Query *parse, const char *str)
 
 		if (parser->keyword == NULL)
 		{
-			hint_ereport(head,
-						 ("Unrecognized hint keyword \"%s\".", buf.data));
-			pfree(buf.data);
-			return;
+			const char *next = skip_unrecognized_hint(str);
+			if(next)
+			{
+				str = next;
+			}
+			else
+			{
+				hint_ereport(head,
+							 ("Unrecognized hint keyword \"%s\".", buf.data));
+				pfree(buf.data);
+				return;
+			}
 		}
 	}
 
