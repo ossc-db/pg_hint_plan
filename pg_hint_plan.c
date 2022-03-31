@@ -687,6 +687,8 @@ _PG_init(void)
 							 NULL,
 							 NULL);
 
+	EmitWarningsOnPlaceholders("pg_hint_plan");
+
 	/* Install hooks. */
 	prev_post_parse_analyze_hook = post_parse_analyze_hook;
 	post_parse_analyze_hook = pg_hint_plan_post_parse_analyze;
@@ -1014,7 +1016,7 @@ HintStateDelete(HintState *hstate)
 	if (hstate->hint_str)
 		pfree(hstate->hint_str);
 
-	for (i = 0; i < hstate->num_hints[HINT_TYPE_SCAN_METHOD]; i++)
+	for (i = 0; i < hstate->nall_hints; i++)
 		hstate->all_hints[i]->delete_func(hstate->all_hints[i]);
 	if (hstate->all_hints)
 		pfree(hstate->all_hints);
@@ -2876,7 +2878,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 	/* increment the query number */
 	qnostr[0] = 0;
 	if (debug_level > 1)
-		snprintf(qnostr, sizeof(qnostr), "[qno=0x%x]", qno++);
+		snprintf(qnostr, sizeof(qnostr), "[qno=0x%x]", qno);
 	qno++;
 
 	/* search the hint table for a hint if requested */
@@ -2912,6 +2914,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 			jstate.clocations = (pgssLocationLen *)
 				palloc(jstate.clocations_buf_size * sizeof(pgssLocationLen));
 			jstate.clocations_count = 0;
+			jstate.highest_extern_param_id = 0;
 
 			JumbleQuery(&jstate, jumblequery);
 
@@ -2966,6 +2969,8 @@ get_current_hint_string(ParseState *pstate, Query *query)
 
 				msgqno = qno;
 			}
+
+			pfree((void *)normalized_query);
 		}
 
 		/* retrun if we have hint here */
@@ -2983,7 +2988,10 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		 * use..
 		 */
 		if (current_hint_str)
-			pfree((void *)current_hint_str);
+		{
+			pfree((void *) current_hint_str);
+			current_hint_str = NULL;
+		}
 
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 		current_hint_str = get_hints_from_comment(query_str);

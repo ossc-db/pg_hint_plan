@@ -756,7 +756,7 @@ generate_normalized_query(pgssJumbleState *jstate, const char *query,
 		 * is kept stable.
 		 */
 		/* And insert a '?' in place of the constant token */
-		norm_query[n_quer_loc++] = '?';
+		n_quer_loc += sprintf(norm_query + n_quer_loc, "?");
 
 		quer_loc = off + tok_len;
 		last_off = off;
