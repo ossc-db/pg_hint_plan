@@ -1148,3 +1148,27 @@ set pg_hint_plan.parse_messages to 'NOTICE';
 -- all hint types together
 /*+ SeqScan(t1) MergeJoin(t1 t2) Leading(t1 t2) Rows(t1 t2 +10) Parallel(t1 8 hard) Set(random_page_cost 2.0)*/
 EXPLAIN (costs off) SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
+
+-- Test enable_state_hint_extractor=on
+do
+$$
+begin
+execute $prepare$ prepare test_hint_extractor(numeric[]) as 
+with recursive 
+dual as (select 'x' dummy, E'\'/*+fake*/' dummy2, $test_string$x /*+test/*/*+ '''E'''''''--*/x$test_string$ as dummy3, 5 dummy_num), 
+hier as (
+select * from dual d1 where d1.dummy_num =any($1) 
+union all 
+select /*+NestLoop(d2 d3) /*MergeJoin(d2 d3) this hint is not actual more*/ */ d2.* from dual d2, dual d3 where d2.dummy=d3.dummy
+union all 
+select /*+HashJoin(h2 h3) */ h2.* from hier h2, dual h3 where h3.dummy=h2.dummy and h2.dummy  is null)
+select --+MergeJoin(h4 d5)
+* from hier h4, dual d5 where h4.dummy = d5.dummy 
+$prepare$;
+end;
+$$;
+begin;
+select set_config('pg_hint_plan.enable_state_hint_extractor', 'on', true);
+explain (costs off) execute test_hint_extractor(array[1,2,3]);
+commit;
+deallocate test_hint_extractor;

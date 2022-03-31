@@ -393,6 +393,37 @@ typedef struct HintParser
 	HintKeyword			hint_keyword;
 } HintParser;
 
+typedef struct ExtractHintResult_t
+{
+	char *string;
+	size_t size;
+} ExtractHintResult;
+
+typedef enum ExtractHintState_e
+{
+	EH_TOP = 0,
+	EH_SINGLE_LINE_HINT,
+	EH_MULTI_LINE_COMMENT,
+	EH_MULTI_LINE_HINT,
+
+	EH_UNCHANGED,
+	EH_COMPLETED
+} ExtractHintState;
+
+static const char* EXTRACT_HINT_CONTROL_CHARS[] = {
+	"'*-$",
+	"\r\n",
+	"/",
+	"/",
+	"$"
+};
+
+static void extract_hints(const char *query_string, ExtractHintResult *result);
+static void extract_hints_recursive(const char *initial, const char **cursor, ExtractHintState state, ExtractHintResult *result);
+static inline const char* skip_to_non_escaped(const char *from, char brk);
+static inline const char* skip_token_quoted(const char* token_start, char token_char);
+static inline bool is_escaped_char(const char *string, const char *current_char);
+
 /* Module callbacks */
 void		_PG_init(void);
 void		_PG_fini(void);
@@ -519,6 +550,7 @@ static int	pg_hint_plan_parse_message_level = INFO;
 static int	pg_hint_plan_debug_message_level = LOG;
 /* Default is off, to keep backward compatibility. */
 static bool	pg_hint_plan_enable_hint_table = false;
+static bool pg_hint_plan_enable_state_hint_extractor = false;
 
 static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
 static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
@@ -680,6 +712,17 @@ _PG_init(void)
 							 "Let pg_hint_plan look up the hint table.",
 							 NULL,
 							 &pg_hint_plan_enable_hint_table,
+							 false,
+							 PGC_USERSET,
+							 0,
+							 NULL,
+							 NULL,
+							 NULL);
+
+	DefineCustomBoolVariable("pg_hint_plan.enable_state_hint_extractor",
+							 "Enables an alternative hint extractor that can extract multiple hints located in different places (include single line comments) of the provided query.",
+							 NULL,
+							 &pg_hint_plan_enable_state_hint_extractor,
 							 false,
 							 PGC_USERSET,
 							 0,
@@ -1945,6 +1988,13 @@ get_hints_from_comment(const char *p)
 
 	if (p == NULL)
 		return NULL;
+
+	if(pg_hint_plan_enable_state_hint_extractor)
+	{
+		ExtractHintResult result = {NULL, 0};
+		extract_hints(p, &result);
+		return result.string;
+	}
 
 	/* extract query head comment. */
 	hint_head = strstr(p, HINT_START);
@@ -4948,6 +4998,228 @@ void plpgsql_query_erase_callback(ResourceReleasePhase phase,
 		return;
 	/* Cancel plpgsql nest level*/
 	plpgsql_recurse_level = 0;
+}
+
+static inline bool
+is_escaped_char(const char *string, const char *current_char)
+{
+	int escapeCount = 0;
+	const char *check = current_char;
+	while (check > string)
+	{
+		check--;
+		if(*check != '\\')
+		{
+			break;
+		}
+		escapeCount++;
+	}
+
+	return escapeCount%2 > 0;
+}
+
+static inline const char*
+skip_token_quoted(const char* token_start, char token_char)
+{
+	const char *token_end = strchr(token_start + 1, token_char);
+	if(token_end)
+	{
+		const char *token_string;
+		const char *end_string = NULL;
+		size_t size = token_end - token_start + 2; // token_char + \0
+		char *token = palloc(size);
+		memcpy(token, token_start, size - 1);
+		token[size - 1] = '\0';
+
+		token_string = strstr(token_end + 1, token);
+		if(token_string)
+		{
+			end_string = token_string + size - 1;
+		}
+		pfree((void*)token);
+		return end_string;
+	}
+	return NULL;
+}
+
+static inline const char*
+skip_to_non_escaped(const char *from, char brk)
+{
+	const char *next;
+	while((next = strchr(from, brk)))
+	{
+		if(!is_escaped_char(from, next))
+		{
+			return next + 1;
+		}
+		from = next + 1;
+	}
+	return NULL;
+}
+
+static inline ExtractHintState
+get_next_state(ExtractHintState state, const char *initial, const char *from, const char *found, const char **prev_char_ptr, const char **next_char_ptr)
+{
+	ExtractHintState next_state = EH_UNCHANGED;
+	const char *next_char = found + 1;
+	const char *prev_char = found > initial ? found - 1 : NULL;
+
+	if(state == EH_TOP)
+	{
+		char found_char = *found;
+		if(found_char == '\'') // Quoted sql string
+		{
+			if(prev_char && *prev_char == 'E') // Escaped
+			{
+				next_char = skip_to_non_escaped(found, '\'');
+			}
+			else // default string
+			{
+				next_char = strchr(next_char, '\'');
+				if(next_char)
+				{
+					next_char++;
+				}
+			}
+		}
+		else if(found_char == '*' && prev_char && *prev_char == '/') // multiline hint/comment
+		{
+			if(*next_char == '+')
+			{
+				next_state = EH_MULTI_LINE_HINT;
+				next_char++;
+			}
+			else
+			{
+				next_state = EH_MULTI_LINE_COMMENT;
+			}
+		}
+		else if(found_char == '-' && *next_char == '-') // single line comment/hint
+		{
+			next_char++;
+			if( *next_char == '+')
+			{
+				next_char++;
+				next_state = EH_SINGLE_LINE_HINT;
+			}
+			else // Single-line comment
+			{
+				next_char = strpbrk(next_char, "\r\n");
+				if(next_char)
+				{
+					next_char++;
+				}
+			}
+		}
+		else if(found_char == '$' && (prev_char == NULL || isspace(*prev_char)) && !isdigit(*next_char) ) // dollar-quoted string
+		{
+			next_char = skip_token_quoted(found, '$');
+		}
+	}
+	else if(state == EH_SINGLE_LINE_HINT)
+	{
+		prev_char++;
+		next_state = EH_COMPLETED;
+	}
+	else if(state == EH_MULTI_LINE_COMMENT || state == EH_MULTI_LINE_HINT)
+	{
+		if(prev_char && *prev_char == '*')
+		{
+			next_state = EH_COMPLETED;
+		}
+		else if(*next_char == '*')
+		{
+			next_state = EH_MULTI_LINE_COMMENT;
+			prev_char++;
+			next_char++;
+		}
+	}
+
+	*next_char_ptr = next_char;
+	*prev_char_ptr = prev_char;
+	return next_state;
+}
+
+static inline const char*
+get_control_chars(ExtractHintState state)
+{
+	return EXTRACT_HINT_CONTROL_CHARS[state];
+}
+
+static inline void
+append_extracted_result(const char *string, size_t len, ExtractHintResult *result)
+{
+	if(len > 0)
+	{
+		size_t new_size;
+		if(!result->string)
+		{
+			new_size = len + 1;
+			result->string = palloc(new_size);
+		}
+		else
+		{
+			new_size = result->size + len + 1;
+			result->string = repalloc(result->string, new_size);
+			result->string[result->size - 1] = '\n';
+		}
+
+		memcpy(result->string + result->size, string, len);
+		result->string[new_size - 1] = '\0';
+		result->size = new_size;
+	}
+}
+
+static void
+extract_hints(const char *query_string, ExtractHintResult *result)
+{
+	const char *cursor = query_string;
+	extract_hints_recursive(query_string, &cursor, EH_TOP, result);
+}
+
+static void
+extract_hints_recursive(const char *initial, const char **cursor, ExtractHintState state, ExtractHintResult *result)
+{
+	if(cursor && *cursor && **cursor)
+	{
+		const char *control_chars = get_control_chars(state);
+		const char *from = *cursor;
+
+		while(from && *from)
+		{
+			const char *to;
+			const char *found = strpbrk(from, control_chars);
+			if(found)
+			{
+				ExtractHintState next_state = get_next_state(state, initial, from, found, &to, cursor);
+				if(next_state != EH_UNCHANGED)
+				{
+					if (state == EH_SINGLE_LINE_HINT || state == EH_MULTI_LINE_HINT)
+					{
+						append_extracted_result(from, to - from, result);
+					}
+
+					if (next_state == EH_COMPLETED)
+					{
+						return;
+					}
+					else
+					{
+						extract_hints_recursive(initial, cursor, next_state, result);
+					}
+				}
+				from = *cursor;
+			}
+			else
+			{
+				if (state == EH_SINGLE_LINE_HINT)
+				{
+					append_extracted_result(from, strlen(from), result);
+				}
+				from = *cursor = NULL;
+			}
+		}
+	}
 }
 
 #define standard_join_search pg_hint_plan_standard_join_search
