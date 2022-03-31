@@ -9122,3 +9122,49 @@ error hint:
          Index Cond: (id = t1.id)
 (11 rows)
 
+-- test hints after handled exception
+begin;
+select set_config('pg_hint_plan.disable_parsed_hint_reuse', 'on', true);
+ set_config 
+------------
+ on
+(1 row)
+
+create or replace function pg_temp.func_with_exception(p_var varchar) returns numeric language plpgsql as 
+$$
+begin 
+    return p_var::numeric;
+exception when others then null;
+    return -1;
+end;
+$$;
+select pg_temp.func_with_exception('abc');
+ func_with_exception 
+---------------------
+                  -1
+(1 row)
+
+explain (COSTS false) /*+MergeJoin(d1 d2) */ with dual as (select 'x' as dummy) select * from dual d1, dual d2 where d1.dummy = d2.dummy;
+DEBUG:  pg_hint_plan:
+used hint:
+MergeJoin(d1 d2)
+not used hint:
+duplication hint:
+error hint:
+
+             QUERY PLAN              
+-------------------------------------
+ Merge Join
+   Merge Cond: (d1.dummy = d2.dummy)
+   CTE dual
+     ->  Result
+   ->  Sort
+         Sort Key: d1.dummy
+         ->  CTE Scan on dual d1
+   ->  Sort
+         Sort Key: d2.dummy
+         ->  CTE Scan on dual d2
+(10 rows)
+
+drop function pg_temp.func_with_exception(varchar);
+rollback;

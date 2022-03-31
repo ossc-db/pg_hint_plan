@@ -1148,3 +1148,19 @@ set pg_hint_plan.parse_messages to 'NOTICE';
 -- all hint types together
 /*+ SeqScan(t1) MergeJoin(t1 t2) Leading(t1 t2) Rows(t1 t2 +10) Parallel(t1 8 hard) Set(random_page_cost 2.0)*/
 EXPLAIN (costs off) SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
+
+-- test hints after handled exception
+begin;
+select set_config('pg_hint_plan.disable_parsed_hint_reuse', 'on', true);
+create or replace function pg_temp.func_with_exception(p_var varchar) returns numeric language plpgsql as 
+$$
+begin 
+    return p_var::numeric;
+exception when others then null;
+    return -1;
+end;
+$$;
+select pg_temp.func_with_exception('abc');
+explain (COSTS false) /*+MergeJoin(d1 d2) */ with dual as (select 'x' as dummy) select * from dual d1, dual d2 where d1.dummy = d2.dummy;
+drop function pg_temp.func_with_exception(varchar);
+rollback;
