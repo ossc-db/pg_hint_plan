@@ -1148,3 +1148,9 @@ set pg_hint_plan.parse_messages to 'NOTICE';
 -- all hint types together
 /*+ SeqScan(t1) MergeJoin(t1 t2) Leading(t1 t2) Rows(t1 t2 +10) Parallel(t1 8 hard) Set(random_page_cost 2.0)*/
 EXPLAIN (costs off) SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
+
+-- Test pg_hint_plan.ignore_unrecognized_hints=on
+begin;
+select set_config('pg_hint_plan.ignore_unrecognized_hints', 'on', true);
+explain (costs off)/*+ unknown_hint internal_query_id(123) MemoizeSupportedINPG14(d1) MergeJoin(d1 d2) */ with dual as (select 'x' as dummy) select * from dual d1, dual d2 where d1.dummy = d2.dummy;
+commit;
