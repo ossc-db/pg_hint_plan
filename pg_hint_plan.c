@@ -1970,7 +1970,8 @@ get_hints_from_comment(const char *p)
 			!isspace(*p) &&
 			*p != '_' &&
 			*p != ',' &&
-			*p != '(' && *p != ')')
+			*p != '(' && *p != ')' &&
+			*p != '[' && *p != ']')
 			return NULL;
 	}
 
