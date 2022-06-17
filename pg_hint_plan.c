@@ -519,6 +519,7 @@ static int	pg_hint_plan_parse_message_level = INFO;
 static int	pg_hint_plan_debug_message_level = LOG;
 /* Default is off, to keep backward compatibility. */
 static bool	pg_hint_plan_enable_hint_table = false;
+static bool	pg_hint_plan_disable_parsed_hint_reuse = false;
 
 static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
 static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
@@ -686,6 +687,19 @@ _PG_init(void)
 							 NULL,
 							 NULL,
 							 NULL);
+
+	DefineCustomBoolVariable("pg_hint_plan.disable_parsed_hint_reuse",
+							 "Always read and parse hints from actual query string regardless of the sql/plpgsql execution level.",
+							 NULL,
+							 &pg_hint_plan_disable_parsed_hint_reuse,
+							 false,
+							 PGC_USERSET,
+							 0,
+							 NULL,
+							 NULL,
+							 NULL);
+
+	EmitWarningsOnPlaceholders("pg_hint_plan");
 
 	/* Install hooks. */
 	prev_post_parse_analyze_hook = post_parse_analyze_hook;
@@ -2847,7 +2861,7 @@ pop_hint(void)
  * Retrieve and store hint string from given query or from the hint table.
  */
 static void
-get_current_hint_string(ParseState *pstate, Query *query)
+get_current_hint_string(ParseState *pstate, Query *query, const char *query_string)
 {
 	const char *query_str;
 	MemoryContext	oldcontext;
@@ -2857,7 +2871,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		return;
 
 	/* We alredy have one, don't parse it again. */
-	if (current_hint_retrieved)
+	if (current_hint_retrieved && !pg_hint_plan_disable_parsed_hint_reuse)
 		return;
 
 	/* Don't parse the current query hereafter */
@@ -2887,7 +2901,18 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		Query		   *jumblequery;
 		char		   *normalized_query = NULL;
 
-		query_str = get_query_string(pstate, query, &jumblequery);
+		if(pg_hint_plan_disable_parsed_hint_reuse)
+		{
+			query_str = query_string;
+			if(query_str && query->utilityStmt == NULL && IsA(query, Query))
+			{
+				jumblequery = query;
+			}
+		}
+		else
+		{
+			query_str = get_query_string(pstate, query, &jumblequery);
+		}
 
 		/* If this query is not for hint, just return */
 		if (!query_str)
@@ -2972,8 +2997,10 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		if (current_hint_str)
 			return;
 	}
-	else
+	else if(!pg_hint_plan_disable_parsed_hint_reuse)
 		query_str = get_query_string(pstate, query, NULL);
+	else
+		query_str = query_string;
 
 	if (query_str)
 	{
@@ -2983,7 +3010,10 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		 * use..
 		 */
 		if (current_hint_str)
-			pfree((void *)current_hint_str);
+		{
+			pfree((void *) current_hint_str);
+			current_hint_str = NULL;
+		}
 
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 		current_hint_str = get_hints_from_comment(query_str);
@@ -3032,7 +3062,8 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query)
 	if (plpgsql_recurse_level == 0)
 		current_hint_retrieved = false;
 
-	get_current_hint_string(pstate, query);
+	if(!pg_hint_plan_disable_parsed_hint_reuse)
+		get_current_hint_string(pstate, query, NULL);
 }
 
 /*
@@ -3091,7 +3122,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	 * Support for nested plpgsql functions. This is quite ugly but this is the
 	 * only point I could find where I can get the query string.
 	 */
-	if (plpgsql_recurse_level > 0 &&
+	if (!pg_hint_plan_disable_parsed_hint_reuse && plpgsql_recurse_level > 0 &&
 		error_context_stack && error_context_stack->arg)
 	{
 		MemoryContext oldcontext;
@@ -3106,8 +3137,8 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	 * Query execution in extended protocol can be started without the analyze
 	 * phase. In the case retrieve hint string here.
 	 */
-	if (!current_hint_str)
-		get_current_hint_string(NULL, parse);
+	if (!current_hint_str || pg_hint_plan_disable_parsed_hint_reuse)
+		get_current_hint_string(NULL, parse, query_string);
 
 	/* No hint, go the normal way */
 	if (!current_hint_str)
@@ -3115,6 +3146,12 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 
 	/* parse the hint into hint state struct */
 	hstate = create_hintstate(parse, pstrdup(current_hint_str));
+
+	if(pg_hint_plan_disable_parsed_hint_reuse)
+	{
+		pfree((void*)current_hint_str);
+		current_hint_str = NULL;
+	}
 
 	/* run standard planner if the statement has not valid hint */
 	if (!hstate)
