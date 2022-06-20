@@ -9122,3 +9122,34 @@ error hint:
          Index Cond: (id = t1.id)
 (11 rows)
 
+-- Test pg_hint_plan.ignore_unrecognized_hints=on
+begin;
+select set_config('pg_hint_plan.ignore_unrecognized_hints', 'on', true);
+ set_config 
+------------
+ on
+(1 row)
+
+explain (costs off)/*+ unknown_hint internal_query_id(123) MemoizeSupportedINPG14(d1) MergeJoin(d1 d2) */ with dual as (select 'x' as dummy) select * from dual d1, dual d2 where d1.dummy = d2.dummy;
+DEBUG:  pg_hint_plan:
+used hint:
+MergeJoin(d1 d2)
+not used hint:
+duplication hint:
+error hint:
+
+             QUERY PLAN              
+-------------------------------------
+ Merge Join
+   Merge Cond: (d1.dummy = d2.dummy)
+   CTE dual
+     ->  Result
+   ->  Sort
+         Sort Key: d1.dummy
+         ->  CTE Scan on dual d1
+   ->  Sort
+         Sort Key: d2.dummy
+         ->  CTE Scan on dual d2
+(10 rows)
+
+commit;
