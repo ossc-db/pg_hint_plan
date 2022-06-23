@@ -13,58 +13,46 @@ CREATE SERVER file_server FOREIGN DATA WRAPPER file_fdw;
 CREATE USER MAPPING FOR PUBLIC SERVER file_server;
 CREATE FOREIGN TABLE ft1 (id int, val int) SERVER file_server OPTIONS (format 'csv', filename :'filename');
 
--- create function to filter unstable results of EXPLAIN
-CREATE FUNCTION explain_filter(text) RETURNS setof text
-LANGUAGE plpgsql AS
-$$
-declare
-    ln text;
-begin
-    for ln in execute $1
-    loop
-        -- Remove the path portion of foreign file names
-        ln := regexp_replace(ln, 'Foreign File: .*/([a-z.]+)$', 'Foreign File: .../\1');
-        return next ln;
-    end loop;
-end;
-$$;
-
 -- foreign table test
 SELECT * FROM ft1;
 \t
-SELECT explain_filter('
+\o results/ut-fdw.tmpout
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
-');
+\o
+\! sql/maskout2.sh results/ut-fdw.tmpout
 
 ----
 ---- No. S-1-5 object type for the hint
 ----
 
 -- No. S-1-5-6
-SELECT explain_filter('
+\o results/ut-fdw.tmpout
 /*+SeqScan(t1)SeqScan(ft_1)SeqScan(ft_2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
-');
+\o
+\! sql/maskout2.sh results/ut-fdw.tmpout;
 
 ----
 ---- No. J-1-6 object type for the hint
 ----
 
 -- No. J-1-6-6
-SELECT explain_filter('
+\o results/ut-fdw.tmpout
 /*+MergeJoin(ft_1 ft_2)Leading(ft_1 ft_2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
-');
+\o
+\! sql/maskout2.sh results/ut-fdw.tmpout;
 
 ----
 ---- No. L-1-6 object type for the hint
 ----
 
 -- No. L-1-6-6
-SELECT explain_filter('
+\o results/ut-fdw.tmpout
 /*+Leading(ft_1 ft_2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
-');
+\o
+\! sql/maskout2.sh results/ut-fdw.tmpout;
 
 ----
 ---- No. R-1-6 object type for the hint
@@ -72,10 +60,8 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1
 
 -- No. R-1-6-6
 \o results/ut-fdw.tmpout
-SELECT explain_filter('
 /*+Rows(ft_1 ft_2 #1)Leading(ft_1 ft_2 t1)*/
 EXPLAIN SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
-');
 \o
-\! sql/maskout.sh results/ut-fdw.tmpout
+\! sql/maskout.sh results/ut-fdw.tmpout | sql/maskout2.sh
 \! rm results/ut-fdw.tmpout
