@@ -1010,8 +1010,8 @@ not used hint:
 duplication hint:
 error hint:
 
-                       QUERY PLAN                        
----------------------------------------------------------
+                     QUERY PLAN                     
+----------------------------------------------------
  Merge Join
    Merge Cond: (ct1.c1 = ct2.c1)
    CTE c1
@@ -1033,20 +1033,19 @@ error hint:
          ->  CTE Scan on c1 ct1
    ->  Materialize
          ->  Merge Join
-               Merge Cond: (ct2.c1 = ct3.c1)
+               Merge Cond: (ct3.c1 = ct2.c1)
+               ->  Merge Join
+                     Merge Cond: (ct3.c1 = ct4.c1)
+                     ->  Sort
+                           Sort Key: ct3.c1
+                           ->  CTE Scan on c1 ct3
+                     ->  Sort
+                           Sort Key: ct4.c1
+                           ->  CTE Scan on c1 ct4
                ->  Sort
                      Sort Key: ct2.c1
                      ->  CTE Scan on c1 ct2
-               ->  Materialize
-                     ->  Merge Join
-                           Merge Cond: (ct3.c1 = ct4.c1)
-                           ->  Sort
-                                 Sort Key: ct3.c1
-                                 ->  CTE Scan on c1 ct3
-                           ->  Sort
-                                 Sort Key: ct4.c1
-                                 ->  CTE Scan on c1 ct4
-(34 rows)
+(33 rows)
 
 -- No. L-1-6-10
 EXPLAIN (COSTS false) SELECT * FROM s1.v1 t1, s1.v1 t2, s1.v1 t3, s1.v1 t4 WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
