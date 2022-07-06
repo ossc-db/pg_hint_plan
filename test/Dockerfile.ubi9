@@ -1,0 +1,38 @@
+FROM redhat/ubi9
+
+# Install packages
+RUN yum install -y sudo make gcc openssl-devel rpm-build
+RUN yum update
+
+# Create postgres user/group with specific IDs
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g $GID -o postgres
+RUN useradd -m -u $UID -g $GID -o -s /bin/bash postgres
+
+# Add PostgreSQL repository
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Install PostgreSQL
+ENV PGVERSION=14
+RUN dnf install -y postgresql${PGVERSION?}-server postgresql${PGVERSION?}-devel postgresql${PGVERSION?}-contrib
+
+# Create PostgreSQL cluster
+ENV PGBIN=/usr/pgsql-${PGVERSION}/bin
+ENV PGLIB=/usr/pgsql-${PGVERSION}/lib
+ENV PGDATA="/var/lib/pgsql/${PGVERSION}/data"
+ENV PATH="${PATH}:${PGBIN}"
+
+RUN sudo -u postgres ${PGBIN?}/initdb -A trust -k ${PGDATA?}
+RUN echo "shared_preload_libraries = 'pg_stat_statements, file_fdw, btree_gin, btree_gist'" >> ${PGDATA?}/postgresql.conf
+
+# Configure sudo
+RUN echo 'postgres ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+# Edit CLANG
+RUN sed -e 's/\/usr\/lib64\/ccache\/clang/\/usr\/bin\/clang/' ${PGLIB?}/pgxs/src/Makefile.global > ${PGLIB?}/pgxs/src/Makefile.global.tmp
+RUN mv ${PGLIB?}/pgxs/src/Makefile.global.tmp ${PGLIB?}/pgxs/src/Makefile.global
+RUN rm -rf ${PGLIB?}/pgxs/src/Makefile.global.tmp
+
+USER postgres

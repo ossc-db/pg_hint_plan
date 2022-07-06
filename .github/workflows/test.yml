@@ -1,0 +1,46 @@
+name: test
+
+on:
+  push:
+    branches:
+      - master
+      - PG13
+      - PG12
+      - PG11
+      - PG10
+  pull_request:
+    branches:
+      - master
+      - PG13
+      - PG12
+      - PG11
+      - PG10
+  schedule:
+    - cron: "0 1 * * SUN"      # only master
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      # Let all the jobs run to completion even if one fails
+      fail-fast: false
+
+      # Test matrix
+      matrix:
+        include:
+          - image: centos7
+          - image: ubi8
+          - image: ubi9
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          path: pg_hint_plan
+
+      - name: Build Test Container
+        run: docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -f ${GITHUB_WORKSPACE?}/pg_hint_plan/test/Dockerfile.${{matrix.image}} -t pg_hint_plan-test ${GITHUB_WORKSPACE?}/pg_hint_plan
+
+      - name: Run Test
+        run: docker run -v ${GITHUB_WORKSPACE?}/pg_hint_plan:/pg_hint_plan pg_hint_plan-test /pg_hint_plan/test/test.sh

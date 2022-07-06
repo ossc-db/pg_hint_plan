@@ -1,0 +1,31 @@
+FROM redhat/ubi8
+
+# Install packages
+RUN yum install -y sudo make gcc openssl-devel rpm-build
+
+# Create postgres user/group with specific IDs
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g $GID -o postgres
+RUN useradd -m -u $UID -g $GID -o -s /bin/bash postgres
+
+# Add PostgreSQL repository
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+# Install PostgreSQL
+ENV PGVERSION=14
+RUN dnf install -y postgresql${PGVERSION?}-server postgresql${PGVERSION?}-devel postgresql${PGVERSION?}-contrib
+
+# Create PostgreSQL cluster
+ENV PGBIN=/usr/pgsql-${PGVERSION}/bin
+ENV PGDATA="/var/lib/pgsql/${PGVERSION}/data"
+ENV PATH="${PATH}:${PGBIN}"
+
+RUN sudo -u postgres ${PGBIN?}/initdb -A trust -k ${PGDATA?}
+RUN echo "shared_preload_libraries = 'pg_stat_statements, file_fdw, btree_gin, btree_gist'" >> ${PGDATA?}/postgresql.conf
+
+# Configure sudo
+RUN echo 'postgres ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+USER postgres
