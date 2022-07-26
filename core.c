@@ -20,14 +20,14 @@
  *        function.
  *
  *	static functions:
- *	   set_rel_pathlist()
  *	   set_plain_rel_pathlist()
- *	   set_tablesample_rel_pathlist
+ *	   set_tablesample_rel_pathlist()
  *	   set_foreign_pathlist()
- *	   set_append_rel_pathlist()
  *	   set_function_pathlist()
  *	   set_values_pathlist()
  *	   set_tablefunc_pathlist()
+ *	   set_rel_pathlist()
+ *	   set_append_rel_pathlist()
  *	   create_plain_partial_paths()
  *
  * src/backend/optimizer/path/joinrels.c
@@ -47,7 +47,7 @@
  *     compute_partition_bounds()
  *     try_partitionwise_join()
  *
- * Portions Copyright (c) 1996-2020, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2022, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  *-------------------------------------------------------------------------
@@ -1447,9 +1447,9 @@ compute_partition_bounds(PlannerInfo *root, RelOptInfo *rel1,
 
 		/*
 		 * See if the partition bounds for inputs are exactly the same, in
-		 * which case we don't need to work hard: the join rel have the same
-		 * partition bounds as inputs, and the partitions with the same
-		 * cardinal positions form the pairs.
+		 * which case we don't need to work hard: the join rel will have the
+		 * same partition bounds as inputs, and the partitions with the same
+		 * cardinal positions will form the pairs.
 		 *
 		 * Note: even in cases where one or both inputs have merged bounds, it
 		 * would be possible for both the bounds to be exactly the same, but

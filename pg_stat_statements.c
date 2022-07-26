@@ -1,10 +1,13 @@
 /*-------------------------------------------------------------------------
  *
  * pg_stat_statements.c
- * 
- * Part of pg_stat_statements.c in PostgreSQL 10.
+ *	  Routines copied from PostgreSQL core distribution with some
+ *	  modifications.
  *
- * Copyright (c) 2008-2020, PostgreSQL Global Development Group
+ * contrib/pg_stat_statements/pg_stat_statements.c
+ *
+ * Portions Copyright (c) 2013-2022, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+ * Portions Copyright (c) 2008-2022, PostgreSQL Global Development Group
  *
  *-------------------------------------------------------------------------
  */
