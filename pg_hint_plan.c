@@ -3476,7 +3476,9 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 											info->indexkeys[i], false);
 
 					/* deny if any of column attributes don't match */
-					if (strcmp(p_attname, c_attname) != 0 ||
+					if (info->amcanorderbyop == true)					
+					{
+						if (strcmp(p_attname, c_attname) != 0 ||
 						p_info->indcollation[i] != info->indexcollations[i] ||
 						p_info->opclass[i] != info->opcintype[i]||
 						((p_info->indoption[i] & INDOPTION_DESC) != 0)
@@ -3484,6 +3486,19 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 						((p_info->indoption[i] & INDOPTION_NULLS_FIRST) != 0)
 						!= info->nulls_first[i])
 						break;
+					}
+					else
+					{
+						/*
+						 * When index does not support order by,
+						 * info->reverse[i] and info->nulls_first[i] are null.
+						 */
+						if (strcmp(p_attname, c_attname) != 0 ||
+							p_info->indcollation[i] != info->indexcollations[i] ||
+							p_info->opclass[i] != info->opcintype[i])
+							break;
+
+					}
 				}
 
 				/* deny this if any difference found */
