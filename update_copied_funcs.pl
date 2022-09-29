@@ -5,7 +5,8 @@ use strict;
 my $srcpath;
 my @sources = (
 	'src/backend/optimizer/path/allpaths.c',
-	'src/backend/optimizer/path/joinrels.c');
+	'src/backend/optimizer/path/joinrels.c',
+	'contrib/pg_stat_statements/pg_stat_statements.c');
 my %defs =
   ('core.c'
    => {protos => [],
@@ -34,7 +35,15 @@ my %defs =
    => {protos => [],
 	   funcs => ['make_join_rel',
 				 'populate_joinrel_with_paths'],
-	   head => make_join_rel_head()});
+	   head => make_join_rel_head()},
+	'pg_stat_statements.c'
+   => {protos => ['generate_normalized_query',
+   				  'fill_in_constant_lengths',
+				  'comp_location'],
+	   funcs => ['generate_normalized_query',
+	   			 'fill_in_constant_lengths',
+				 'comp_location'],
+	   head => pg_stat_statements_head()});
 	
 open (my $in, '-|', "objdump -W `which postgres`") || die "failed to objdump";
 while (<$in>)
@@ -125,6 +134,9 @@ for my $fname (keys %defs)
 
 # modify make_join_rel.c
 patch_make_join_rel();
+
+# modify pg_stat_statements.c
+patch_pg_stat_statements();
 
 sub core_c_head()
 {
@@ -245,6 +257,28 @@ adjust_rows(double rows, RowsHint *hint)
 }
 EOS
 }
+
+sub pg_stat_statements_head
+{
+	return << "EOS";
+/*-------------------------------------------------------------------------
+ *
+ * pg_stat_statements.c
+ *	  Routines copied from PostgreSQL core distribution with some
+ *	  modifications.
+ *
+ * contrib/pg_stat_statements/pg_stat_statements.c
+ *
+ * Portions Copyright (c) 2013-2022, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+ * Portions Copyright (c) 2008-2022, PostgreSQL Global Development Group
+ *
+ *-------------------------------------------------------------------------
+ */
+#include "postgres.h"
+
+#include "parser/scanner.h"
+EOS
+}
    
 
 sub patch_make_join_rel
@@ -341,5 +375,29 @@ index 0e7b99f..287e7f1 100644
  	/*
  	 * If we've already proven this join is empty, we needn't consider any
  	 * more paths for it.
+EOS
+}
+
+sub patch_pg_stat_statements
+{
+	open(my $out, '|-', 'patch') || die "failed to open pipe: $!";
+
+	print $out <<"EOS";
+diff --git a/pg_stat_statements.c b/pg_stat_statements.c
+index 051dd73..aa00450 100644
+--- a/pg_stat_statements.c
++++ b/pg_stat_statements.c
+@@ -95,8 +95,9 @@ generate_normalized_query(JumbleState *jstate, const char *query,
+ 		n_quer_loc += len_to_wrt;
+ 
+ 		/* And insert a param symbol in place of the constant token */
+-		n_quer_loc += sprintf(norm_query + n_quer_loc, "\$%d",
+-							  i + 1 + jstate->highest_extern_param_id);
++		/* !!! START: HERE IS THE PART WHICH IS MODIFIED FOR PG_HINT_PLAN !!! */
++		n_quer_loc += sprintf(norm_query + n_quer_loc, "?");
++		/* !!! END: HERE IS THE PART WHICH IS MODIFIED FOR PG_HINT_PLAN !!! */
+ 
+ 		quer_loc = off + tok_len;
+ 		last_off = off;
 EOS
 }

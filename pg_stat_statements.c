@@ -16,12 +16,10 @@
 #include "parser/scanner.h"
 
 static char *generate_normalized_query(JumbleState *jstate, const char *query,
-						  int query_loc, int *query_len_p);
+									   int query_loc, int *query_len_p);
 static void fill_in_constant_lengths(JumbleState *jstate, const char *query,
-						 int query_loc);
+									 int query_loc);
 static int	comp_location(const void *a, const void *b);
-
-
 
 /*
  * Generate a normalized version of the query string that will be used to
@@ -97,7 +95,6 @@ generate_normalized_query(JumbleState *jstate, const char *query,
 		n_quer_loc += len_to_wrt;
 
 		/* And insert a param symbol in place of the constant token */
-
 		/* !!! START: HERE IS THE PART WHICH IS MODIFIED FOR PG_HINT_PLAN !!! */
 		n_quer_loc += sprintf(norm_query + n_quer_loc, "?");
 		/* !!! END: HERE IS THE PART WHICH IS MODIFIED FOR PG_HINT_PLAN !!! */
@@ -123,6 +120,7 @@ generate_normalized_query(JumbleState *jstate, const char *query,
 	*query_len_p = n_quer_loc;
 	return norm_query;
 }
+
 
 /*
  * Given a valid SQL string and an array of constant-location records,
@@ -247,6 +245,7 @@ fill_in_constant_lengths(JumbleState *jstate, const char *query,
 
 	scanner_finish(yyscanner);
 }
+
 
 /*
  * comp_location: comparator for qsorting LocationLen structs by location
