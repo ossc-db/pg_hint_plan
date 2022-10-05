@@ -193,7 +193,6 @@ SELECT * FROM settings;
  enable_async_append            | on        | Query Tuning / Planner Method Configuration
  enable_bitmapscan              | on        | Query Tuning / Planner Method Configuration
  enable_gathermerge             | on        | Query Tuning / Planner Method Configuration
- enable_group_by_reordering     | on        | Query Tuning / Planner Method Configuration
  enable_hashagg                 | on        | Query Tuning / Planner Method Configuration
  enable_hashjoin                | on        | Query Tuning / Planner Method Configuration
  enable_incremental_sort        | on        | Query Tuning / Planner Method Configuration
@@ -211,6 +210,6 @@ SELECT * FROM settings;
  enable_seqscan                 | on        | Query Tuning / Planner Method Configuration
  enable_sort                    | on        | Query Tuning / Planner Method Configuration
  enable_tidscan                 | on        | Query Tuning / Planner Method Configuration
-(50 rows)
+(49 rows)
 
 ANALYZE;
