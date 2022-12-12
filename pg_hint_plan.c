@@ -689,6 +689,8 @@ _PG_init(void)
 							 NULL,
 							 NULL);
 
+	EmitWarningsOnPlaceholders("pg_hint_plan");
+
 	/* Install hooks. */
 	prev_post_parse_analyze_hook = post_parse_analyze_hook;
 	post_parse_analyze_hook = pg_hint_plan_post_parse_analyze;
