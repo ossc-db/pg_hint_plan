@@ -4511,7 +4511,7 @@ error hint:
 ---- No. S-3-5 not used index
 ----
 -- No. S-3-5-1
-\! psql contrib_regression -c "/*+IndexScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+IndexScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
 LOG:  available indexes for IndexScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4527,7 +4527,7 @@ error hint:
 (2 rows)
 
 -- No. S-3-5-2
-\! psql contrib_regression -c "/*+BitmapScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+BitmapScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
 LOG:  available indexes for BitmapScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4543,7 +4543,7 @@ error hint:
 (2 rows)
 
 -- No. S-3-5-3
-\! psql contrib_regression -c "/*+IndexOnlyScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+IndexOnlyScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
 LOG:  available indexes for IndexOnlyScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4559,7 +4559,7 @@ error hint:
 (2 rows)
 
 -- No. S-3-5-4
-\! psql contrib_regression -c "/*+IndexScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+IndexScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
 LOG:  available indexes for IndexScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4575,7 +4575,7 @@ error hint:
 (2 rows)
 
 -- No. S-3-5-5
-\! psql contrib_regression -c "/*+BitmapScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+BitmapScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
 LOG:  available indexes for BitmapScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4591,7 +4591,7 @@ error hint:
 (2 rows)
 
 -- No. S-3-5-6
-\! psql contrib_regression -c "/*+IndexOnlyScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+IndexOnlyScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100" | grep -v "Planning time:"
 LOG:  available indexes for IndexOnlyScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4614,7 +4614,7 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
    Index Cond: (c1 = 1)
 (2 rows)
 
-\! psql contrib_regression -c "/*+TidScan(t1)*/ EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1" | grep -v "Planning time:"
+\! psql contrib_regression --no-psqlrc -c "/*+TidScan(t1)*/ EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1" | grep -v "Planning time:"
 LOG:  pg_hint_plan:
 used hint:
 TidScan(t1)
