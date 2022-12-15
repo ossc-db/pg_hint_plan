@@ -1,17 +1,17 @@
-/* pg_hint_plan/pg_hint_plan--1.5.sql */
+/* pg_hint_plan/pg_hint_plan--1.3.3--1.3.4.sql */
 
--- complain if script is sourced in psql, rather than via CREATE EXTENSION
-\echo Use "CREATE EXTENSION pg_hint_plan" to load this file. \quit
+-- complain if script is sourced in psql, rather than via ALTER EXTENSION
+\echo Use "ALTER EXTENSION pg_dbms_stats UPDATE TO '1.3.4'" to load this file. \quit
 
-CREATE TABLE hint_plan.hints (
+CREATE TABLE IF NOT EXISTS hint_plan.hints (
 	id					serial	NOT NULL,
 	norm_query_string	text	NOT NULL,
 	application_name	text	NOT NULL,
 	hints				text	NOT NULL,
 	PRIMARY KEY (id)
 );
-CREATE UNIQUE INDEX hints_norm_and_app ON hint_plan.hints (
- 	norm_query_string,
+CREATE UNIQUE INDEX IF NOT EXISTS hints_norm_and_app ON hint_plan.hints (
+	norm_query_string,
 	application_name
 );
 
