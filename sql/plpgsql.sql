@@ -33,7 +33,7 @@ begin;
 -- Show plan without hints
 explain (costs false) with test as (select 'z' val)
   select t1.val from test t1, test t2 where t1.val = t2.val;
--- Invoke function that throws internally throws an exception with two
+-- Invoke function that internally throws an exception with two
 -- levels of nesting.
 select test_hint_exception(0);
 -- Show plan with hint, stored as an internal state of plpgsql_recurse_level.
@@ -44,7 +44,7 @@ explain (costs false) with test as (select 'y' val)
   select t1.val from test t1, test t2 where t1.val = t2.val;
 -- Again, with one level of nesting.
 select test_hint_exception(1);
--- Show plan with hint/
+-- Show plan with hint.
 explain (costs false) with test /*+ MergeJoin(t1 t2) */
   as (select 'x' val) select t1.val from test t1, test t2 where t1.val = t2.val;
 -- This query should have no hints.
@@ -58,7 +58,7 @@ drop function test_hint_exception;
 
 -- Test hints with function using transactions internally.
 create table test_hint_tab (a int);
--- Function called in a nested loop to check for hints hijts
+-- Function called in a nested loop to check for hints.
 create function test_hint_queries(run int, level int) returns void
 language plpgsql as $$
 declare c text;
@@ -68,8 +68,8 @@ begin
   if level > 2 then
     return;
   end if;
-  -- Mix of queries with and without hints.  The level is mixed
-  -- in the query string to show it in the query context.
+  -- Mix of queries with and without hints.  The level is mixed in the
+  -- query string to show it in the output generated.
   raise notice 'Execution % at level %, no hints', run, level;
   execute 'explain (costs false) with test
     as (select ' || level || ' val)
@@ -92,9 +92,9 @@ begin
     execute 'select test_hint_queries(' || i || ', 0)';
     insert into test_hint_tab (a) values (i);
     if i % 2 = 0 then
-        commit;
+      commit;
     else
-        rollback;
+      rollback;
     end if;
   end loop;
 end; $$;
