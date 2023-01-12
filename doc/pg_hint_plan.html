@@ -242,6 +242,8 @@ postgres-# SELECT * FROM table1 t1 WHERE key = 'value';
   <td>Specifies message level of debug print. Valid values are error, warning, notice, info, log, debug<n>.</td><td>LOG</td></tr>
 <tr><td>pg_hint_plan.hints_anywhere</td>
   <td>If it is on, pg_hint_plan reads hints ignoring SQL syntax.  This allows to hints to be placed anywhere in a query but be cautious of false reads.</td><td>off</td></tr>
+<tr><td>pg_hint_plan.enable_square_brackets</td>
+  <td>Extends set of allowed characters before the hint string to include square brackets, which are commonly used for array arguments in PREPARE statements. Note: it is a default behavior in PG15 and this parameter is removed in that version.</td><td>off</td></tr>
 </tbody>
 </table>
 <h2 id="install">Installation</h2>

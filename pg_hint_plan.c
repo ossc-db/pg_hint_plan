@@ -535,6 +535,7 @@ static int	pg_hint_plan_debug_message_level = LOG;
 /* Default is off, to keep backward compatibility. */
 static bool	pg_hint_plan_enable_hint_table = false;
 static bool	pg_hint_plan_hints_anywhere = false;
+static bool	pg_hint_plan_skip_square_brackets = false;
 
 static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
 static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
@@ -710,6 +711,17 @@ _PG_init(void)
 							 "Read hints from anywhere in a query.",
 							 "This option lets pg_hint_plan ignore syntax so be cautious for false reads.",
 							 &pg_hint_plan_hints_anywhere,
+							 false,
+							 PGC_USERSET,
+							 0,
+							 NULL,
+							 NULL,
+							 NULL);
+
+	DefineCustomBoolVariable("pg_hint_plan.enable_square_brackets",
+							 "Skip square brackets before hint string",
+							 "This option extends set of allowed characters before the hint string to include square brackets, which are commonly used for array arguments in PREPARE statements.",
+							 &pg_hint_plan_skip_square_brackets,
 							 false,
 							 PGC_USERSET,
 							 0,
@@ -1915,6 +1927,9 @@ get_hints_from_comment(const char *p)
 			 *   - underscores, for identifier
 			 *   - commas, for SELECT clause, EXPLAIN and PREPARE
 			 *   - parentheses, for EXPLAIN and PREPARE
+			 *   - squared brackets, for arrays (like arguments of
+			 *     PREPARE statements) - only if GUC option
+			 *     'enable_square_brackets' is set to true
 			 *
 			 * Note that we don't use isalpha() nor isalnum() in ctype.h here to
 			 * avoid behavior which depends on locale setting.
@@ -1925,7 +1940,8 @@ get_hints_from_comment(const char *p)
 				!isspace(*p) &&
 				*p != '_' &&
 				*p != ',' &&
-				*p != '(' && *p != ')')
+				*p != '(' && *p != ')' &&
+				(!pg_hint_plan_skip_square_brackets || (*p != '[' && *p != ']')))
 				return NULL;
 		}
 	}

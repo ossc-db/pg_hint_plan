@@ -170,7 +170,9 @@ GUC parameters below affect the behavior of `pg_hint_plan`.
 | `pg_hint_plan.enable_hint_table` | True enbles hinting by table. `true` or `false`.                                                                    | `off`     |
 | `pg_hint_plan.parse_messages`    | Specifies the log level of hint parse error. Valid values are `error`, `warning`, `notice`, `info`, `log`, `debug`. | `INFO`    |
 | `pg_hint_plan.debug_print`       | Controls debug print and verbosity. Valid vaiues are `off`, `on`, `detailed` and `verbose`.                         | `off`     |
-| `pg_hint_plan.message_level`     | Specifies message level of debug print. Valid values are `error`, `warning`, `notice`, `info`, `log`, `debug`.      | `INFO`    |
+| `pg_hint_plan.message_level`     | Specifies message level of debug print. Valid values are `error`, `warning`, `notice`, `info`, `log`, `debug`.      | `LOG`    |
+| `pg_hint_plan.hints_anywhere`    | If it is on, pg_hint_plan reads hints ignoring SQL syntax. This allows hints to be placed anywhere in a query but be cautious of false reads. | `off` |
+| `pg_hint_plan.enable_square_brackets` | Extends set of allowed characters before the hint string to include square brackets, which are commonly used for array arguments in PREPARE statements. Note: it is a default behavior in PG15 and this parameter is removed in that version. | `off` |
 
 ## Installation
 
