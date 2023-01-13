@@ -2,6 +2,7 @@ name: regression test
 on:
   push:
     branches:
+      - PG15
       - PG14
       - PG13
       - PG12
@@ -9,6 +10,7 @@ on:
       - PG10
   pull_request:
     branches:
+      - PG15
       - PG14
       - PG13
       - PG12
@@ -35,7 +37,9 @@ jobs:
 
       - name: Set PATH and PG_VERSION
         run: |
-          if [ "${{ github.ref_name }}" == 'PG14' ]; then
+          if [ "${{ github.ref_name }}" == 'PG15' ]; then
+            echo "PG_VERSION=15" >> $GITHUB_ENV
+          elif [ "${{ github.ref_name }}" == 'PG14' ]; then
             echo "PG_VERSION=14" >> $GITHUB_ENV
           elif [ "${{ github.ref_name }}" == 'PG13' ]; then
             echo "PG_VERSION=13" >> $GITHUB_ENV
