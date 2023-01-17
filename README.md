@@ -1,4 +1,4 @@
-# pg\_hint\_plan 1.5
+# pg\_hint\_plan 1.6
 
 1. [Synopsis](#synopsis)
 1. [Description](#description)
@@ -413,12 +413,12 @@ ECPG removes comments in queries written as embedded SQLs so hints cannot be pas
 
 ## Requirements
 
-pg_hint_plan 1.5 requires PostgreSQL 15.
+pg_hint_plan 1.6 requires PostgreSQL 16.
 
 
 PostgreSQL versions tested
 
-- Version 15
+- Version 16
 
 OS versions tested
 
