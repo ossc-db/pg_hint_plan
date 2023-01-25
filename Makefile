@@ -25,8 +25,7 @@ DATA = \
 	pg_hint_plan--1.3.8--1.4.sql \
 	pg_hint_plan--1.4--1.4.1.sql \
 	pg_hint_plan--1.4.1--1.5.sql \
-	pg_hint_plan--1.5--1.5.1.sql \
-	pg_hint_plan--1.5.1--1.6.sql
+	pg_hint_plan--1.5--1.6.sql
 
 EXTRA_CLEAN = RPMS
 
