@@ -22,9 +22,9 @@ The PostgreSQL optimizer uses a cost-based approach to determine the most effici
 
 ### Basic Usage
 
-`pg_hint_plan` reads hinting phrases in specially formulated comments given within the target SQL statement. The special form begins with the character sequence `"/\*+"` and ends with `"\*/"`. Hint phrases consist of a hint name followed parameters enclosed by parentheses and delimited by spaces. Hinting phrases may be delimited by new lines for readability.
+`pg_hint_plan` reads hinting phrases in specially formulated comments given within the target SQL statement. The special form begins with the character sequence `"/\*+"` and ends with `"\*/"`. Hint phrases consist of a hint name followed by parameters enclosed by parentheses and delimited by spaces. Hinting phrases may be delimited by new lines for readability.
 
-In the example below, hash join is selected as the joning method and scanning `pgbench_accounts` by sequential scan method.
+In the example below, hash join is selected as the joining method and scanning `pgbench_accounts` by sequential scan method.
 
 <pre>
 postgres=# /*+
@@ -78,7 +78,7 @@ The following example shows how to operate with the hint table.
     DELETE 1
     postgres=#
 
-The hint table is owned by and have the default privileges of the creating user at the time of creation during the `CREATE EXTENSION` command. Table hints are prioritized over comment hits.
+The hint table is owned by and has the default privileges of the creating user at the time of creation during the `CREATE EXTENSION` command. Table hints are prioritized over comment hits.
 
 ### The types of hints
 
@@ -104,7 +104,7 @@ Join method hints are only effective on ordinary tables, inheritance tables, UNL
 
 #### Hint for joining order
 
-This hint "Leading" enforces the order of joining on two or more tables. There are two ways of enforcing join order. One is enforcing the specific order of joining, but not restricting the direction at each join level. The other enfoces both join order and join direction. Additional details are available in the [hint list](#hints-list) table.
+This hint "Leading" enforces the order of joining on two or more tables. There are two ways of enforcing join order. One is enforcing the specific order of joining, but not restricting the direction at each join level. The other enforces both join order and join direction. Additional details are available in the [hint list](#hints-list) table.
 
     postgres=# /*+
     postgres*#     NestLoop(t1 t2)
@@ -126,7 +126,7 @@ This hint "Rows" modifies row number estimates for joins that come from the plan
 
 #### Hint for parallel plan
 
-This hint `Parallel` enforces parallel execution configuration on scans. The first and second parameter specifiy the table and number of workers to be used for the paralel scan. The third parameter specifies the strength of enfocement. `soft` means that `pg_hint_plan` only changes `max_parallel_worker_per_gather`, leaving all other parameters to the planner. `hard` changes other planner parameters so as to forcibly apply the number.
+This hint `Parallel` enforces parallel execution configuration on scans. The first and second parameter specifiy the table and number of workers to be used for the parallel scan. The third parameter specifies the strength of enfocement. `soft` means that `pg_hint_plan` only changes `max_parallel_worker_per_gather`, leaving all other parameters to the planner. `hard` changes other planner parameters so as to forcibly apply the number.
 
 Parallel plan hints can affect scans on ordinary tables, inheritence parents, unlogged tables, and system catalogs. External tables, table functions, values clause, CTEs, views, and subqueries are not affected. Note that the internal tables of a view can be specified by its real name/alias as the target object. The following example shows that the query is enforced differently on each table.
 
@@ -260,7 +260,7 @@ Use `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_tables TO on` if you wa
 
 #### Letter case in the object names
 
-Unlike the way PostgreSQL handles object names, `pg_hint_plan` compares bare object names in hints against the database internal object names and are case sensitive. Therefore an object name TBL in a hint matches only "TBL" in database and does not match any unquoted names in a query like TBL, tbl or Tbl.
+Unlike the way PostgreSQL handles object names, `pg_hint_plan` compares bare object names in hints against the database internal object names and are case sensitive. Therefore an object name TBL in a hint matches only "TBL" in the database and does not match any unquoted names in a query like TBL, tbl or Tbl.
 
 #### Escaping special chacaters in object names
 
@@ -268,7 +268,7 @@ The objects in a hint parameter should be enclosed by double quotes if they incl
 
 ### Distinction between multiple occurances of a table
 
-`pg_hint_plan` uses alises to identify the target objects, if present. This allows you to specificy a specific occurance of a table among multiple occurances. 
+`pg_hint_plan` uses aliases to identify the target objects, if present. This allows you to target a specific occurance of a table among multiple occurances.
 
     postgres=# /*+ HashJoin(t1 t1) */
     postgres-# EXPLAIN SELECT * FROM s1.t1
@@ -312,7 +312,7 @@ One multistatement can have only one hint block, however the included hints will
 
 #### VALUES expressions
 
-`VALUES` expressions in `FROM` clause are named as `*VALUES*` internally so it is hintable if it is the only `VALUES` in a query. Two or more `VALUES` expressions in a query seem distinguishable looking at its explain result, but in reality it is merely a cosmetic and they are not distinguishable.
+`VALUES` expressions in `FROM` clause are named as `*VALUES*` internally so it is hintable if it is the only `VALUES` in a query. Two or more `VALUES` expressions in a query seem distinguishable looking at its explain result, but in reality it is merely cosmetic and they are not distinguishable.
 
     postgres=# /*+ MergeJoin(*VALUES*_1 *VALUES*) */
           EXPLAIN SELECT * FROM (VALUES (1, 1), (2, 2)) v (a, b)
@@ -365,7 +365,7 @@ A `UNION` can run in parallel only when all underlying subqueries are parallel-s
 
 #### Setting `pg_hint_plan` parameters by Set hints
 
-`pg_hint_plan` parameters can change the behavior of `pg_hint_plan` itself, which may case some parameters to not work as expected.
+`pg_hint_plan` parameters can change the behavior of `pg_hint_plan` itself, which may cause some parameters to not work as expected.
 
 -   Hints to change `enable_hint`, `enable_hint_tables` are ignored even though they are reported as "used hints" in debug logs.
 -   Setting `debug_print` and `message_level` works from midst of the processing of the target query.
@@ -463,7 +463,7 @@ The available hints are listed below.
 |                              | `Leading(<join pair>)`                                                                                                            | Forces join order and directions as specified. A join pair is a pair of tables and/or other join pairs enclosed by parentheses, which can make a nested structure.                                                                                                                                                                                       |
 | Behavior control on Join     | `Memoize(table table[ table...])`                                                                                                 | Allow the topmost join of a join among the specified tables to memoize the inner result. (Note this doesn't force, but only allows.)                                                                                                                                                                                                                                                                                                              |
 |                              | `NoMemoize(table table[ table...])`                                                                                               | Inhibit the topmost join of a join among the specified tables from memoizing the inner result.                                                                                                                                                                                                                                                                                                        |
-| Row number correction        | `Rows(table table[ table...] correction)`                                                                                         | Modify row number estimate of the result of joins between the specfied tables. The available correction methods are absolute (#<n>), addition (+<n>), subtract (-<n>), or multiplication (*<n>). <n> should be a string that strtod() can read.                                                                                                            |
+| Row number correction        | `Rows(table table[ table...] correction)`                                                                                         | Modify row number estimate of the result of joins between the specfied tables. The available methods are absolute (#<n>), addition (+<n>), subtraction (-<n>), or multiplication (*<n>). <n> should be a string that strtod() can read.                                                                                                            |
 | Parallel query configuration | `Parallel(table <# of workers> [soft\|hard])`                                                                                     | Enforce or inhibit parallel execution of specfied table. <# of workers> is the desired number of parallel workers, where zero means inhibiting parallel execution. If the third parameter is soft (default), it just changes max_parallel_workers_per_gather and leaves everything else to the planner. Hard means enforcing the specified number of workers. |
 | GUC                          | `Set(GUC-param value)`                                                                                                            | Set the GUC parameter to the value during plan time.                                                                                                                                                                                                                                                                                             |
 
