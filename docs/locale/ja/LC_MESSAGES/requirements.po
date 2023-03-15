@@ -1,0 +1,74 @@
+# LANGUAGE message translation file for pg_hint_plan requirements.
+# Copyright (C) 2012-2023, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+# This file is distributed under the same license as the pg_hint_plan
+# package.
+# Julien Rouhaud <rjuju123@gmail.com>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: pg_hint_plan \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-03-15 10:17+0800\n"
+"PO-Revision-Date: 2023-03-15 10:17+0800\n"
+"Last-Translator: Julien Rouhaud <rjuju123@gmail.com>\n"
+"Language: ja\n"
+"Language-Team: ja <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../requirements.md:1 e91e157e11f843b3bfd01875a7e4f599
+msgid "Requirements"
+msgstr ""
+
+#: ../../requirements.md:3 fd02551ff92040ee9e750b400372a8f4
+msgid "pg_hint_plan 1.4 requires PostgreSQL 14."
+msgstr ""
+
+#: ../../requirements.md:6 85e99420c38344cbacb82bf5886f0ef3
+msgid "PostgreSQL versions tested"
+msgstr ""
+
+#: ../../requirements.md:8 9de4dadd7d5044009b36e9b494cca5af
+msgid "Version 14"
+msgstr ""
+
+#: ../../requirements.md:10 9f1bb5f53fec48949612d21129ff062c
+msgid "OS versions tested"
+msgstr ""
+
+#: ../../requirements.md:12 b46da1d8a69b4538ac43ef090754f947
+msgid "CentOS 8.5"
+msgstr ""
+
+#: ../../requirements.md:14 e0558d7599f9430ca0626875570fb6cc
+msgid "See also"
+msgstr ""
+
+#: ../../requirements.md:17 d1309ef607a44067beff1f680413878f
+msgid "PostgreSQL documents"
+msgstr ""
+
+#: ../../requirements.md:19 e1e17e2a689947dfa2f21d4aa3c81d2f
+msgid "[EXPLAIN](http://www.postgresql.org/docs/current/static/sql-explain.html)"
+msgstr ""
+
+#: ../../requirements.md:20 2b732350c3234930a82e5a7170a14fd3
+msgid "[SET](http://www.postgresql.org/docs/current/static/sql-set.html)"
+msgstr ""
+
+#: ../../requirements.md:21 f21b7b8eddbb40e698af36584d33e716
+msgid ""
+"[Server Config](http://www.postgresql.org/docs/current/static/runtime-"
+"config.html)"
+msgstr ""
+
+#: ../../requirements.md:22 b8d01405b6b64b0ea53afbb90633fc1f
+msgid ""
+"[Parallel Plans](http://www.postgresql.org/docs/current/static/parallel-"
+"plans.html)"
+msgstr ""
+
