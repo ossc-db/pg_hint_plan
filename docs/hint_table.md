@@ -6,8 +6,7 @@ can be placed in a special table named `"hint_plan.hints"`. The table consists
 of the following columns.
 
 | column                | description                                                                                                                                                                                           |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------         |
-| `id`                  | Unique number to identify a row for a hint.<br>This column is filled automatically by sequence.                                                                                                       |
+| :-------------------- | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `id`                  | Unique number to identify a row for a hint.<br>This column is filled automatically by sequence.                                                                                                       |
 | `norm_query_string`   | A pattern matches to the query to be hinted.<br>Constants in the query have to be replace with '?' as in the following example.<br>White space is significant in the pattern.                         |
 | `application_name`    | The value of `application_name` of sessions to apply the hint.<br>The hint in the example below applies to sessions connected from psql.<br>An empty string means sessions of any `application_name`. |
