@@ -75,7 +75,7 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 	/* We should never try to join two overlapping sets of rels. */
 	Assert(!bms_overlap(rel1->relids, rel2->relids));
 
-	/* Construct Relids set that identifies the joinrel. */
+	/* Construct Relids set that identifies the joinrel (without OJ as yet). */
 	joinrelids = bms_union(rel1->relids, rel2->relids);
 
 	/* Check validity and determine join type. */
@@ -86,6 +86,10 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		bms_free(joinrelids);
 		return NULL;
 	}
+
+	/* If we have an outer join, add its RTI to form the canonical relids. */
+	if (sjinfo && sjinfo->ojrelid != 0)
+		joinrelids = bms_add_member(joinrelids, sjinfo->ojrelid);
 
 	/* Swap rels if needed to match the join info. */
 	if (reversed)
@@ -110,9 +114,12 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		sjinfo->syn_lefthand = rel1->relids;
 		sjinfo->syn_righthand = rel2->relids;
 		sjinfo->jointype = JOIN_INNER;
+		sjinfo->ojrelid = 0;
+		sjinfo->commute_above_l = NULL;
+		sjinfo->commute_above_r = NULL;
+		sjinfo->commute_below = NULL;
 		/* we don't bother trying to make the remaining fields valid */
 		sjinfo->lhs_strict = false;
-		sjinfo->delay_upper_joins = false;
 		sjinfo->semi_can_btree = false;
 		sjinfo->semi_can_hash = false;
 		sjinfo->semi_operators = NIL;
@@ -373,6 +380,9 @@ populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
 				mark_dummy_rel(rel2);
 			add_paths_to_joinrel(root, joinrel, rel1, rel2,
 								 JOIN_ANTI, sjinfo,
+								 restrictlist);
+			add_paths_to_joinrel(root, joinrel, rel2, rel1,
+								 JOIN_RIGHT_ANTI, sjinfo,
 								 restrictlist);
 			break;
 		default:
