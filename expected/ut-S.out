@@ -4073,13 +4073,14 @@ not used hint:
 duplication hint:
 error hint:
 
-                                                                            QUERY PLAN                                                                             
--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
  Bitmap Heap Scan on ti1
-   Filter: ((c1 < 100) AND (c2 = 1) AND (ctid = '(1,1)'::tid) AND (lower(c4) = '1'::text) AND (to_tsvector('english'::regconfig, c4) @@ '''a'' & ''b'''::tsquery))
+   Recheck Cond: (c1 < 100)
+   Filter: ((c2 = 1) AND (ctid = '(1,1)'::tid) AND (lower(c4) = '1'::text) AND (to_tsvector('english'::regconfig, c4) @@ '''a'' & ''b'''::tsquery))
    ->  Bitmap Index Scan on ti1_expr
          Index Cond: ((c1 < 100) = true)
-(4 rows)
+(5 rows)
 
 -- No. S-3-4-17
 /*+BitmapScan(ti1 ti1_pred)*/
