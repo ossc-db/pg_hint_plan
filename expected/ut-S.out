@@ -704,7 +704,7 @@ error hint:
                              ->  Nested Loop
                                    ->  Seq Scan on t2 b1t2
                                    ->  Bitmap Heap Scan on t4 b1t4
-                                         Recheck Cond: (c1 = b1t2.c1)
+                                         Recheck Cond: (b1t2.c1 = c1)
                                          ->  Bitmap Index Scan on t4_pkey
                                                Index Cond: (c1 = b1t2.c1)
                              ->  Index Scan using t3_pkey on t3 b1t3
@@ -720,7 +720,7 @@ error hint:
                            ->  Hash
                                  ->  Index Scan using t2_pkey on t2 bmt2
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (31 rows)
@@ -829,7 +829,7 @@ error hint:
                              ->  Nested Loop
                                    ->  Seq Scan on t2 b1t2
                                    ->  Bitmap Heap Scan on t4 b1t4
-                                         Recheck Cond: (c1 = b1t2.c1)
+                                         Recheck Cond: (b1t2.c1 = c1)
                                          ->  Bitmap Index Scan on t4_pkey
                                                Index Cond: (c1 = b1t2.c1)
                              ->  Index Scan using t3_pkey on t3 b1t3
@@ -862,7 +862,7 @@ error hint:
                            ->  Hash
                                  ->  Index Scan using t2_pkey on t2 bmt2
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (48 rows)
@@ -915,7 +915,7 @@ error hint:
                            ->  Hash
                                  ->  Index Scan using t2_pkey on t2 bmt2
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (15 rows)
@@ -968,7 +968,7 @@ error hint:
                            ->  Hash
                                  ->  Index Scan using t2_pkey on t2 bmt2
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (15 rows)
@@ -1053,7 +1053,7 @@ error hint:
                              ->  Nested Loop
                                    ->  Seq Scan on t2 b1t2
                                    ->  Bitmap Heap Scan on t4 b1t4
-                                         Recheck Cond: (c1 = b1t2.c1)
+                                         Recheck Cond: (b1t2.c1 = c1)
                                          ->  Bitmap Index Scan on t4_pkey
                                                Index Cond: (c1 = b1t2.c1)
                              ->  Index Scan using t3_pkey on t3 b1t3
@@ -1070,7 +1070,7 @@ error hint:
                            ->  Hash
                                  ->  Index Scan using t2_pkey on t2 bmt2
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (32 rows)
@@ -1180,7 +1180,7 @@ error hint:
                              ->  Nested Loop
                                    ->  Seq Scan on t2 b1t2
                                    ->  Bitmap Heap Scan on t4 b1t4
-                                         Recheck Cond: (c1 = b1t2.c1)
+                                         Recheck Cond: (b1t2.c1 = c1)
                                          ->  Bitmap Index Scan on t4_pkey
                                                Index Cond: (c1 = b1t2.c1)
                              ->  Index Scan using t3_pkey on t3 b1t3
@@ -1214,7 +1214,7 @@ error hint:
                            ->  Hash
                                  ->  Index Scan using t2_pkey on t2 bmt2
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (49 rows)
@@ -1319,13 +1319,13 @@ error hint:
                                                          ->  Nested Loop
                                                                ->  Seq Scan on t2 b1t2
                                                                ->  Bitmap Heap Scan on t4 b1t4
-                                                                     Recheck Cond: (c1 = b1t2.c1)
+                                                                     Recheck Cond: (b1t2.c1 = c1)
                                                                      ->  Bitmap Index Scan on t4_pkey
                                                                            Index Cond: (c1 = b1t2.c1)
                                                          ->  Index Scan using t3_pkey on t3 b1t3
                                                                Index Cond: (c1 = b1t4.c1)
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (36 rows)
@@ -1441,7 +1441,7 @@ error hint:
                ->  Nested Loop
                      ->  Nested Loop
                            ->  Nested Loop
-                                 Join Filter: ((max(b1t1.c1)) = bmt1.c1)
+                                 Join Filter: (bmt1.c1 = (max(b1t1.c1)))
                                  ->  Merge Join
                                        Merge Cond: ((max(b1t1.c1)) = (max(b2t1.c1)))
                                        ->  Sort
@@ -1456,7 +1456,7 @@ error hint:
                                                                      ->  Nested Loop
                                                                            ->  Seq Scan on t2 b1t2
                                                                            ->  Bitmap Heap Scan on t4 b1t4
-                                                                                 Recheck Cond: (c1 = b1t2.c1)
+                                                                                 Recheck Cond: (b1t2.c1 = c1)
                                                                                  ->  Bitmap Index Scan on t4_pkey
                                                                                        Index Cond: (c1 = b1t2.c1)
                                                                      ->  Index Scan using t3_pkey on t3 b1t3
@@ -1483,7 +1483,7 @@ error hint:
                            ->  Index Scan using t2_pkey on t2 bmt2
                                  Index Cond: (c1 = bmt1.c1)
                      ->  Bitmap Heap Scan on t3 bmt3
-                           Recheck Cond: (c1 = bmt1.c1)
+                           Recheck Cond: (bmt1.c1 = c1)
                            ->  Bitmap Index Scan on t3_pkey
                                  Index Cond: (c1 = bmt1.c1)
 (53 rows)
@@ -1687,7 +1687,7 @@ error hint:
                  ->  Index Scan using t1_pkey on t1 b3t1
                        Filter: (ctid = '(1,1)'::tid)
                  ->  Bitmap Heap Scan on t2 b3t2
-                       Recheck Cond: (c1 = b3t1.c1)
+                       Recheck Cond: (b3t1.c1 = c1)
                        Filter: (ctid = '(1,1)'::tid)
                        ->  Bitmap Index Scan on t2_pkey
                              Index Cond: (c1 = b3t1.c1)
@@ -1844,7 +1844,7 @@ error hint:
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t4.c1)
                  ->  Nested Loop
-                       Join Filter: (b2t2.c1 = b2t1.c1)
+                       Join Filter: (b2t1.c1 = b2t2.c1)
                        ->  Nested Loop
                              Join Filter: (b2t2.c1 = b2t3.c1)
                              ->  Tid Scan on t2 b2t2
@@ -1864,7 +1864,7 @@ error hint:
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t2.c1)
                  ->  Nested Loop
-                       Join Filter: (b3t3.c1 = b3t1.c1)
+                       Join Filter: (b3t1.c1 = b3t3.c1)
                        ->  Nested Loop
                              Join Filter: (b3t3.c1 = b3t4.c1)
                              ->  Tid Scan on t3 b3t3
@@ -1895,7 +1895,7 @@ error hint:
                            Index Cond: (c1 = bmt4.c1)
                            Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Heap Scan on t3 bmt3
-                     Recheck Cond: (c1 = bmt2.c1)
+                     Recheck Cond: (bmt2.c1 = c1)
                      Filter: (ctid = '(1,1)'::tid)
                      ->  Bitmap Index Scan on t3_pkey
                            Index Cond: (c1 = bmt2.c1)
@@ -1914,7 +1914,7 @@ error hint:
                                  Index Cond: (c1 = b1t2.c1)
                                  Filter: (ctid = '(1,1)'::tid)
                      ->  Bitmap Heap Scan on t4 b1t4
-                           Recheck Cond: (c1 = b1t2.c1)
+                           Recheck Cond: (b1t2.c1 = c1)
                            Filter: (ctid = '(1,1)'::tid)
                            ->  Bitmap Index Scan on t4_pkey
                                  Index Cond: (c1 = b1t2.c1)
@@ -2057,7 +2057,7 @@ error hint:
                            Index Cond: (c1 = bmt4.c1)
                            Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Heap Scan on t3 bmt3
-                     Recheck Cond: (c1 = bmt2.c1)
+                     Recheck Cond: (bmt2.c1 = c1)
                      Filter: (ctid = '(1,1)'::tid)
                      ->  Bitmap Index Scan on t3_pkey
                            Index Cond: (c1 = bmt2.c1)
@@ -2076,7 +2076,7 @@ error hint:
                                  Index Cond: (c1 = b1t2.c1)
                                  Filter: (ctid = '(1,1)'::tid)
                      ->  Bitmap Heap Scan on t4 b1t4
-                           Recheck Cond: (c1 = b1t2.c1)
+                           Recheck Cond: (b1t2.c1 = c1)
                            Filter: (ctid = '(1,1)'::tid)
                            ->  Bitmap Index Scan on t4_pkey
                                  Index Cond: (c1 = b1t2.c1)
@@ -2146,7 +2146,7 @@ error hint:
                      Index Cond: (c1 = t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4
-               Recheck Cond: (c1 = t2.c1)
+               Recheck Cond: (t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = t2.c1)
@@ -2212,7 +2212,7 @@ error hint:
                      Index Cond: (c1 = b1t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4 b1t4
-               Recheck Cond: (c1 = b1t2.c1)
+               Recheck Cond: (b1t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = b1t2.c1)
@@ -2312,7 +2312,7 @@ error hint:
                      Index Cond: (c1 = t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4
-               Recheck Cond: (c1 = t2.c1)
+               Recheck Cond: (t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = t2.c1)
@@ -2335,7 +2335,7 @@ error hint:
                      Index Cond: (c1 = t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4
-               Recheck Cond: (c1 = t2.c1)
+               Recheck Cond: (t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = t2.c1)
@@ -2443,7 +2443,7 @@ error hint:
                      Index Cond: (c1 = b1t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4 b1t4
-               Recheck Cond: (c1 = b1t2.c1)
+               Recheck Cond: (b1t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = b1t2.c1)
@@ -2452,7 +2452,7 @@ error hint:
    ->  Nested Loop
          Join Filter: (b2t1.c1 = b2t4.c1)
          ->  Nested Loop
-               Join Filter: (b2t2.c1 = b2t1.c1)
+               Join Filter: (b2t1.c1 = b2t2.c1)
                ->  Nested Loop
                      Join Filter: (b2t2.c1 = b2t3.c1)
                      ->  Nested Loop
@@ -2599,7 +2599,7 @@ error hint:
                      Index Cond: (c1 = t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4
-               Recheck Cond: (c1 = t2.c1)
+               Recheck Cond: (t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = t2.c1)
@@ -2622,7 +2622,7 @@ error hint:
                      Index Cond: (c1 = t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4
-               Recheck Cond: (c1 = t2.c1)
+               Recheck Cond: (t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = t2.c1)
@@ -2645,7 +2645,7 @@ error hint:
                      Index Cond: (c1 = t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4
-               Recheck Cond: (c1 = t2.c1)
+               Recheck Cond: (t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = t2.c1)
@@ -2803,7 +2803,7 @@ error hint:
                      Index Cond: (c1 = b1t2.c1)
                      Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Heap Scan on t4 b1t4
-               Recheck Cond: (c1 = b1t2.c1)
+               Recheck Cond: (b1t2.c1 = c1)
                Filter: (ctid = '(1,1)'::tid)
                ->  Bitmap Index Scan on t4_pkey
                      Index Cond: (c1 = b1t2.c1)
@@ -2812,7 +2812,7 @@ error hint:
    ->  Nested Loop
          Join Filter: (b2t1.c1 = b2t4.c1)
          ->  Nested Loop
-               Join Filter: (b2t2.c1 = b2t1.c1)
+               Join Filter: (b2t1.c1 = b2t2.c1)
                ->  Nested Loop
                      Join Filter: (b2t2.c1 = b2t3.c1)
                      ->  Nested Loop
@@ -2835,7 +2835,7 @@ error hint:
    ->  Nested Loop
          Join Filter: (b3t1.c1 = b3t2.c1)
          ->  Nested Loop
-               Join Filter: (b3t3.c1 = b3t1.c1)
+               Join Filter: (b3t1.c1 = b3t3.c1)
                ->  Nested Loop
                      Join Filter: (b3t3.c1 = b3t4.c1)
                      ->  Nested Loop
@@ -2880,7 +2880,7 @@ error hint:
  Nested Loop
    ->  Index Scan using t1_i1 on t1 v1t1
    ->  Bitmap Heap Scan on t1 v1t1_1
-         Recheck Cond: (c1 = v1t1.c1)
+         Recheck Cond: (v1t1.c1 = c1)
          ->  Bitmap Index Scan on t1_i1
                Index Cond: (c1 = v1t1.c1)
 (6 rows)
@@ -2911,7 +2911,7 @@ error hint:
  Nested Loop
    ->  Seq Scan on t1 v1t1
    ->  Bitmap Heap Scan on t1 v1t1_
-         Recheck Cond: (c1 = v1t1.c1)
+         Recheck Cond: (v1t1.c1 = c1)
          ->  Bitmap Index Scan on t1_i1
                Index Cond: (c1 = v1t1.c1)
 (6 rows)
@@ -4653,7 +4653,7 @@ error hint:
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Heap Scan on t2
-         Recheck Cond: (c1 = t1.c1)
+         Recheck Cond: (t1.c1 = c1)
          ->  Bitmap Index Scan on t2_i1
                Index Cond: (c1 = t1.c1)
 (7 rows)

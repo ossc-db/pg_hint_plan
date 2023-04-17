@@ -32,7 +32,7 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1
 \o
 \! sql/maskout2.sh results/ut-fdw.tmpout
  Nested Loop
-   Join Filter: (ft_1.id = t1.c1)
+   Join Filter: (t1.c1 = ft_1.id)
    ->  Nested Loop
          Join Filter: (ft_1.id = ft_2.id)
          ->  Foreign Scan on ft1 ft_1
@@ -89,7 +89,7 @@ error hint:
 \o
 \! sql/maskout2.sh results/ut-fdw.tmpout;
  Nested Loop
-   Join Filter: (ft_1.id = t1.c1)
+   Join Filter: (t1.c1 = ft_1.id)
    ->  Merge Join
          Merge Cond: (ft_1.id = ft_2.id)
          ->  Sort
@@ -120,7 +120,7 @@ error hint:
 \o
 \! sql/maskout2.sh results/ut-fdw.tmpout;
  Nested Loop
-   Join Filter: (ft_1.id = t1.c1)
+   Join Filter: (t1.c1 = ft_1.id)
    ->  Nested Loop
          Join Filter: (ft_1.id = ft_2.id)
          ->  Foreign Scan on ft1 ft_1
@@ -148,7 +148,7 @@ error hint:
 \o
 \! sql/maskout.sh results/ut-fdw.tmpout | sql/maskout2.sh
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
-   Join Filter: (ft_1.id = t1.c1)
+   Join Filter: (t1.c1 = ft_1.id)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (ft_1.id = ft_2.id)
          ->  Foreign Scan on ft1 ft_1  (cost=xxx..xxx rows=1 width=xxx)
