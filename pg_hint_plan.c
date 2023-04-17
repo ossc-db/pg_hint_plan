@@ -2986,6 +2986,16 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query,
 		current_hint_retrieved = false;
 
 	/*
+	 * Query jumbling is possible with utility queries in PostgreSQL 16 and
+	 * newer versions, hence just leave in this case.  There could be a point
+	 * in providing hints for some cases, like a CTAS or a matview creation,
+	 * but that should not matter much in practice compared to SELECT and DML
+	 * queries.
+	 */
+	if (query->utilityStmt)
+		return;
+
+	/*
 	 * Jumble state is required when hint table is used.  This is the only
 	 * chance to have one already generated in-core.  If it's not the case, no
 	 * use to do the work now and pg_hint_plan_planner() will do the all work.
