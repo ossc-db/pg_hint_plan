@@ -19,8 +19,7 @@ SHOW pg_hint_plan.enable_hint_table;
 (1 row)
 
 -- Internal handling of hints within plpgsql functions.
--- This forces an exception, manipulating internally plpgsql_recurse_level
--- in the resowner cleanup callback.
+-- This forces an exception, manipulating internally plpgsql_recurse_level.
 create or replace function test_hint_exception(level int)
 returns void language plpgsql as $$
 begin
@@ -35,8 +34,7 @@ begin
   exception when others then end;
 $$;
 -- Having a transaction context is essential to mess up with the
--- recursion counter and to make sure that the resowner cleanup is called
--- when expected.
+-- plpgsql_recurse_level.
 begin;
 select set_config('compute_query_id','off', true);
  set_config 
@@ -185,12 +183,17 @@ begin
   end if;
   -- Mix of queries with and without hints.  The level is mixed in the
   -- query string to show it in the output generated.
+  raise notice 'Execution % at level %, hash-join t2/t1 hint', run, level;
+  execute 'explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select ' || level || ' val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;'
+    into c;
   raise notice 'Execution % at level %, no hints', run, level;
   execute 'explain (costs false) with test
     as (select ' || level || ' val)
     select t1.val from test t1, test t2 where t1.val = t2.val;'
     into c;
-  raise notice 'Execution % at level %, merge-join hint', run, level;
+  raise notice 'Execution % at level %, merge-join t1/t2 hint', run, level;
   execute 'explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select ' || level || ' val)
     select t1.val from test t1, test t2 where t1.val = t2.val;'
@@ -199,29 +202,58 @@ begin
 end; $$;
 -- Entry point of this test.  This executes the transaction
 -- commands while calling test_hint_queries in a nested loop.
-create procedure test_hint_transaction()
+-- "mode" can be set to "before" or "after", to control the timing of
+-- the subtransaction commands launched in this procedure.
+create procedure test_hint_transaction(mode text)
 language plpgsql as $$
 declare c text;
 begin
   for i in 0..3 loop
-    execute 'select test_hint_queries(' || i || ', 0)';
-    insert into test_hint_tab (a) values (i);
+
+    if mode = 'before' then
+      execute 'select test_hint_queries(' || i || ', 0)';
+      insert into test_hint_tab (a) values (i);
+    end if;
+
+    -- Mix commits and rollbacks.
     if i % 2 = 0 then
       commit;
     else
       rollback;
     end if;
+
+    if mode = 'after' then
+      execute 'select test_hint_queries(' || i || ', 0)';
+      insert into test_hint_tab (a) values (i);
+    end if;
   end loop;
 end; $$;
-call test_hint_transaction();
+call test_hint_transaction('before');
+NOTICE:  Execution 0 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 NOTICE:  Execution 0 at level 1, no hints
-CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
-SQL statement "select test_hint_queries(0, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 0 at level 1, merge-join hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(0, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 0 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -232,21 +264,42 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 1 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(0, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 0 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 NOTICE:  Execution 0 at level 2, no hints
-CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
-SQL statement "select test_hint_queries(0,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
-SQL statement "select test_hint_queries(0, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 0 at level 2, merge-join hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(0,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(0, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 0 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -257,19 +310,36 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 2 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(0,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(0, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 1 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 NOTICE:  Execution 1 at level 1, no hints
-CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
-SQL statement "select test_hint_queries(1, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 1 at level 1, merge-join hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(1, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 1 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -280,21 +350,42 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 1 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(1, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 1 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 NOTICE:  Execution 1 at level 2, no hints
-CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
-SQL statement "select test_hint_queries(1,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
-SQL statement "select test_hint_queries(1, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 1 at level 2, merge-join hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(1,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(1, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 1 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -305,19 +396,36 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 2 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(1,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(1, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 2 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 NOTICE:  Execution 2 at level 1, no hints
-CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
-SQL statement "select test_hint_queries(2, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 2 at level 1, merge-join hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(2, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 2 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -328,21 +436,42 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 1 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(2, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 2 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 NOTICE:  Execution 2 at level 2, no hints
-CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
-SQL statement "select test_hint_queries(2,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
-SQL statement "select test_hint_queries(2, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 2 at level 2, merge-join hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(2,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(2, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 2 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -353,19 +482,36 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 2 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(2,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(2, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 3 at level 1, no hints
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 3 at level 1, hash-join t2/t1 hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
 SQL statement "select test_hint_queries(3, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 3 at level 1, merge-join hint
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 3 at level 1, no hints
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(3, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 3 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -376,21 +522,42 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 1 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(3, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 3 at level 2, no hints
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 3 at level 2, hash-join t2/t1 hint
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
 SQL statement "select test_hint_queries(3,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(3, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
-NOTICE:  Execution 3 at level 2, merge-join hint
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 3 at level 2, no hints
 CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
 SQL statement "select test_hint_queries(3,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(3, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+NOTICE:  Execution 3 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(t1 t2)
@@ -401,17 +568,364 @@ error hint:
 CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
     as (select 2 val)
     select t1.val from test t1, test t2 where t1.val = t2.val;"
-PL/pgSQL function test_hint_queries(integer,integer) line 17 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
 SQL statement "select test_hint_queries(3,1)"
-PL/pgSQL function test_hint_queries(integer,integer) line 21 at EXECUTE
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
 SQL statement "select test_hint_queries(3, 0)"
-PL/pgSQL function test_hint_transaction() line 5 at EXECUTE
+PL/pgSQL function test_hint_transaction(text) line 7 at EXECUTE
+call test_hint_transaction('after');
+NOTICE:  Execution 0 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 0 at level 1, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 0 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 0 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 0 at level 2, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 0 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(0,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(0, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 1 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 1 at level 1, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 1 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 1 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 1 at level 2, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 1 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(1,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(1, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 2 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 2 at level 1, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 2 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 2 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 2 at level 2, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 2 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(2,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(2, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 3 at level 1, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 3 at level 1, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 3 at level 1, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 1 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 3 at level 2, hash-join t2/t1 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 11 at RAISE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+HashJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ HashJoin(t2 t1) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 12 at EXECUTE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 3 at level 2, no hints
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 16 at RAISE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+NOTICE:  Execution 3 at level 2, merge-join t1/t2 hint
+CONTEXT:  PL/pgSQL function test_hint_queries(integer,integer) line 21 at RAISE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
+LOG:  pg_hint_plan:
+used hint:
+MergeJoin(t1 t2)
+not used hint:
+duplication hint:
+error hint:
+
+CONTEXT:  SQL statement "explain (costs false) with test /*+ MergeJoin(t1 t2) */
+    as (select 2 val)
+    select t1.val from test t1, test t2 where t1.val = t2.val;"
+PL/pgSQL function test_hint_queries(integer,integer) line 22 at EXECUTE
+SQL statement "select test_hint_queries(3,1)"
+PL/pgSQL function test_hint_queries(integer,integer) line 26 at EXECUTE
+SQL statement "select test_hint_queries(3, 0)"
+PL/pgSQL function test_hint_transaction(text) line 19 at EXECUTE
 table test_hint_tab;
  a 
 ---
  0
  2
-(2 rows)
+ 1
+ 3
+(4 rows)
 
 drop procedure test_hint_transaction;
 drop function test_hint_queries;
