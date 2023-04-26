@@ -15,7 +15,9 @@
 #include "access/relation.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_index.h"
+#include "catalog/pg_proc.h"
 #include "commands/prepare.h"
+#include "commands/proclang.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "nodes/nodeFuncs.h"
@@ -44,7 +46,6 @@
 #include "utils/rel.h"
 #include "utils/snapmgr.h"
 #include "utils/syscache.h"
-#include "utils/resowner.h"
 
 #include "catalog/pg_class.h"
 
@@ -511,14 +512,6 @@ static void set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
-static void pg_hint_plan_plpgsql_stmt_beg(PLpgSQL_execstate *estate,
-										  PLpgSQL_stmt *stmt);
-static void pg_hint_plan_plpgsql_stmt_end(PLpgSQL_execstate *estate,
-										  PLpgSQL_stmt *stmt);
-static void plpgsql_query_erase_callback(ResourceReleasePhase phase,
-										 bool isCommit,
-										 bool isTopLevel,
-										 void *arg);
 static int set_config_option_noerror(const char *name, const char *value,
 						  GucContext context, GucSource source,
 						  GucAction action, bool changeVal, int elevel);
@@ -586,9 +579,17 @@ static post_parse_analyze_hook_type prev_post_parse_analyze_hook = NULL;
 static planner_hook_type prev_planner = NULL;
 static join_search_hook_type prev_join_search = NULL;
 static set_rel_pathlist_hook_type prev_set_rel_pathlist = NULL;
+static needs_fmgr_hook_type prev_needs_fmgr_hook = NULL;
+static fmgr_hook_type prev_fmgr_hook = NULL;
 
 /* Hold reference to currently active hint */
 static HintState *current_hint_state = NULL;
+
+/*
+ * Reference to OID of PL/pgsql language, saved on first lookup at a
+ * PL function.
+ */
+static Oid pg_hint_plan_pgpg_oid = InvalidOid;
 
 /*
  * List of hint contexts.  We treat the head of the list as the Top of the
@@ -631,15 +632,67 @@ static const HintParser parsers[] = {
 	{NULL, NULL, HINT_KEYWORD_UNRECOGNIZED}
 };
 
-PLpgSQL_plugin  plugin_funcs = {
-	NULL,
-	NULL,
-	NULL,
-	pg_hint_plan_plpgsql_stmt_beg,
-	pg_hint_plan_plpgsql_stmt_end,
-	NULL,
-	NULL,
-};
+static bool
+pg_hint_plan_is_plpgsql_function(Oid funcoid)
+{
+	HeapTuple		procTuple;
+	Form_pg_proc	procStruct;
+	bool			result;
+
+	procTuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcoid));
+	if (!HeapTupleIsValid(procTuple))
+		return false;
+
+	procStruct = (Form_pg_proc) GETSTRUCT(procTuple);
+
+	if (!OidIsValid(pg_hint_plan_pgpg_oid))
+		pg_hint_plan_pgpg_oid = get_language_oid("plpgsql", false);
+
+	result = (procStruct->prolang == pg_hint_plan_pgpg_oid);
+
+	ReleaseSysCache(procTuple);
+
+	return result;
+}
+
+/*
+ * Used as needs_fmgr_hook. All plpgsql functions needs this hook to properly
+ * track the nested depth of plpgsql calls.
+ */
+static bool
+pg_hint_plan_needs_fmgr_hook(Oid funcoid)
+{
+	if (prev_needs_fmgr_hook &&
+		(*prev_needs_fmgr_hook)(funcoid))
+		return true;
+
+	return pg_hint_plan_is_plpgsql_function(funcoid);
+}
+
+static void
+pg_hint_plan_fmgr_hook(FmgrHookEventType event,
+					   FmgrInfo *flinfo, Datum *private)
+{
+	if (prev_fmgr_hook)
+		(*prev_fmgr_hook) (event, flinfo, private);
+
+	switch (event)
+	{
+		case FHET_START:
+			plpgsql_recurse_level++;
+			Assert(plpgsql_recurse_level > 0);
+			break;
+		case FHET_END:
+		case FHET_ABORT:	/* may be an exception */
+			plpgsql_recurse_level--;
+			Assert(plpgsql_recurse_level >= 0);
+			break;
+		default:
+			break;
+	}
+
+	return;
+}
 
 /*
  * Module load callbacks
@@ -647,8 +700,6 @@ PLpgSQL_plugin  plugin_funcs = {
 void
 _PG_init(void)
 {
-	PLpgSQL_plugin	**var_ptr;
-
 	/* Define custom GUC variables. */
 	DefineCustomBoolVariable("pg_hint_plan.enable_hint",
 			 "Force planner to use plans specified in the hint comment preceding to the query.",
@@ -730,12 +781,10 @@ _PG_init(void)
 	join_search_hook = pg_hint_plan_join_search;
 	prev_set_rel_pathlist = set_rel_pathlist_hook;
 	set_rel_pathlist_hook = pg_hint_plan_set_rel_pathlist;
-
-	/* setup PL/pgSQL plugin hook */
-	var_ptr = (PLpgSQL_plugin **) find_rendezvous_variable("PLpgSQL_plugin");
-	*var_ptr = &plugin_funcs;
-
-	RegisterResourceReleaseCallback(plpgsql_query_erase_callback, NULL);
+	prev_fmgr_hook = fmgr_hook;
+	fmgr_hook = pg_hint_plan_fmgr_hook;
+	prev_needs_fmgr_hook = needs_fmgr_hook;
+	needs_fmgr_hook = pg_hint_plan_needs_fmgr_hook;
 }
 
 /*
@@ -751,6 +800,8 @@ _PG_fini(void)
 	planner_hook = prev_planner;
 	join_search_hook = prev_join_search;
 	set_rel_pathlist_hook = prev_set_rel_pathlist;
+	needs_fmgr_hook = prev_needs_fmgr_hook;
+	fmgr_hook = prev_fmgr_hook;
 
 	/* uninstall PL/pgSQL plugin hook */
 	var_ptr = (PLpgSQL_plugin **) find_rendezvous_variable("PLpgSQL_plugin");
@@ -4872,63 +4923,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 
 	reset_hint_enforcement();
 }
-
-/*
- * stmt_beg callback is called when each query in PL/pgSQL function is about
- * to be executed.  At that timing, we save query string in the global variable
- * plpgsql_query_string to use it in planner hook.  It's safe to use one global
- * variable for the purpose, because its content is only necessary until
- * planner hook is called for the query, so recursive PL/pgSQL function calls
- * don't harm this mechanism.
- */
-static void
-pg_hint_plan_plpgsql_stmt_beg(PLpgSQL_execstate *estate, PLpgSQL_stmt *stmt)
-{
-	plpgsql_recurse_level++;
-}
-
-/*
- * stmt_end callback is called then each query in PL/pgSQL function has
- * finished.  At that timing, we clear plpgsql_query_string to tell planner
- * hook that next call is not for a query written in PL/pgSQL block.
- */
-static void
-pg_hint_plan_plpgsql_stmt_end(PLpgSQL_execstate *estate, PLpgSQL_stmt *stmt)
-{
-
-	/*
-	 * If we come here, we should have gone through the statement begin
-	 * callback at least once.
-	 */
-	if (plpgsql_recurse_level > 0)
-		plpgsql_recurse_level--;
-}
-
-void plpgsql_query_erase_callback(ResourceReleasePhase phase,
-								  bool isCommit,
-								  bool isTopLevel,
-								  void *arg)
-{
-	/* Cleanup is just applied once all the locks are released */
-	if (phase != RESOURCE_RELEASE_AFTER_LOCKS)
-		return;
-
-	if (isTopLevel)
-	{
-		/* Cancel recurse level */
-		plpgsql_recurse_level = 0;
-	}
-	else if (plpgsql_recurse_level > 0)
-	{
-		/*
-		 * This applies when a transaction is aborted for a PL/pgSQL query,
-		 * like when a transaction triggers an exception, or for an internal
-		 * commit.
-		 */
-		plpgsql_recurse_level--;
-	}
-}
-
 
 /* include core static functions */
 static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
