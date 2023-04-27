@@ -188,8 +188,7 @@ typedef Hint *(*HintCreateFunction) (const char *hint_str,
 typedef void (*HintDeleteFunction) (Hint *hint);
 typedef void (*HintDescFunction) (Hint *hint, StringInfo buf, bool nolf);
 typedef int (*HintCmpFunction) (const Hint *a, const Hint *b);
-typedef const char *(*HintParseFunction) (Hint *hint, HintState *hstate,
-										  Query *parse, const char *str);
+typedef const char *(*HintParseFunction) (Hint *hint, const char *str);
 
 /* hint types */
 typedef enum HintType
@@ -436,8 +435,7 @@ static Hint *ScanMethodHintCreate(const char *hint_str, const char *keyword,
 static void ScanMethodHintDelete(ScanMethodHint *hint);
 static void ScanMethodHintDesc(ScanMethodHint *hint, StringInfo buf, bool nolf);
 static int ScanMethodHintCmp(const ScanMethodHint *a, const ScanMethodHint *b);
-static const char *ScanMethodHintParse(ScanMethodHint *hint, HintState *hstate,
-									   Query *parse, const char *str);
+static const char *ScanMethodHintParse(ScanMethodHint *hint, const char *str);
 
 /* Join method hint callbacks */
 static Hint *JoinMethodHintCreate(const char *hint_str, const char *keyword,
@@ -445,8 +443,7 @@ static Hint *JoinMethodHintCreate(const char *hint_str, const char *keyword,
 static void JoinMethodHintDelete(JoinMethodHint *hint);
 static void JoinMethodHintDesc(JoinMethodHint *hint, StringInfo buf, bool nolf);
 static int JoinMethodHintCmp(const JoinMethodHint *a, const JoinMethodHint *b);
-static const char *JoinMethodHintParse(JoinMethodHint *hint, HintState *hstate,
-									   Query *parse, const char *str);
+static const char *JoinMethodHintParse(JoinMethodHint *hint, const char *str);
 
 /* Leading hint callbacks */
 static Hint *LeadingHintCreate(const char *hint_str, const char *keyword,
@@ -454,8 +451,7 @@ static Hint *LeadingHintCreate(const char *hint_str, const char *keyword,
 static void LeadingHintDelete(LeadingHint *hint);
 static void LeadingHintDesc(LeadingHint *hint, StringInfo buf, bool nolf);
 static int LeadingHintCmp(const LeadingHint *a, const LeadingHint *b);
-static const char *LeadingHintParse(LeadingHint *hint, HintState *hstate,
-									Query *parse, const char *str);
+static const char *LeadingHintParse(LeadingHint *hint, const char *str);
 
 /* Set hint callbacks */
 static Hint *SetHintCreate(const char *hint_str, const char *keyword,
@@ -463,8 +459,7 @@ static Hint *SetHintCreate(const char *hint_str, const char *keyword,
 static void SetHintDelete(SetHint *hint);
 static void SetHintDesc(SetHint *hint, StringInfo buf, bool nolf);
 static int SetHintCmp(const SetHint *a, const SetHint *b);
-static const char *SetHintParse(SetHint *hint, HintState *hstate, Query *parse,
-								const char *str);
+static const char *SetHintParse(SetHint *hint, const char *str);
 
 /* Rows hint callbacks */
 static Hint *RowsHintCreate(const char *hint_str, const char *keyword,
@@ -472,8 +467,7 @@ static Hint *RowsHintCreate(const char *hint_str, const char *keyword,
 static void RowsHintDelete(RowsHint *hint);
 static void RowsHintDesc(RowsHint *hint, StringInfo buf, bool nolf);
 static int RowsHintCmp(const RowsHint *a, const RowsHint *b);
-static const char *RowsHintParse(RowsHint *hint, HintState *hstate,
-								 Query *parse, const char *str);
+static const char *RowsHintParse(RowsHint *hint, const char *str);
 
 /* Parallel hint callbacks */
 static Hint *ParallelHintCreate(const char *hint_str, const char *keyword,
@@ -481,8 +475,7 @@ static Hint *ParallelHintCreate(const char *hint_str, const char *keyword,
 static void ParallelHintDelete(ParallelHint *hint);
 static void ParallelHintDesc(ParallelHint *hint, StringInfo buf, bool nolf);
 static int ParallelHintCmp(const ParallelHint *a, const ParallelHint *b);
-static const char *ParallelHintParse(ParallelHint *hint, HintState *hstate,
-									 Query *parse, const char *str);
+static const char *ParallelHintParse(ParallelHint *hint, const char *str);
 
 static Hint *MemoizeHintCreate(const char *hint_str, const char *keyword,
 							   HintKeyword hint_keyword);
@@ -1808,7 +1801,7 @@ parse_hints(HintState *hstate, Query *parse, const char *str)
 			hint = parser->create_func(head, keyword, parser->hint_keyword);
 
 			/* parser of each hint does parse in a parenthesis. */
-			if ((str = hint->parse_func(hint, hstate, parse, str)) == NULL)
+			if ((str = hint->parse_func(hint, str)) == NULL)
 			{
 				hint->delete_func(hint);
 				pfree(buf.data);
@@ -2109,8 +2102,7 @@ create_hintstate(Query *parse, const char *hints)
  * Parse inside of parentheses of scan-method hints.
  */
 static const char *
-ScanMethodHintParse(ScanMethodHint *hint, HintState *hstate, Query *parse,
-					const char *str)
+ScanMethodHintParse(ScanMethodHint *hint, const char *str)
 {
 	const char	   *keyword = hint->base.keyword;
 	HintKeyword		hint_keyword = hint->base.hint_keyword;
@@ -2200,8 +2192,7 @@ ScanMethodHintParse(ScanMethodHint *hint, HintState *hstate, Query *parse,
 }
 
 static const char *
-JoinMethodHintParse(JoinMethodHint *hint, HintState *hstate, Query *parse,
-					const char *str)
+JoinMethodHintParse(JoinMethodHint *hint, const char *str)
 {
 	const char	   *keyword = hint->base.keyword;
 	HintKeyword		hint_keyword = hint->base.hint_keyword;
@@ -2325,8 +2316,7 @@ OuterInnerList(OuterInnerRels *outer_inner)
 }
 
 static const char *
-LeadingHintParse(LeadingHint *hint, HintState *hstate, Query *parse,
-				 const char *str)
+LeadingHintParse(LeadingHint *hint, const char *str)
 {
 	List		   *name_list = NIL;
 	OuterInnerRels *outer_inner = NULL;
@@ -2362,7 +2352,7 @@ LeadingHintParse(LeadingHint *hint, HintState *hstate, Query *parse,
 }
 
 static const char *
-SetHintParse(SetHint *hint, HintState *hstate, Query *parse, const char *str)
+SetHintParse(SetHint *hint, const char *str)
 {
 	List   *name_list = NIL;
 
@@ -2390,8 +2380,7 @@ SetHintParse(SetHint *hint, HintState *hstate, Query *parse, const char *str)
 }
 
 static const char *
-RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
-			  const char *str)
+RowsHintParse(RowsHint *hint, const char *str)
 {
 	HintKeyword		hint_keyword = hint->base.hint_keyword;
 	List		   *name_list = NIL;
@@ -2488,8 +2477,7 @@ RowsHintParse(RowsHint *hint, HintState *hstate, Query *parse,
 }
 
 static const char *
-ParallelHintParse(ParallelHint *hint, HintState *hstate, Query *parse,
-				  const char *str)
+ParallelHintParse(ParallelHint *hint, const char *str)
 {
 	HintKeyword		hint_keyword = hint->base.hint_keyword;
 	List		   *name_list = NIL;
