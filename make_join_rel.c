@@ -68,6 +68,7 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 	Relids		joinrelids;
 	SpecialJoinInfo *sjinfo;
 	bool		reversed;
+	List	   *pushed_down_joins = NIL;
 	SpecialJoinInfo sjinfo_data;
 	RelOptInfo *joinrel;
 	List	   *restrictlist;
@@ -87,9 +88,12 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		return NULL;
 	}
 
-	/* If we have an outer join, add its RTI to form the canonical relids. */
-	if (sjinfo && sjinfo->ojrelid != 0)
-		joinrelids = bms_add_member(joinrelids, sjinfo->ojrelid);
+	/*
+	 * Add outer join relid(s) to form the canonical relids.  Any added outer
+	 * joins besides sjinfo itself are appended to pushed_down_joins.
+	 */
+	joinrelids = add_outer_joins_to_relids(root, joinrelids, sjinfo,
+										   &pushed_down_joins);
 
 	/* Swap rels if needed to match the join info. */
 	if (reversed)
@@ -117,7 +121,8 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		sjinfo->ojrelid = 0;
 		sjinfo->commute_above_l = NULL;
 		sjinfo->commute_above_r = NULL;
-		sjinfo->commute_below = NULL;
+		sjinfo->commute_below_l = NULL;
+		sjinfo->commute_below_r = NULL;
 		/* we don't bother trying to make the remaining fields valid */
 		sjinfo->lhs_strict = false;
 		sjinfo->semi_can_btree = false;
@@ -130,7 +135,8 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 	 * Find or build the join RelOptInfo, and compute the restrictlist that
 	 * goes with this particular joining.
 	 */
-	joinrel = build_join_rel(root, joinrelids, rel1, rel2, sjinfo,
+	joinrel = build_join_rel(root, joinrelids, rel1, rel2,
+							 sjinfo, pushed_down_joins,
 							 &restrictlist);
 
 	/* !!! START: HERE IS THE PART WHICH IS ADDED FOR PG_HINT_PLAN !!! */

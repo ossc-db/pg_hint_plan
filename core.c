@@ -1359,9 +1359,8 @@ try_partitionwise_join(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 
 		/* Build correct join relids for child join */
 		child_joinrelids = bms_union(child_rel1->relids, child_rel2->relids);
-		if (child_sjinfo->ojrelid != 0)
-			child_joinrelids = bms_add_member(child_joinrelids,
-											  child_sjinfo->ojrelid);
+		child_joinrelids = add_outer_joins_to_relids(root, child_joinrelids,
+													 child_sjinfo, NULL);
 
 		/* Find the AppendRelInfo structures */
 		appinfos = find_appinfos_by_relids(root, child_joinrelids, &nappinfos);
