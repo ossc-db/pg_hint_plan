@@ -2590,7 +2590,7 @@ get_current_join_mask()
 }
 
 /*
- * Sets GUC prameters without throwing exception. Reutrns false if something
+ * Sets GUC parameters without throwing exception. Returns false if something
  * wrong.
  */
 static int
@@ -2968,7 +2968,7 @@ get_current_hint_string(ParseState *pstate, Query *query)
 			}
 		}
 
-		/* retrun if we have hint here */
+		/* return if we have hint here */
 		if (current_hint_str)
 			return;
 	}
