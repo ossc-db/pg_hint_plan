@@ -3127,10 +3127,23 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	/*  Set scan enforcement here. */
 	save_nestlevel = NewGUCNestLevel();
 
-	/* Apply Set hints, then save it as the initial state  */
-	setup_guc_enforcement(current_hint_state->set_hints,
-						   current_hint_state->num_hints[HINT_TYPE_SET],
-						   current_hint_state->context);
+	/*
+	 * Use PG_TRY mechanism to remove hint with error.
+	 */
+	PG_TRY();
+	{
+		/* Apply Set hints, then save it as the initial state  */
+		setup_guc_enforcement(current_hint_state->set_hints,
+							  current_hint_state->num_hints[HINT_TYPE_SET],
+							  current_hint_state->context);
+	}
+	PG_CATCH();
+	{
+		pop_hint();
+		PG_RE_THROW();
+	}
+	PG_END_TRY();
+
 
 	current_hint_state->init_scan_mask = get_current_scan_mask();
 	current_hint_state->init_join_mask = get_current_join_mask();
