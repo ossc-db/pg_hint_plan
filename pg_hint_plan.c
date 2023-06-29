@@ -2921,7 +2921,7 @@ get_current_hint_string(Query *query, const char *query_str,
 		}
 
 		if (!jstate)
-			jstate = JumbleQuery(query, query_str);
+			jstate = JumbleQuery(query);
 
 		if (!jstate)
 			return;
