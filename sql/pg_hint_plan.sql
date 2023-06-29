@@ -1143,6 +1143,10 @@ set client_min_messages to 'DEBUG1';
 set pg_hint_plan.debug_level to 'verbose';
 /*+ SeqScan( */ SELECT 1;
 /*+ SeqScan(t1) */ SELECT * FROM t1 LIMIT 0;
+set pg_hint_plan.parse_messages to 'ERROR';
+-- Force an error before running the planner hook, when forcing the Set hints.
+/*+ Set(work_mem "foo") */ SELECT 1;
+/*+ SeqScan(t1) */ SELECT * FROM t1 LIMIT 0;
 set pg_hint_plan.message_level to 'DEBUG1';
 set pg_hint_plan.parse_messages to 'NOTICE';
 /*+ SeqScan( */ SELECT 1;
