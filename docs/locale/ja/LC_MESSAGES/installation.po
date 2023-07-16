@@ -3,22 +3,23 @@
 # This file is distributed under the same license as the pg_hint_plan
 # package.
 # Julien Rouhaud <rjuju123@gmail.com>, 2023.
+# Tatsuro Yamada <yamatattsu@gmail.com>, 2023.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: pg_hint_plan \n"
+"Project-Id-Version: pg_hint_plan\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-03-02 12:25+0800\n"
-"PO-Revision-Date: 2023-03-02 12:28+0800\n"
-"Last-Translator: Julien Rouhaud <rjuju123@gmail.com>\n"
+"PO-Revision-Date: 2023-06-05 15:03+0900\n"
+"Last-Translator: Tatsuro Yamada <yamatattsu@gmail.com>\n"
+"Language-Team: \n"
 "Language: ja\n"
-"Language-Team: ja <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.12.1\n"
+"X-Generator: Poedit 3.3.1\n"
 
 #: ../../installation.md:1 88a8f8501d174d67bb9ac7eacd67677a
 msgid "Installation"
@@ -26,7 +27,7 @@ msgstr "インストール"
 
 #: ../../installation.md:3 1a3061c87eb5480cb0426dff856d06b7
 msgid "This section describes the installation steps."
-msgstr "pg_hint_planのインストール方法について説明します。"
+msgstr "このセクションはpg_hint_planのインストール方法について説明します。"
 
 #: ../../installation.md:5 2b41d2a2c4974b1b944e9faa5ac7e799
 msgid "building binary module"
@@ -38,12 +39,9 @@ msgid ""
 "an appropriate user. The `PATH` environment variable should be set "
 "properly for the target PostgreSQL for this process."
 msgstr ""
-"pg_hint_planをソースコードからビルドする場合、pg_hint_planのソースを展開"
-"したディレクトリでmake → make installの順に実行します。"
-"make installはPostgreSQLをインストールしたOSユーザで実行します。"
-"なお、pg_hint_planのビルドにはpgxsを使用するので、"
-"RPM版のPostgreSQLを使用している環境では、"
-"postgresql-devel パッケージが必要です。"
+"ソースツリーの先頭で `make` を実行し、適切なユーザで `make install` を実"
+"行してください。環境変数 `PATH` は、この処理で対象となる PostgreSQL に対"
+"して適切に設定されている必要があります。"
 
 #: ../../installation.md:17 6c3685561f2441f3918283f9a802ca6e
 msgid "Loading `pg_hint_plan`"
@@ -57,11 +55,16 @@ msgid ""
 "Or you might be interested in `ALTER USER SET`/`ALTER DATABASE SET` for "
 "automatic loading for specific sessions."
 msgstr ""
-""
+"`pg_hint_plan` は基本的に`CREATE EXTENSION`を必要としません。単純に`LOAD`"
+"コマンドで有効化できます。もちろん、`postgresql.conf`の"
+"`shared_preload_libraries` を設定することで全体にロード することができま"
+"す。また、特定のユーザに対し自動的にロードするための`ALTER USER SET`/"
+"`ALTER DATABASE SET`に興味があるかもしれません。"
 
 #: ../../installation.md:31 28ccb49c1b2f498b8ed85e5e231f40d9
 msgid ""
 "Do `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_tables TO on` if "
 "you are planning to use the hint table."
 msgstr ""
-
+"ヒントテーブルを使用する場合は、`CREATE EXTENSION` を実行し`SET "
+"pg_hint_plan.enable_hint_tables TO on`を実行してください。"

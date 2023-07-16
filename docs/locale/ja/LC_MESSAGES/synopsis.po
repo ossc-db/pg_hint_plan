@@ -3,49 +3,46 @@
 # This file is distributed under the same license as the pg_hint_plan
 # package.
 # Julien Rouhaud <rjuju123@gmail.com>, 2023.
+# Tatsuro Yamada <yamatattsu@gmail.com>, 2023.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: pg_hint_plan \n"
+"Project-Id-Version: pg_hint_plan\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-02 12:25+0800\n"
-"PO-Revision-Date: 2023-03-02 12:28+0800\n"
-"Last-Translator: Julien Rouhaud <rjuju123@gmail.com>\n"
+"POT-Creation-Date: 2023-03-20 16:24+0900\n"
+"PO-Revision-Date: 2023-07-14 14:58+0900\n"
+"Last-Translator: Tatsuro Yamada <yamatattsu@gmail.com>\n"
+"Language-Team: \n"
 "Language: ja\n"
-"Language-Team: ja <LL@li.org>\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.12.1\n"
+"X-Generator: Poedit 3.3.1\n"
 
-#: ../../synopsis.md:1 03cf7d0e37b34ef09c199b8bc50d5321
+#: ../../synopsis.md:1 b690240736284cd1bd13ae1530583873
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../synopsis.md:3 deb2f09ee507421288d14d380404d690
+#: ../../synopsis.md:3 140dfc13208f44eeb44f8592d430de13
 msgid ""
-"`pg_hint_plan` makes it possible to tweak PostgreSQL execution plans "
-"using so-called \"hints\" in SQL comments, like `/*+ SeqScan(a) */`."
+"`pg_hint_plan` makes it possible to tweak PostgreSQL execution plans using so-called "
+"\"hints\" in SQL comments, like `/*+ SeqScan(a) */`."
 msgstr ""
-"pg_hint_planを用いると、ヒントでスキャン方式や結合方式を指定することで、"
-"SQL文やGUCパラメータを変更することなく実行計画を制御することができます。"
+"`pg_hint_plan`はヒント (SQLコメント内の`/*+ SeqScan(a) */`など) を用いることで実行計画を制御す"
+"ることができます。"
 
-#: ../../synopsis.md:6 02ae6edebabe4ddc99a77b260d24aa41
+#: ../../synopsis.md:6 27d61755e5554247b68e06b62a6dfe2c
 msgid ""
-"PostgreSQL uses a cost-based optimizer, which utilizes data statistics, "
-"not static rules. The planner (optimizer) esitimates costs of each "
-"possible execution plans for a SQL statement then the execution plan with"
-" the lowest cost finally be executed. The planner does its best to select"
-" the best best execution plan, but is not always perfect, since it "
-"doesn't count some properties of the data, for example, correlation "
-"between columns."
+"PostgreSQL uses a cost-based optimizer, which utilizes data statistics, not static rules. The "
+"planner (optimizer) esitimates costs of each possible execution plans for a SQL statement "
+"then the execution plan with the lowest cost finally be executed. The planner does its best "
+"to select the best execution plan, but is not always perfect, since it doesn't count some "
+"properties of the data, for example, correlation between columns."
 msgstr ""
-"PostgreSQLのプランナははコストベースでのオプティマイズを行なっており、"
-"SQL文と統計情報を元に可能な実行計画のコストを見積もり、"
-"最もコストの低い実行計画を選択します。"
-"プランナは可能な限りよい実行計画を作成しようとしますが、"
-"例えばカラム間の相関関係などは考慮しないため、"
-"複雑なクエリでは常に最適なプランを選択するとは限りません。"
-
+"PostgreSQLのプランナは静的なルールではなくデータの統計情報を用いたコストベースのオプティマイザ"
+"を利用しています。プランナ（オプティマイザ）はSQL文に対して可能な限りの実行計画のコストを推定"
+"し、最もコストが低い実行計画を最終的に選択します。プランナは最適な実行計画を選択するために最善"
+"を尽くしますが、データのいくつかの特性（例えば、カラム間の相関関係）を考慮していないため、常に"
+"完璧とは言えません。"
