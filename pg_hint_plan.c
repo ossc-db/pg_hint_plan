@@ -4530,6 +4530,7 @@ make_join_rel_wrapper(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 	int				save_nestlevel;
 
 	joinrelids = bms_union(rel1->relids, rel2->relids);
+	joinrelids = bms_intersect(joinrelids, root->all_baserels);
 	join_hint = find_join_hint(joinrelids);
 	memoize_hint = find_memoize_hint(joinrelids);
 	bms_free(joinrelids);
@@ -4597,6 +4598,7 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 	int				save_nestlevel;
 
 	joinrelids = bms_union(outerrel->relids, innerrel->relids);
+	joinrelids = bms_intersect(joinrelids, root->all_baserels);
 	join_hint = find_join_hint(joinrelids);
 	memoize_hint = find_memoize_hint(joinrelids);
 	bms_free(joinrelids);
