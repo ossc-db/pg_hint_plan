@@ -1,7 +1,7 @@
-/* pg_hint_plan/pg_hint_plan--1.5--1.6.sql */
+/* pg_hint_plan/pg_hint_plan--1.3.9--1.4.sql */
 
--- complain if script is sourced in psql, rather than via CREATE EXTENSION
-\echo Use "ALTER EXTENSION pg_dbms_stats UPDATE TO '1.6'" to load this file. \quit
+-- complain if script is sourced in psql, rather than via ALTER EXTENSION
+\echo Use "ALTER EXTENSION pg_dbms_stats UPDATE TO '1.4'" to load this file. \quit
 
 SELECT pg_catalog.pg_extension_config_dump('hint_plan.hints','');
 SELECT pg_catalog.pg_extension_config_dump('hint_plan.hints_id_seq','');
