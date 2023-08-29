@@ -2,7 +2,6 @@
 
 pg_hint_plan 1.6 requires PostgreSQL 16.
 
-
 PostgreSQL versions tested
 
 - Version 16
@@ -14,7 +13,7 @@ OS versions tested
 See also
 --------
 
-## PostgreSQL documents
+## References
 
 - [EXPLAIN](http://www.postgresql.org/docs/current/static/sql-explain.html)
 - [SET](http://www.postgresql.org/docs/current/static/sql-set.html)

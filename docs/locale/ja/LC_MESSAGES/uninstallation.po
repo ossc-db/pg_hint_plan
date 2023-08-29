@@ -22,7 +22,7 @@ msgstr ""
 "X-Generator: Poedit 3.3.1\n"
 
 #: ../../uninstallation.md:1 2d6a150c5d724b10b00eb53a67fb7b3e
-msgid "Unistallation"
+msgid "Uninstallation"
 msgstr "アンインストール"
 
 #: ../../uninstallation.md:3 3e750dafa7a14af6ac4e715f614d0a2d
