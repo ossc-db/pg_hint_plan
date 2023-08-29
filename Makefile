@@ -5,7 +5,7 @@
 #
 
 MODULES = pg_hint_plan
-HINTPLANVER = 1.4.1
+HINTPLANVER = 1.4.2
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
 	ut-fdw ut-W ut-T ut-fini hints_anywhere plpgsql oldextversions
@@ -22,8 +22,10 @@ DATA = \
 	pg_hint_plan--1.3.4--1.3.5.sql \
 	pg_hint_plan--1.3.6--1.3.7.sql \
 	pg_hint_plan--1.3.7--1.3.8.sql \
-	pg_hint_plan--1.3.8--1.4.sql \
-	pg_hint_plan--1.4--1.4.1.sql
+	pg_hint_plan--1.3.8--1.3.9.sql \
+	pg_hint_plan--1.3.9--1.4.sql \
+	pg_hint_plan--1.4--1.4.1.sql \
+	pg_hint_plan--1.4.1--1.4.2.sql
 
 EXTRA_CLEAN = sql/ut-fdw.sql expected/ut-fdw.out RPMS
 
