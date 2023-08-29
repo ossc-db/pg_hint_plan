@@ -1,4 +1,4 @@
-# pg\_hint\_plan 1.6
+# pg\_hint\_plan 1.7
 
 `pg_hint_plan` makes it possible to tweak PostgreSQL execution plans using
 so-called "hints" in SQL comments, like `/*+ SeqScan(a) */`.

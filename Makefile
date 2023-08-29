@@ -5,7 +5,7 @@
 #
 
 MODULES = pg_hint_plan
-HINTPLANVER = 1.6
+HINTPLANVER = 1.7
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
 	ut-fdw ut-W ut-T ut-fini hints_anywhere plpgsql oldextversions
@@ -25,7 +25,8 @@ DATA = \
 	pg_hint_plan--1.3.8--1.4.sql \
 	pg_hint_plan--1.4--1.4.1.sql \
 	pg_hint_plan--1.4.1--1.5.sql \
-	pg_hint_plan--1.5--1.6.sql
+	pg_hint_plan--1.5--1.6.sql \
+	pg_hint_plan--1.6--1.7.sql
 
 EXTRA_CLEAN = RPMS
 
@@ -45,8 +46,8 @@ include $(DESTDIR)/../src/Makefile.global
 include $(DESTDIR)/../contrib/contrib-global.mk
 endif
 
-STARBALL16 = pg_hint_plan16-$(HINTPLANVER).tar.gz
-STARBALLS = $(STARBALL16)
+STARBALL17 = pg_hint_plan17-$(HINTPLANVER).tar.gz
+STARBALLS = $(STARBALL17)
 
 TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	pg_hint_plan--*.sql \
@@ -54,7 +55,7 @@ TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	doc/* expected/*.out sql/*.sql sql/maskout*.sh \
 	data/data.csv SPECS/*.spec
 
-rpms: rpm16
+rpms: rpm17
 
 # pg_hint_plan.c includes core.c and make_join_rel.c
 pg_hint_plan.o: core.c make_join_rel.c # pg_stat_statements.c
@@ -69,5 +70,5 @@ $(STARBALLS): $(TARSOURCES)
 	tar -chzf $@ $(addprefix $(subst .tar.gz,,$@)/, $^)
 	rm $(subst .tar.gz,,$@)
 
-rpm16: $(STARBALL16)
-	MAKE_ROOT=`pwd` rpmbuild -bb SPECS/pg_hint_plan16.spec
+rpm17: $(STARBALL17)
+	MAKE_ROOT=`pwd` rpmbuild -bb SPECS/pg_hint_plan17.spec

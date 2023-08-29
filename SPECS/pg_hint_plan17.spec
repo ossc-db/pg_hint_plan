@@ -1,7 +1,7 @@
 # SPEC file for pg_store_plans
 # Copyright(c) 2022-2023, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
-%define _pgdir   /usr/pgsql-16
+%define _pgdir   /usr/pgsql-17
 %define _bindir  %{_pgdir}/bin
 %define _libdir  %{_pgdir}/lib
 %define _datadir %{_pgdir}/share
@@ -14,9 +14,9 @@
 %endif
 
 ## Set general information for pg_store_plans.
-Summary:    Optimizer hint on PostgreSQL 16
-Name:       pg_hint_plan16
-Version:    1.6
+Summary:    Optimizer hint on PostgreSQL 17
+Name:       pg_hint_plan17
+Version:    1.7
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -26,8 +26,8 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-%(%{__id_u} -n)
 Vendor:     NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
 ## We use postgresql-devel package
-BuildRequires:  postgresql16-devel
-Requires:  postgresql16-server
+BuildRequires:  postgresql17-devel
+Requires:  postgresql17-server
 
 ## Description for "pg_hint_plan"
 %description
@@ -35,19 +35,19 @@ Requires:  postgresql16-server
 pg_hint_plan provides capability to tweak execution plans to be
 executed on PostgreSQL.
 
-Note that this package is available for only PostgreSQL 16.
+Note that this package is available for only PostgreSQL 17.
 
 %package llvmjit
-Requires: postgresql16-server, postgresql16-llvmjit
-Requires: pg_hint_plan16 = 1.6
-Summary:  Just-in-time compilation support for pg_hint_plan16
+Requires: postgresql17-server, postgresql17-llvmjit
+Requires: pg_hint_plan17 = 1.7
+Summary:  Just-in-time compilation support for pg_hint_plan17
 
 %description llvmjit
-Just-in-time compilation support for pg_hint_plan16
+Just-in-time compilation support for pg_hint_plan17
 
 ## pre work for build pg_hint_plan
 %prep
-PATH=/usr/pgsql-16/bin:$PATH
+PATH=/usr/pgsql-17/bin:$PATH
 if [ "${MAKE_ROOT}" != "" ]; then
   pushd ${MAKE_ROOT}
   make clean %{name}-%{version}.tar.gz
@@ -58,7 +58,7 @@ if [ ! -d %{_rpmdir} ]; then mkdir -p %{_rpmdir}; fi
 
 ## Set variables for build environment
 %build
-PATH=/usr/pgsql-16/bin:$PATH
+PATH=/usr/pgsql-17/bin:$PATH
 make USE_PGXS=1 LDFLAGS+=-Wl,--build-id %{?_smp_mflags}
 
 ## Set variables for install
@@ -86,6 +86,7 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.4--1.4.1.sql
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.5--1.6.sql
+%{_datadir}/extension/pg_hint_plan--1.6--1.7.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -97,5 +98,5 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
-* Thu Jan 17 2023 Michael Paquier
-- Support PostgreSQL 16.
+* Tue Aug 29 2023 Michael Paquier
+- Support PostgreSQL 17.

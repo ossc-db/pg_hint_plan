@@ -26,16 +26,16 @@ msgid "Requirements"
 msgstr "動作環境"
 
 #: ../../requirements.md:3 3e0ef43c79334e4b8818ab973f0b8e8b
-msgid "pg_hint_plan 1.6 requires PostgreSQL 16."
-msgstr "pg_hint_plan 1.6 は PostgreSQL 16 のみをサポートします。"
+msgid "pg_hint_plan 1.7 requires PostgreSQL 17."
+msgstr "pg_hint_plan 1.7 は PostgreSQL 17 のみをサポートします。"
 
 #: ../../requirements.md:6 d30d4c9f346147fa85c1103448fcf5a6
 msgid "PostgreSQL versions tested"
 msgstr "テスト済みのPostgreSQLバージョン"
 
 #: ../../requirements.md:8 454cb93d64d74a68adbb68d0627fbe57
-msgid "Version 16"
-msgstr "バージョン 16"
+msgid "Version 17"
+msgstr "バージョン 17"
 
 #: ../../requirements.md:10 9c91df10a07a47309edd0401d0d87c2a
 msgid "OS versions tested"

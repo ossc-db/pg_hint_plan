@@ -1,4 +1,4 @@
-# pg_hint_plan 1.6
+# pg_hint_plan 1.7
 
 ```{contents} Table of Contents
 :depth: 2
