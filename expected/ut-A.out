@@ -4744,14 +4744,14 @@ CREATE INDEX ON s1.tpc(a);
 PREPARE p1 AS SELECT * FROM s1.tpc WHERE a < 999;
 /*+ IndexScan(tpc) */PREPARE p2 AS SELECT * FROM s1.tpc WHERE a < 999;
 /*+ SeqScan(tpc) */PREPARE p3(int) AS SELECT * FROM s1.tpc WHERE a = $1;
-EXPLAIN EXECUTE p1;
-                      QUERY PLAN                      
-------------------------------------------------------
- Seq Scan on tpc  (cost=0.00..17.50 rows=333 width=4)
+EXPLAIN (COSTS false) EXECUTE p1;
+     QUERY PLAN      
+---------------------
+ Seq Scan on tpc
    Filter: (a < 999)
 (2 rows)
 
-EXPLAIN EXECUTE p2;
+EXPLAIN (COSTS false) EXECUTE p2;
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(tpc)
@@ -4759,13 +4759,13 @@ not used hint:
 duplication hint:
 error hint:
 
-                               QUERY PLAN                               
-------------------------------------------------------------------------
- Index Scan using tpc_a_idx on tpc  (cost=0.28..34.10 rows=333 width=4)
+            QUERY PLAN             
+-----------------------------------
+ Index Scan using tpc_a_idx on tpc
    Index Cond: (a < 999)
 (2 rows)
 
-EXPLAIN EXECUTE p3(500);
+EXPLAIN (COSTS false) EXECUTE p3(500);
 LOG:  pg_hint_plan:
 used hint:
 SeqScan(tpc)
@@ -4773,9 +4773,9 @@ not used hint:
 duplication hint:
 error hint:
 
-                     QUERY PLAN                     
-----------------------------------------------------
- Seq Scan on tpc  (cost=0.00..17.50 rows=5 width=4)
+     QUERY PLAN      
+---------------------
+ Seq Scan on tpc
    Filter: (a = 500)
 (2 rows)
 
@@ -4783,14 +4783,14 @@ error hint:
 DROP TABLE s1.tpc;
 CREATE TABLE s1.tpc AS SELECT a FROM generate_series(0, 999) a;
 CREATE INDEX ON s1.tpc(a);
-EXPLAIN EXECUTE p1;
-                      QUERY PLAN                      
-------------------------------------------------------
- Seq Scan on tpc  (cost=0.00..17.50 rows=333 width=4)
+EXPLAIN (COSTS false) EXECUTE p1;
+     QUERY PLAN      
+---------------------
+ Seq Scan on tpc
    Filter: (a < 999)
 (2 rows)
 
-EXPLAIN EXECUTE p2;
+EXPLAIN (COSTS false) EXECUTE p2;
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(tpc)
@@ -4798,13 +4798,13 @@ not used hint:
 duplication hint:
 error hint:
 
-                               QUERY PLAN                               
-------------------------------------------------------------------------
- Index Scan using tpc_a_idx on tpc  (cost=0.28..34.10 rows=333 width=4)
+            QUERY PLAN             
+-----------------------------------
+ Index Scan using tpc_a_idx on tpc
    Index Cond: (a < 999)
 (2 rows)
 
-EXPLAIN EXECUTE p3(500);
+EXPLAIN (COSTS false) EXECUTE p3(500);
 LOG:  pg_hint_plan:
 used hint:
 SeqScan(tpc)
@@ -4812,9 +4812,9 @@ not used hint:
 duplication hint:
 error hint:
 
-                     QUERY PLAN                     
-----------------------------------------------------
- Seq Scan on tpc  (cost=0.00..17.50 rows=5 width=4)
+     QUERY PLAN      
+---------------------
+ Seq Scan on tpc
    Filter: (a = 500)
 (2 rows)
 
