@@ -1159,6 +1159,11 @@ set max_parallel_workers_per_gather to DEFAULT;
 \! sql/maskout.sh results/pg_hint_plan.tmpout
 \! rm results/pg_hint_plan.tmpout
 
+-- Query with join RTE and outer-join relids
+/*+Leading(ft_1 ft_2 t1)*/
+SELECT relname, seq_scan > 0 AS seq_scan, idx_scan > 0 AS idx_scan
+  FROM pg_stat_user_tables WHERE schemaname = 'public' AND relname = 't1';
+
 -- hint error level
 set client_min_messages to 'DEBUG1';
 /*+ SeqScan( */ SELECT 1;

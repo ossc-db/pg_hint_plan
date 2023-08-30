@@ -4177,6 +4177,12 @@ OuterInnerJoinCreate(OuterInnerRels *outer_inner, LeadingHint *leading_hint,
 
 	join_relids = bms_add_members(outer_relids, inner_relids);
 
+	/*
+	 * join_relids may include outer-join relids since PostgreSQL 16, so
+	 * filter them out as hints can only handle base relations.
+	 */
+	join_relids = bms_intersect(join_relids, root->all_baserels);
+
 	if (bms_num_members(join_relids) > nbaserel)
 		return join_relids;
 
@@ -4530,6 +4536,13 @@ make_join_rel_wrapper(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 	int				save_nestlevel;
 
 	joinrelids = bms_union(rel1->relids, rel2->relids);
+
+	/*
+	 * joinrelids may include outer-join relids since PostgreSQL 16, so
+	 * filter them out as hints can only handle base relations.
+	 */
+	joinrelids = bms_intersect(joinrelids, root->all_baserels);
+
 	join_hint = find_join_hint(joinrelids);
 	memoize_hint = find_memoize_hint(joinrelids);
 	bms_free(joinrelids);
@@ -4597,6 +4610,13 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 	int				save_nestlevel;
 
 	joinrelids = bms_union(outerrel->relids, innerrel->relids);
+
+	/*
+	 * joinrelids may include outer-join relids since PostgreSQL 16, so
+	 * filter them out as hints can only handle base relations.
+	 */
+	joinrelids = bms_intersect(joinrelids, root->all_baserels);
+
 	join_hint = find_join_hint(joinrelids);
 	memoize_hint = find_memoize_hint(joinrelids);
 	bms_free(joinrelids);
