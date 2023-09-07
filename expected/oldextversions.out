@@ -136,7 +136,7 @@ Objects in extension "pg_hint_plan"
  table hint_plan.hints
 (2 rows)
 
-ALTER EXTENSION pg_hint_plan UPDATE TO "1.6";
+ALTER EXTENSION pg_hint_plan UPDATE TO "1.6.0";
 \dx+ pg_hint_plan
 Objects in extension "pg_hint_plan"
        Object description        
@@ -145,7 +145,7 @@ Objects in extension "pg_hint_plan"
  table hint_plan.hints
 (2 rows)
 
-ALTER EXTENSION pg_hint_plan UPDATE TO "1.7";
+ALTER EXTENSION pg_hint_plan UPDATE TO "1.7.0";
 \dx+ pg_hint_plan
 Objects in extension "pg_hint_plan"
        Object description        

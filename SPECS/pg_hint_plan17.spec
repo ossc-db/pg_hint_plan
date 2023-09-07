@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 17
 Name:       pg_hint_plan17
-Version:    1.7
+Version:    1.7.0
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 17.
 
 %package llvmjit
 Requires: postgresql17-server, postgresql17-llvmjit
-Requires: pg_hint_plan17 = 1.7
+Requires: pg_hint_plan17 = 1.7.0
 Summary:  Just-in-time compilation support for pg_hint_plan17
 
 %description llvmjit
@@ -88,8 +88,8 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
 %{_datadir}/extension/pg_hint_plan--1.4.2--1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.5--1.5.1.sql
-%{_datadir}/extension/pg_hint_plan--1.5.1--1.6.sql
-%{_datadir}/extension/pg_hint_plan--1.6--1.7.sql
+%{_datadir}/extension/pg_hint_plan--1.5.1--1.6.0.sql
+%{_datadir}/extension/pg_hint_plan--1.6.0--1.7.0.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
