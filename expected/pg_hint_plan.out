@@ -9106,6 +9106,26 @@ error hint:
          Sort Key: t3.id
          ->  Seq Scan on t3  (cost=xxx..xxx rows=100 width=xxx)
 
+-- case insensitve alias
+\o results/pg_hint_plan.tmpout
+/*+ Rows(aliast1 aliasT2 #42) */
+EXPLAIN SELECT * FROM t1 AS aliasT1 JOIN t2 AS aliasT2 ON (aliasT1.id = aliasT2.id);
+LOG:  pg_hint_plan:
+used hint:
+Rows(aliast1 aliasT2 #42)
+not used hint:
+duplication hint:
+error hint:
+
+\o
+\! sql/maskout.sh results/pg_hint_plan.tmpout
+  QUERY PLAN
+----------------
+ Merge Join  (cost=xxx..xxx rows=42 width=xxx)
+   Merge Cond: (aliast1.id = aliast2.id)
+   ->  Index Scan using t1_pkey on t1 aliast1  (cost=xxx..xxx rows=10000 width=xxx)
+   ->  Index Scan using t2_pkey on t2 aliast2  (cost=xxx..xxx rows=1000 width=xxx)
+
 \o results/pg_hint_plan.tmpout
 /*+ Rows(t1 t3 *10) */
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);

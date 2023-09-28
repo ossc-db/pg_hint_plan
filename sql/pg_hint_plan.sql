@@ -1152,6 +1152,13 @@ EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
 \o
 \! sql/maskout.sh results/pg_hint_plan.tmpout
 
+-- case insensitve alias
+\o results/pg_hint_plan.tmpout
+/*+ Rows(aliast1 aliasT2 #42) */
+EXPLAIN SELECT * FROM t1 AS aliasT1 JOIN t2 AS aliasT2 ON (aliasT1.id = aliasT2.id);
+\o
+\! sql/maskout.sh results/pg_hint_plan.tmpout
+
 \o results/pg_hint_plan.tmpout
 /*+ Rows(t1 t3 *10) */
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);

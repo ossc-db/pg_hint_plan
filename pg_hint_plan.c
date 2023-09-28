@@ -1454,7 +1454,7 @@ RelnameCmp(const void *a, const void *b)
 	const char *relnamea = *((const char **) a);
 	const char *relnameb = *((const char **) b);
 
-	return strcmp(relnamea, relnameb);
+	return pg_strcasecmp(relnamea, relnameb);
 }
 
 static int
