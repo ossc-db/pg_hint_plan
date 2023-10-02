@@ -1,0 +1,45 @@
+{
+    "name": "pg_hint_plan16",
+    "abstract": "pg_hint_plan makes it possible to tweak PostgreSQL execution plans using so-called 'hints' in SQL comments, like /*+ SeqScan(a) */.",
+    "description": "PostgreSQL uses a cost-based optimizer, which utilizes data statistics, not static rules. The planner (optimizer) esitimates costs of each possible execution plans for a SQL statement then the execution plan with the lowest cost finally be executed. The planner does its best to select the best best execution plan, but is not always perfect, since it doesn't count some properties of the data, for example, correlation between columns. For more details, please see the various documentations available in the docs/ directory.",
+    "version": "1.6.0",
+    "maintainer": [
+        "Github Issues <no-reply@fake.local>"
+    ],
+    "license": "bsd",
+    "prereqs": {
+        "runtime": {
+            "requires": {
+                "PostgreSQL": ">= 16.0.0, < 17.0.0"
+            }
+        }
+    },
+    "provides": {
+       "pg_hint_plan": {
+            "abstract": "pg_hint_plan makes it possible to tweak PostgreSQL execution plans using so-called 'hints' in SQL comments, like /*+ SeqScan(a) */.",
+            "file": "pg_hint_plan--1.3.0.sql",
+            "docfile": "README.md",
+            "version": "1.6.0"
+       }
+    },
+    "resources": {
+        "bugtracker": {
+            "web": "https://github.com/ossc-db/pg_hint_plan/issues"
+        },
+        "repository": {
+            "url":  "https://github.com/ossc-db/pg_hint_plan.git",
+            "web":  "https://github.com/ossc-db/pg_hint_plan/",
+            "type": "git"
+        }
+    },
+    "meta-spec": {
+        "version": "1.0.0",
+        "url": "https://pgxn.org/meta/spec.txt"
+    },
+    "tags": [
+        "sql",
+        "plan",
+        "performance",
+        "hint"
+    ]
+ }
