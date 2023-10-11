@@ -2579,7 +2579,7 @@ ParallelHintParse(ParallelHint *hint, const char *str)
  */
 
 static int
-get_current_scan_mask()
+get_current_scan_mask(void)
 {
 	int mask = 0;
 
@@ -2598,7 +2598,7 @@ get_current_scan_mask()
 }
 
 static int
-get_current_join_mask()
+get_current_join_mask(void)
 {
 	int mask = 0;
 
@@ -3843,7 +3843,7 @@ get_parent_index_info(Oid indexoid, Oid relid)
  * cancel hint enforcement
  */
 static void
-reset_hint_enforcement()
+reset_hint_enforcement(void)
 {
 	setup_scan_method_enforcement(NULL, current_hint_state);
 	setup_parallel_plan_enforcement(NULL, current_hint_state);
