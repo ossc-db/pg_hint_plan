@@ -3007,7 +3007,10 @@ get_current_hint_string(ParseState *pstate, Query *query)
 		 * use..
 		 */
 		if (current_hint_str)
+		{
 			pfree((void *)current_hint_str);
+			current_hint_str = NULL;
+		}
 
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 		current_hint_str = get_hints_from_comment(query_str);
