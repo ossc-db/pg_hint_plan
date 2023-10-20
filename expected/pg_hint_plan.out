@@ -109,7 +109,7 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.val = t2.val;
 
 /*+ Test (t1 t2) */
 EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;
-INFO:  pg_hint_plan: hint syntax error at or near "Test (t1 t2) "
+INFO:  pg_hint_plan: hint syntax error at or near " Test (t1 t2) "
 DETAIL:  Unrecognized hint keyword "Test".
               QUERY PLAN              
 --------------------------------------
@@ -153,16 +153,23 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;
 
 /*+Set(enable_indexscan off) /* nest comment */ */
 EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;
-INFO:  pg_hint_plan: hint syntax error at or near "/* nest comment */ */
-EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;"
+INFO:  pg_hint_plan: hint syntax error at or near "/*"
 DETAIL:  Nested block comments are not supported.
-              QUERY PLAN              
---------------------------------------
- Merge Join
-   Merge Cond: (t1.id = t2.id)
-   ->  Index Scan using t1_pkey on t1
-   ->  Index Scan using t2_pkey on t2
-(4 rows)
+LOG:  pg_hint_plan:
+used hint:
+Set(enable_indexscan off)
+not used hint:
+duplication hint:
+error hint:
+
+          QUERY PLAN          
+------------------------------
+ Hash Join
+   Hash Cond: (t1.id = t2.id)
+   ->  Seq Scan on t1
+   ->  Hash
+         ->  Seq Scan on t2
+(5 rows)
 
 /*+Set(enable_indexscan off)*/
 EXPLAIN (COSTS false) SELECT * FROM t1, t2 WHERE t1.id = t2.id;
@@ -9048,7 +9055,7 @@ Rows(t1 t2 /99)
 \o results/pg_hint_plan.tmpout
 /*+ Rows(t1 t2 -99999) */
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
-WARNING:  Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : Rows(t1 t2 -99999) 
+WARNING:  Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs :  Rows(t1 t2 -99999) 
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 -99999)

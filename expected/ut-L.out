@@ -3591,7 +3591,7 @@ error hint:
 
 /*+ Leading(*VALUES* t3 t2 t1) */
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
-INFO:  pg_hint_plan: hint syntax error at or near "Leading(*VALUES* t3 t2 t1) "
+INFO:  pg_hint_plan: hint syntax error at or near " Leading(*VALUES* t3 t2 t1) "
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:

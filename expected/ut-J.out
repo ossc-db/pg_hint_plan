@@ -3771,7 +3771,7 @@ INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(*VALUES* t3 t2)Merge
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 INFO:  pg_hint_plan: hint syntax error at or near "MergeJoin(*VALUES* t3 t2 t1)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
-INFO:  pg_hint_plan: hint syntax error at or near "Leading(*VALUES* t3 t2 t1) NestLoop(t4 t3)HashJoin(*VALUES* t3 t2)MergeJoin(*VALUES* t3 t2 t1)"
+INFO:  pg_hint_plan: hint syntax error at or near " Leading(*VALUES* t3 t2 t1) NestLoop(t4 t3)HashJoin(*VALUES* t3 t2)MergeJoin(*VALUES* t3 t2 t1)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:

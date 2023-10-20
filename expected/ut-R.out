@@ -4237,7 +4237,7 @@ INFO:  pg_hint_plan: hint syntax error at or near "Rows(*VALUES* t3 t2 #2)Rows(*
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(*VALUES* t3 t2 t1 #2)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
-INFO:  pg_hint_plan: hint syntax error at or near "Leading(*VALUES* t3 t2 t1) Rows(t4 t3 #2)Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
+INFO:  pg_hint_plan: hint syntax error at or near " Leading(*VALUES* t3 t2 t1) Rows(t4 t3 #2)Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 LOG:  pg_hint_plan:
 used hint:

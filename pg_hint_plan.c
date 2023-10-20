@@ -57,6 +57,9 @@
 /* partially copied from pg_stat_statements */
 #include "normalize_query.h"
 
+/* Owner scanner */
+#include "query_scan.h"
+
 /* PostgreSQL */
 #include "access/htup_details.h"
 
@@ -1945,76 +1948,40 @@ get_hints_from_table(const char *client_query, const char *client_application)
 
 /*
  * Get hints from the head block comment in client-supplied query string.
+ *
+ * The extracted hint is palloc()'d in TopMemoryContext.
  */
 static const char *
 get_hints_from_comment(const char *p)
 {
-	const char *hint_head;
-	char	   *head;
-	char	   *tail;
-	int			len;
+	QueryScanState	sstate;
+	StringInfo		query_buf;
+	char		   *result = NULL;
 
 	if (p == NULL)
 		return NULL;
 
-	/* extract query head comment. */
-	hint_head = strstr(p, HINT_START);
-	if (hint_head == NULL)
-		return NULL;
+	sstate = query_scan_create();
+	query_buf = makeStringInfo();
 
-	for (;p < hint_head; p++)
+	query_scan_setup(sstate, p, strlen(p), 0,
+					 standard_conforming_strings,
+					 pg_hint_plan_parse_message_level);
+	for (;;)
 	{
-		/*
-		 * Allow these characters precedes hint comment:
-		 *   - digits
-		 *   - alphabets which are in ASCII range
-		 *   - space, tabs and new-lines
-		 *   - underscores, for identifier
-		 *   - commas, for SELECT clause, EXPLAIN and PREPARE
-		 *   - parentheses, for EXPLAIN and PREPARE
-		 *   - squared brackets, for arrays (like arguments of PREPARE
-		 *     statements).
-		 *
-		 * Note that we don't use isalpha() nor isalnum() in ctype.h here to
-		 * avoid behavior which depends on locale setting.
-		 */
-		if (!(*p >= '0' && *p <= '9') &&
-			!(*p >= 'A' && *p <= 'Z') &&
-			!(*p >= 'a' && *p <= 'z') &&
-			!isspace(*p) &&
-			*p != '_' &&
-			*p != ',' &&
-			*p != '(' && *p != ')' &&
-			*p != '[' && *p != ']')
-			return NULL;
+		QueryScanResult sr = query_scan(sstate, query_buf);
+		if (sr == QUERY_SCAN_EOL)
+			break;
 	}
 
-	head = (char *)hint_head;
-	p = head + strlen(HINT_START);
-	skip_space(p);
+	query_scan_finish(sstate);
 
-	/* find hint end keyword. */
-	if ((tail = strstr(p, HINT_END)) == NULL)
-	{
-		hint_ereport(head, ("Unterminated block comment."));
-		return NULL;
-	}
-
-	/* We don't support nested block comments. */
-	if ((head = strstr(p, BLOCK_COMMENT_START)) != NULL && head < tail)
-	{
-		hint_ereport(head, ("Nested block comments are not supported."));
-		return NULL;
-	}
-
-	/* Make a copy of hint. */
-	len = tail - p;
-	head = palloc(len + 1);
-	memcpy(head, p, len);
-	head[len] = '\0';
-	p = head;
-
-	return p;
+	/* Get a copy of the hint extracted, if any */
+	if (query_buf->len > 0)
+		result = MemoryContextStrdup(TopMemoryContext, query_buf->data);
+	pfree(query_buf->data);
+	pfree(query_buf);
+	return result;
 }
 
 /*
@@ -2992,9 +2959,7 @@ get_current_hint_string(Query *query, const char *query_str,
 	}
 
 	/* get hints from the comment */
-	oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 	current_hint_str = get_hints_from_comment(query_str);
-	MemoryContextSwitchTo(oldcontext);
 
 	if (debug_level > 1)
 	{
