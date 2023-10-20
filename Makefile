@@ -4,7 +4,12 @@
 # Copyright (c) 2012-2023, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 #
 
-MODULES = pg_hint_plan
+MODULE_big = pg_hint_plan
+OBJS = \
+	$(WIN32RES) \
+	pg_hint_plan.o \
+	query_scan.o
+
 HINTPLANVER = 1.7.0
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
