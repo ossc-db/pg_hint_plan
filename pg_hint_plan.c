@@ -3818,8 +3818,10 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 	int				ret = 0;
 
 	/* reset returns if requested  */
-	if (rshint != NULL) *rshint = NULL;
-	if (rphint != NULL) *rphint = NULL;
+	if (rshint != NULL)
+		*rshint = NULL;
+	if (rphint != NULL)
+		*rphint = NULL;
 
 	/*
 	 * We could register the parent relation of the following children here
@@ -3835,7 +3837,8 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		if (phint)
 		{
 			setup_parallel_plan_enforcement(phint, current_hint_state);
-			if (rphint) *rphint = phint;
+			if (rphint)
+				*rphint = phint;
 			ret |= HINT_BM_PARALLEL;
 			return ret;
 		}
@@ -3986,7 +3989,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		ret |= HINT_BM_PARALLEL;
 
 	/* Nothing to apply. Reset the scan mask to intial state */
-	if (!shint && ! phint)
+	if (!shint && !phint)
 	{
 		if (debug_level > 1)
 			ereport(pg_hint_plan_debug_message_level,
