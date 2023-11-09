@@ -1104,33 +1104,8 @@ HintStateCreate(void)
 {
 	HintState   *hstate;
 
-	hstate = palloc(sizeof(HintState));
-	hstate->hint_str = NULL;
-	hstate->nall_hints = 0;
-	hstate->max_all_hints = 0;
-	hstate->all_hints = NULL;
-	memset(hstate->num_hints, 0, sizeof(hstate->num_hints));
-	hstate->scan_hints = NULL;
-	hstate->init_scan_mask = 0;
-	hstate->init_nworkers = 0;
-	hstate->init_min_para_tablescan_size = 0;
-	hstate->init_min_para_indexscan_size = 0;
-	hstate->init_paratup_cost = 0;
-	hstate->init_parasetup_cost = 0;
-	hstate->current_root = NULL;
-	hstate->parent_relid = 0;
-	hstate->parent_scan_hint = NULL;
-	hstate->parent_parallel_hint = NULL;
-	hstate->parent_index_infos = NIL;
-	hstate->join_hints = NULL;
-	hstate->init_join_mask = 0;
-	hstate->join_hint_level = NULL;
-	hstate->memoize_hint_level = NULL;
-	hstate->leading_hint = NULL;
+	hstate = palloc0(sizeof(HintState));
 	hstate->context = superuser() ? PGC_SUSET : PGC_USERSET;
-	hstate->set_hints = NULL;
-	hstate->rows_hints = NULL;
-	hstate->parallel_hints = NULL;
 
 	return hstate;
 }
