@@ -684,6 +684,13 @@ RESET client_min_messages;
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 NOTICE:  identifier "1234567890123456789012345678901234567890123456789012345678901234" will be truncated to "123456789012345678901234567890123456789012345678901234567890123"
 INFO:  unrecognized configuration parameter "123456789012345678901234567890123456789012345678901234567890123"
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(123456789012345678901234567890123456789012345678901234567890123 1)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -694,6 +701,13 @@ INFO:  unrecognized configuration parameter "12345678901234567890123456789012345
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 INFO:  invalid value for parameter "constraint_exclusion": "1234567890123456789012345678901234567890123456789012345678901234"
 HINT:  Available values: partition, on, off.
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(constraint_exclusion 1234567890123456789012345678901234567890123456789012345678901234)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -707,6 +721,13 @@ SET ROLE regress_super_user;
 /*+Set(block_size 16384)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 INFO:  parameter "block_size" cannot be changed
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(block_size 16384)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -716,6 +737,13 @@ INFO:  parameter "block_size" cannot be changed
 /*+Set(archive_mode off)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 INFO:  parameter "archive_mode" cannot be changed without restarting the server
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(archive_mode off)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -725,6 +753,13 @@ INFO:  parameter "archive_mode" cannot be changed without restarting the server
 /*+Set(archive_timeout 0)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 INFO:  parameter "archive_timeout" cannot be changed now
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(archive_timeout 0)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -734,6 +769,13 @@ INFO:  parameter "archive_timeout" cannot be changed now
 /*+Set(log_connections off)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 INFO:  parameter "log_connections" cannot be set after connection start
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(log_connections off)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -742,6 +784,13 @@ INFO:  parameter "log_connections" cannot be set after connection start
 -- No. G-2-2-5
 /*+Set(log_min_messages WARNING)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+LOG:  pg_hint_plan:
+used hint:
+Set(log_min_messages WARNING)
+not used hint:
+duplication hint:
+error hint:
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -755,6 +804,13 @@ SET ROLE regress_normal_user;
 /*+Set(log_min_messages WARNING)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 INFO:  permission denied to set parameter "log_min_messages"
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+duplication hint:
+error hint:
+Set(log_min_messages WARNING)
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1
@@ -763,6 +819,13 @@ INFO:  permission denied to set parameter "log_min_messages"
 -- No. G-2-2-7
 /*+Set(enable_seqscan on)*/
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+LOG:  pg_hint_plan:
+used hint:
+Set(enable_seqscan on)
+not used hint:
+duplication hint:
+error hint:
+
  c1 | c2 | c3 | c4 
 ----+----+----+----
   1 |  1 |  1 | 1

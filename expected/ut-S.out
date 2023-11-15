@@ -1,14 +1,11 @@
 LOAD 'pg_hint_plan';
--- We cannot do ALTER USER current_user SET ...
-DELETE FROM pg_db_role_setting WHERE setrole = (SELECT oid FROM pg_roles WHERE rolname = current_user);
-INSERT INTO pg_db_role_setting (SELECT 0, (SELECT oid FROM pg_roles WHERE rolname = current_user), '{client_min_messages=log,pg_hint_plan.debug_print=on}');
-ALTER SYSTEM SET session_preload_libraries TO 'pg_hint_plan';
-SELECT pg_reload_conf();
- pg_reload_conf 
-----------------
- t
-(1 row)
-
+-- Force some GUCs.
+SELECT current_database() AS datname \gset
+ALTER DATABASE :"datname" SET client_min_messages = 'log';
+ALTER DATABASE :"datname" SET pg_hint_plan.debug_print = 'on';
+ALTER DATABASE :"datname" SET session_preload_libraries TO 'pg_hint_plan';
+-- Force GUC reload with a reconnection
+\c
 SET pg_hint_plan.enable_hint TO on;
 SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
@@ -6111,13 +6108,5 @@ error hint:
  Index Scan using ti1_i4 on ti1
    Index Cond: (c2 = 1)
 (2 rows)
-
-DELETE FROM pg_db_role_setting WHERE setrole = (SELECT oid FROM pg_roles WHERE rolname = current_user);
-ALTER SYSTEM SET session_preload_libraries TO DEFAULT;
-SELECT pg_reload_conf();
- pg_reload_conf 
-----------------
- t
-(1 row)
 
 \! rm results/ut-S.tmpout

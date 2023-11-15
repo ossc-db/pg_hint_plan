@@ -118,11 +118,18 @@ CREATE VIEW v4 AS SELECT v_2.t1_id, t_3.id FROM v2 v_2, t3 t_3 WHERE v_2.t1_id =
  * The following GUC parameters need the setting of the default value to
  * succeed in regression test.
  */
+SELECT current_database() AS datname \gset
 
 /* Fix auto-tunable parameters */
-ALTER SYSTEM SET effective_cache_size TO 16384;
-SELECT pg_reload_conf();
+ALTER DATABASE :"datname" SET effective_cache_size TO 16384;
 SET effective_cache_size TO 16384;
+
+/*
+ * enable_self_join_removal makes many hint tests with self joins irrelevant,
+ * so turn it off.
+ */
+ALTER DATABASE :"datname" SET enable_self_join_removal TO off;
+SET enable_self_join_removal TO off;
 
 CREATE VIEW settings AS
 SELECT name, setting, category

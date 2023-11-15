@@ -1,9 +1,12 @@
 LOAD 'pg_hint_plan';
--- We cannot do ALTER USER current_user SET ...
-DELETE FROM pg_db_role_setting WHERE setrole = (SELECT oid FROM pg_roles WHERE rolname = current_user);
-INSERT INTO pg_db_role_setting (SELECT 0, (SELECT oid FROM pg_roles WHERE rolname = current_user), '{client_min_messages=log,pg_hint_plan.debug_print=on}');
-ALTER SYSTEM SET session_preload_libraries TO 'pg_hint_plan';
-SELECT pg_reload_conf();
+
+-- Force some GUCs.
+SELECT current_database() AS datname \gset
+ALTER DATABASE :"datname" SET client_min_messages = 'log';
+ALTER DATABASE :"datname" SET pg_hint_plan.debug_print = 'on';
+ALTER DATABASE :"datname" SET session_preload_libraries TO 'pg_hint_plan';
+-- Force GUC reload with a reconnection
+\c
 SET pg_hint_plan.enable_hint TO on;
 SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
@@ -1184,8 +1187,4 @@ EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
 /*+IndexScan(ti1 not_exist1 not_exist2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
 
-DELETE FROM pg_db_role_setting WHERE setrole = (SELECT oid FROM pg_roles WHERE rolname = current_user);
-
-ALTER SYSTEM SET session_preload_libraries TO DEFAULT;
-SELECT pg_reload_conf();
 \! rm results/ut-S.tmpout
