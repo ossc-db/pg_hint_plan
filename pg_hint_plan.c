@@ -851,7 +851,7 @@ ScanMethodHintCreate(const char *hint_str, const char *keyword,
 {
 	ScanMethodHint *hint;
 
-	hint = palloc(sizeof(ScanMethodHint));
+	hint = palloc0(sizeof(ScanMethodHint));
 	hint->base.hint_str = hint_str;
 	hint->base.keyword = keyword;
 	hint->base.hint_keyword = hint_keyword;
@@ -887,7 +887,7 @@ JoinMethodHintCreate(const char *hint_str, const char *keyword,
 {
 	JoinMethodHint *hint;
 
-	hint = palloc(sizeof(JoinMethodHint));
+	hint = palloc0(sizeof(JoinMethodHint));
 	hint->base.hint_str = hint_str;
 	hint->base.keyword = keyword;
 	hint->base.hint_keyword = hint_keyword;
@@ -933,7 +933,7 @@ LeadingHintCreate(const char *hint_str, const char *keyword,
 {
 	LeadingHint	   *hint;
 
-	hint = palloc(sizeof(LeadingHint));
+	hint = palloc0(sizeof(LeadingHint));
 	hint->base.hint_str = hint_str;
 	hint->base.keyword = keyword;
 	hint->base.hint_keyword = hint_keyword;
@@ -967,7 +967,7 @@ SetHintCreate(const char *hint_str, const char *keyword,
 {
 	SetHint	   *hint;
 
-	hint = palloc(sizeof(SetHint));
+	hint = palloc0(sizeof(SetHint));
 	hint->base.hint_str = hint_str;
 	hint->base.keyword = keyword;
 	hint->base.hint_keyword = hint_keyword;
@@ -1005,7 +1005,7 @@ RowsHintCreate(const char *hint_str, const char *keyword,
 {
 	RowsHint *hint;
 
-	hint = palloc(sizeof(RowsHint));
+	hint = palloc0(sizeof(RowsHint));
 	hint->base.hint_str = hint_str;
 	hint->base.keyword = keyword;
 	hint->base.hint_keyword = hint_keyword;
@@ -1053,7 +1053,7 @@ ParallelHintCreate(const char *hint_str, const char *keyword,
 {
 	ParallelHint *hint;
 
-	hint = palloc(sizeof(ParallelHint));
+	hint = palloc0(sizeof(ParallelHint));
 	hint->base.hint_str = hint_str;
 	hint->base.keyword = keyword;
 	hint->base.hint_keyword = hint_keyword;
@@ -1104,7 +1104,7 @@ HintStateCreate(void)
 {
 	HintState   *hstate;
 
-	hstate = palloc(sizeof(HintState));
+	hstate = palloc0(sizeof(HintState));
 	hstate->hint_str = NULL;
 	hstate->nall_hints = 0;
 	hstate->max_all_hints = 0;
@@ -1659,7 +1659,7 @@ OuterInnerRelsCreate(char *name, List *outer_inner_list)
 {
 	OuterInnerRels *outer_inner;
 
-	outer_inner = palloc(sizeof(OuterInnerRels));
+	outer_inner = palloc0(sizeof(OuterInnerRels));
 	outer_inner->relation = name;
 	outer_inner->outer_inner_pair = outer_inner_list;
 
@@ -1831,7 +1831,7 @@ parse_hints(HintState *hstate, Query *parse, const char *str)
 			{
 				hstate->max_all_hints = HINT_ARRAY_DEFAULT_INITSIZE;
 				hstate->all_hints = (Hint **)
-					palloc(sizeof(Hint *) * hstate->max_all_hints);
+					palloc0(sizeof(Hint *) * hstate->max_all_hints);
 			}
 			else if (hstate->nall_hints == hstate->max_all_hints)
 			{
@@ -2189,7 +2189,7 @@ JoinMethodHintParse(JoinMethodHint *hint, const char *str)
 		 * Transform relation names from list to array to sort them with qsort
 		 * after.
 		 */
-		hint->relnames = palloc(sizeof(char *) * hint->nrels);
+		hint->relnames = palloc0(sizeof(char *) * hint->nrels);
 		foreach (l, name_list)
 		{
 			hint->relnames[i] = lfirst(l);
@@ -2387,7 +2387,7 @@ RowsHintParse(RowsHint *hint, const char *str)
 	 * Transform relation names from list to array to sort them with qsort
 	 * after.
 	 */
-	hint->relnames = palloc(sizeof(char *) * hint->nrels);
+	hint->relnames = palloc0(sizeof(char *) * hint->nrels);
 	foreach (l, name_list)
 	{
 		if (hint->nrels <= i)
@@ -3710,7 +3710,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 static ParentIndexInfo *
 get_parent_index_info(Oid indexoid, Oid relid)
 {
-	ParentIndexInfo	*p_info = palloc(sizeof(ParentIndexInfo));
+	ParentIndexInfo	*p_info = palloc0(sizeof(ParentIndexInfo));
 	Relation	    indexRelation;
 	Form_pg_index	index;
 	char		   *attname;
@@ -3724,9 +3724,9 @@ get_parent_index_info(Oid indexoid, Oid relid)
 	p_info->method = indexRelation->rd_rel->relam;
 
 	p_info->column_names = NIL;
-	p_info->indcollation = (Oid *) palloc(sizeof(Oid) * index->indnatts);
-	p_info->opclass = (Oid *) palloc(sizeof(Oid) * index->indnatts);
-	p_info->indoption = (int16 *) palloc(sizeof(Oid) * index->indnatts);
+	p_info->indcollation = (Oid *) palloc0(sizeof(Oid) * index->indnatts);
+	p_info->opclass = (Oid *) palloc0(sizeof(Oid) * index->indnatts);
+	p_info->indoption = (int16 *) palloc0(sizeof(Oid) * index->indnatts);
 
 	/*
 	 * Collect relation attribute names of index columns for index
