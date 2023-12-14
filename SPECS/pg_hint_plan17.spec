@@ -1,4 +1,4 @@
-# SPEC file for pg_store_plans
+# SPEC file for pg_hint_plan
 # Copyright(c) 2022-2023, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
 %define _pgdir   /usr/pgsql-17
@@ -13,7 +13,7 @@
   %define _sourcedir %(echo ${MAKE_ROOT})
 %endif
 
-## Set general information for pg_store_plans.
+## Set general information for pg_hint_plan.
 Summary:    Optimizer hint on PostgreSQL 17
 Name:       pg_hint_plan17
 Version:    1.7.0
