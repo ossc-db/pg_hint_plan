@@ -35,8 +35,8 @@ underscores, commas and parentheses.  In the following example,
 `pg_hint_plan` works for queries in PL/pgSQL scripts with some restrictions.
 
 -   Hints affect only on the following kind of queries:
-    -   Queries that returns one row (`SELECT`, `INSERT`, `UPDATE` and `DELETE`)
-    -   Queries that returns multiple rows (`RETURN QUERY`)
+    -   Queries that return one row (`SELECT`, `INSERT`, `UPDATE` and `DELETE`)
+    -   Queries that return multiple rows (`RETURN QUERY`)
     -   Dynamic SQL statements (`EXECUTE`)
     -   Cursor open (`OPEN`)
     -   Loop over result of a query (`FOR`)
@@ -70,7 +70,7 @@ TBL, tbl or Tbl.
 ## Escaping special characters in object names
 
 The objects defined in a hint's parameter can use double quotes if they
-includes parentheses, double quotes and white spaces.  The escaping rules are
+include parentheses, double quotes and white spaces.  The escaping rules are
 the same as PostgreSQL.
 
 ## Distinction between multiple occurences of a table
@@ -120,7 +120,7 @@ from outside the view.
 
 ## Inheritance
 
-Hints can only point to the parent of an inheritance tree and the hint saffect
+Hints can only point to the parent of an inheritance tree and the hints affect
 all the tables in an inheritance tree.  Hints pointing directly to inherited
 children have no effect.
 
@@ -133,7 +133,7 @@ of the individual statements in the multistatement.
 
 `VALUES` expressions in `FROM` clause are named as `*VALUES*` internally these
 can be hinted if it is the only `VALUES` of a query.  Two or more `VALUES`
-expressions in a query cannot be distinguised by looking at an `EXPLAIN` result,
+expressions in a query cannot be distinguished by looking at an `EXPLAIN` result,
 resulting in ambiguous results:
 
 ```sql
@@ -197,7 +197,7 @@ zero workers prevents a scan from being executed in parallel.
 
 ## Setting `pg_hint_plan` parameters by Set hints
 
-`pg_hint_plan` parameters influence its own behavior so some parameters
+`pg_hint_plan` parameters influence their own behavior so some parameters
 will not work as one could expect:
 
 -   Hints to change `enable_hint`, `enable_hint_tables` are ignored even though
