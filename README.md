@@ -3,12 +3,12 @@
 `pg_hint_plan` makes it possible to tweak PostgreSQL execution plans using
 so-called "hints" in SQL comments, like `/*+ SeqScan(a) */`.
 
-PostgreSQL uses a cost-based optimizer, which utilizes data statistics, not
-static rules. The planner (optimizer) esitimates costs of each possible
-execution plans for a SQL statement then the execution plan with the lowest
-cost finally be executed. The planner does its best to select the best best
-execution plan, but is not always perfect, since it doesn't count some
-properties of the data, for example, correlation between columns.
+PostgreSQL uses a cost-based optimizer, that uses data statistics, not static
+rules.  The planner (optimizer) estimates costs of each possible execution
+plans for a SQL statement, then executes the plan with the lowest cost.
+The planner does its best to select the best execution plan, but it is far
+from perfect, since it may not count some data properties, like correlation
+between columns.
 
 For more details, please see the various documentations available in the
 **docs/** directory:
