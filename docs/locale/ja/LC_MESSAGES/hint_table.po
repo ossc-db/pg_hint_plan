@@ -141,7 +141,7 @@ msgstr "結合順"
 #: ../../hint_table.md:71 705f15a4b07e4fd38ebb4bbffffeb730
 msgid ""
 "This hint, named \"Leading\", enforces the order of join on two or more tables. There are two methods of enforcing it.  The first method enforces a specific "
-"order of joining but does not restrict the direction at each join level. The second method enforces the join direction additionaly.  See [hint list](#hint-"
+"order of joining but does not restrict the direction at each join level. The second method enforces the join direction additionally.  See [hint list](#hint-"
 "list) for more details.  For example:"
 msgstr ""
 "`Leading`ヒントは、2つ以上のテーブルの結合順を強制するものです。強制には2つの方法があります。1つは特定の結合順を強制し各結合レベルでは方向を制限しない方法で"
@@ -251,7 +251,7 @@ msgid "`pg_hint_plan.debug_print`"
 msgstr "`pg_hint_plan.debug_print`"
 
 #: ../../hint_table.md 967c06b80b7e44908bdeb41cdea10df6
-msgid "Controls debug print and verbosity. Valid vaiues are `off`, `on`, `detailed` and `verbose`."
+msgid "Controls debug print and verbosity. Valid values are `off`, `on`, `detailed` and `verbose`."
 msgstr "動作状況を示すログメッセージの出力を制御します。指定可能な値は `off`、`on`、`detailed`、`verbose`です。"
 
 #: ../../hint_table.md e950028fedfd47478a88207c4d684714
