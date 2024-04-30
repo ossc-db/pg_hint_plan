@@ -71,7 +71,7 @@ list.  Joins on views and subqueries are not affected.
 This hint, named "Leading", enforces the order of join on two or more tables.
 There are two methods of enforcing it.  The first method enforces a specific
 order of joining but does not restrict the direction at each join level.
-The second method enforces the join direction additionaly.  See
+The second method enforces the join direction additionally.  See
 [hint list](#hint-list) for more details.  For example:
 
 ```sql
