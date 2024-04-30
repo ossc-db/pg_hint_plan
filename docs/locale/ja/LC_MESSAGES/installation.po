@@ -63,8 +63,8 @@ msgstr ""
 
 #: ../../installation.md:30 9cad4df70ec04fa594d93a476c9f8f02
 msgid ""
-"Run `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_tables TO on` "
+"Run `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_table TO on` "
 "if you are planning to use the hint table."
 msgstr ""
 "ヒントテーブルを使用する場合は、`CREATE EXTENSION` を実行し`SET "
-"pg_hint_plan.enable_hint_tables TO on`を実行してください。"
+"pg_hint_plan.enable_hint_table TO on`を実行してください。"

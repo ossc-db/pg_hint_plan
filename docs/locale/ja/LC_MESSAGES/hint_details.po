@@ -197,8 +197,8 @@ msgid "`pg_hint_plan` parameters influence its own behavior so some parameters w
 msgstr "・`pg_hint_plan`のパラメータはそれ自体の動作を変更するため、一部のパラメータは期待通りに動作しません。"
 
 #: ../../hint_details.md:203 7d7058808ee747c1b5478b216f33c899
-msgid "Hints to change `enable_hint`, `enable_hint_tables` are ignored even though they are reported as \"used hints\" in debug logs."
-msgstr "・`enable_hint`, `enable_hint_tables`を変更するヒントは、デバッグログに\"used hints\"として報告されても無視されます。"
+msgid "Hints to change `enable_hint`, `enable_hint_table` are ignored even though they are reported as \"used hints\" in debug logs."
+msgstr "・`enable_hint`, `enable_hint_table`を変更するヒントは、デバッグログに\"used hints\"として報告されても無視されます。"
 
 #: ../../hint_details.md:205 8dbe1d92409844ab9c6ad6c370fac651
 msgid "Setting `debug_print` and `message_level` in the middle of query processing."

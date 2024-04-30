@@ -27,5 +27,5 @@ postgres=# LOAD 'pg_hint_plan';
 LOAD
 ```
 
-Run `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_tables TO on` if you
+Run `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_table TO on` if you
 are planning to use the hint table.
