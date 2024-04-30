@@ -329,7 +329,7 @@ msgstr "`pg_hint_plan.debug_print`"
 
 #: ../../hint_table.md c3461a25627b4efa83b851d1f2d937d0
 msgid ""
-"Controls debug print and verbosity. Valid vaiues are `off`, `on`, "
+"Controls debug print and verbosity. Valid values are `off`, `on`, "
 "`detailed` and `verbose`."
 msgstr ""
 "動作状況を示すログメッセージの出力を制御します。指定可能な値は `off`、"
