@@ -267,7 +267,7 @@ msgstr ""
 
 #: ../../hint_table.md 7334bdf8ba12417ea4341491f5d35c5c
 msgid ""
-"Controls debug print and verbosity. Valid vaiues are `off`, `on`, "
+"Controls debug print and verbosity. Valid values are `off`, `on`, "
 "`detailed` and `verbose`."
 msgstr ""
 

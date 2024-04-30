@@ -162,5 +162,5 @@ The following GUC parameters affect the behavior of `pg_hint_plan`:
 | `pg_hint_plan.enable_hint` | True enables `pg_hint_plan`. | `on` |
 | `pg_hint_plan.enable_hint_table` | True enables hinting by table. | `off` |
 | `pg_hint_plan.parse_messages` | Specifies the log level of hint parse error.  Valid values are `error`, `warning`, `notice`, `info`, `log`, `debug`. | `INFO` |
-| `pg_hint_plan.debug_print` | Controls debug print and verbosity. Valid vaiues are `off`, `on`, `detailed` and `verbose`. | `off` |
+| `pg_hint_plan.debug_print` | Controls debug print and verbosity. Valid values are `off`, `on`, `detailed` and `verbose`. | `off` |
 | `pg_hint_plan.message_level` | Specifies message level of debug print. Valid values are `error`, `warning`, `notice`, `info`, `log`, `debug`. | `INFO` |
