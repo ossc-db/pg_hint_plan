@@ -220,7 +220,7 @@ msgstr ""
 
 #: ../../hint_details.md:205 10066ce8166649fc9fe54bc761e2c721
 msgid ""
-"Hints to change `enable_hint`, `enable_hint_tables` are ignored even "
+"Hints to change `enable_hint`, `enable_hint_table` are ignored even "
 "though they are reported as \"used hints\" in debug logs."
 msgstr ""
 

@@ -54,7 +54,7 @@ msgstr ""
 
 #: ../../installation.md:29 506611680a634c4596a30674af5905ff
 msgid ""
-"Do `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_tables TO on` if "
+"Do `CREATE EXTENSION` and `SET pg_hint_plan.enable_hint_table TO on` if "
 "you are planning to use the hint table."
 msgstr ""
 
