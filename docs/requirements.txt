@@ -20,9 +20,11 @@ docutils==0.19
     # via
     #   myst-parser
     #   sphinx
-idna==3.4
+idna==3.7
     # via requests
 imagesize==1.4.1
+    # via sphinx
+importlib-metadata==7.1.0
     # via sphinx
 jinja2==3.1.2
     # via
@@ -78,6 +80,8 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 urllib3==1.26.18
     # via requests
+zipp==3.18.1
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
