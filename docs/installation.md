@@ -2,7 +2,7 @@
 
 This section describes the installation steps.
 
-## building binary module
+## Building binary module
 
 Simply run `make` at the top of the source tree, then `make install` as an
 appropriate user. The `PATH` environment variable should be set properly
@@ -13,6 +13,20 @@ to point to a PostgreSQL set of binaries:
     $ make
     $ su
     $ make install
+
+## Installing from a binary package
+
+On Debian and Ubuntu `pg_hint_plan` is available as a binary package from the
+pgdg (PostgreSQL Global Development Group) repository.  Assuming you've
+already added the repository to `apt` sources, installing the package is as
+simple as:
+
+```
+sudo apt install postgresql-<postgres version>-pg-hint-plan
+```
+
+Please visit https://www.postgresql.org/download/linux/ if you need help at
+adding the repository.
 
 ## Loading `pg_hint_plan`
 
