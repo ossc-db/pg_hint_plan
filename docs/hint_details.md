@@ -200,6 +200,6 @@ zero workers prevents a scan from being executed in parallel.
 `pg_hint_plan` parameters influence their own behavior so some parameters
 will not work as one could expect:
 
--   Hints to change `enable_hint`, `enable_hint_tables` are ignored even though
+-   Hints to change `enable_hint`, `enable_hint_table` are ignored even though
     they are reported as "used hints" in debug logs.
 -   Setting `debug_print` and `message_level` in the middle of query processing.
