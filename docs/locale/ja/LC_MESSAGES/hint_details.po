@@ -263,10 +263,10 @@ msgstr ""
 
 #: ../../hint_details.md:205 6aa6255ae67a4589ba094fd354280c4b
 msgid ""
-"Hints to change `enable_hint`, `enable_hint_tables` are ignored even though "
+"Hints to change `enable_hint`, `enable_hint_table` are ignored even though "
 "they are reported as \"used hints\" in debug logs."
 msgstr ""
-"`enable_hint`, `enable_hint_tables`を変更するヒントは、デバッグログに\"used "
+"`enable_hint`, `enable_hint_table`を変更するヒントは、デバッグログに\"used "
 "hints\"として報告されても無視されます。"
 
 #: ../../hint_details.md:207 01117a88f48e4d0989993d4d65a1c535
