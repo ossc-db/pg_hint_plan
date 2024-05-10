@@ -17,16 +17,16 @@ SET pg_hint_plan.enable_hint_table to on;	-- error
 SET compute_query_id to on;
 SET pg_hint_plan.enable_hint_table to on;
 SET compute_query_id to off;
-SELECT 1;									-- gets warining
+SELECT 1;									-- gets warning
 SELECT 1;									-- not
 SET compute_query_id to on;
 SELECT 1;									-- reactivated
 SET compute_query_id to off;
-SELECT 1;									-- gets warining
+SELECT 1;									-- gets warning
 SET pg_hint_plan.enable_hint_table to off;
 SET compute_query_id to on;
 SET pg_hint_plan.enable_hint_table to on;
-SELECT 1;									-- no warining
+SELECT 1;									-- no warning
 
 RESET compute_query_id;
 RESET pg_hint_plan.enable_hint_table;

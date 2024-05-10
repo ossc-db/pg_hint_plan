@@ -44,7 +44,7 @@ HINT:  Set compute_query_id to on or auto to use hint table.
 SET compute_query_id to on;
 SET pg_hint_plan.enable_hint_table to on;
 SET compute_query_id to off;
-SELECT 1;									-- gets warining
+SELECT 1;									-- gets warning
 WARNING:  hint table feature is deactivated because queryid is not available
 HINT:  Set compute_query_id to "auto" or "on" to use hint table.
  ?column? 
@@ -67,7 +67,7 @@ LOG:  hint table feature is reactivated
 (1 row)
 
 SET compute_query_id to off;
-SELECT 1;									-- gets warining
+SELECT 1;									-- gets warning
 WARNING:  hint table feature is deactivated because queryid is not available
 HINT:  Set compute_query_id to "auto" or "on" to use hint table.
  ?column? 
@@ -78,7 +78,7 @@ HINT:  Set compute_query_id to "auto" or "on" to use hint table.
 SET pg_hint_plan.enable_hint_table to off;
 SET compute_query_id to on;
 SET pg_hint_plan.enable_hint_table to on;
-SELECT 1;									-- no warining
+SELECT 1;									-- no warning
  ?column? 
 ----------
         1
