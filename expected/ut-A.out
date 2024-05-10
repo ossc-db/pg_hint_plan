@@ -150,15 +150,15 @@ SET pg_hint_plan.enable_hint_table TO on;
 -- No. A-6-1-1
 \d hint_plan.hints
                                      Table "hint_plan.hints"
-      Column       |  Type   | Collation | Nullable |                   Default                   
--------------------+---------+-----------+----------+---------------------------------------------
- id                | integer |           | not null | nextval('hint_plan.hints_id_seq'::regclass)
- norm_query_string | text    |           | not null | 
- application_name  | text    |           | not null | 
- hints             | text    |           | not null | 
+      Column      |  Type   | Collation | Nullable |                   Default                   
+------------------+---------+-----------+----------+---------------------------------------------
+ id               | integer |           | not null | nextval('hint_plan.hints_id_seq'::regclass)
+ query_id         | bigint  |           | not null | 
+ application_name | text    |           | not null | 
+ hints            | text    |           | not null | 
 Indexes:
     "hints_pkey" PRIMARY KEY, btree (id)
-    "hints_norm_and_app" UNIQUE, btree (norm_query_string, application_name)
+    "hints_norm_and_app" UNIQUE, btree (query_id, application_name)
 
 ----
 ---- No. A-6-2 search condition
@@ -171,11 +171,9 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 (2 rows)
 
 -- No. A-6-2-1
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = ?;',
-	'',
-	'SeqScan(t1)');
+SELECT get_query_id('SELECT * FROM s1.t1 WHERE t1.c1 = 1;') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', '', 'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 LOG:  pg_hint_plan:
 used hint:
@@ -191,11 +189,8 @@ error hint:
 (2 rows)
 
 -- No. A-6-2-2
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = ?;',
-	'psql',
-	'BitmapScan(t1)');
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', 'dummy_application_name', 'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 LOG:  pg_hint_plan:
 used hint:
@@ -212,27 +207,9 @@ error hint:
 
 TRUNCATE hint_plan.hints;
 -- No. A-6-2-3
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = ?;',
-	'dummy_application_name',
-	'SeqScan(t1)'
-);
-EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
-          QUERY PLAN          
-------------------------------
- Index Scan using t1_i1 on t1
-   Index Cond: (c1 = 1)
-(2 rows)
-
-TRUNCATE hint_plan.hints;
--- No. A-6-2-4
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1;',
-	'',
-	'SeqScan(t1)'
-);
+SELECT get_query_id('SELECT * FROM s1.t1;') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', '', 'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
           QUERY PLAN          
 ------------------------------
@@ -245,12 +222,9 @@ TRUNCATE hint_plan.hints;
 ---- No. A-6-3 number of constant
 ----
 -- No. A-6-3-1
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT c1 FROM s1.t1;',
-	'',
-	'SeqScan(t1)'
-);
+SELECT get_query_id('SELECT c1 FROM s1.t1;') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', '', 'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT c1 FROM s1.t1;
 LOG:  pg_hint_plan:
 used hint:
@@ -266,12 +240,9 @@ error hint:
 
 TRUNCATE hint_plan.hints;
 -- No. A-6-3-2
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = ?;',
-	'',
-	'SeqScan(t1)'
-);
+SELECT get_query_id('SELECT * FROM s1.t1 WHERE t1.c1 = 1;') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', '', 'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 LOG:  pg_hint_plan:
 used hint:
@@ -288,12 +259,9 @@ error hint:
 
 TRUNCATE hint_plan.hints;
 -- No. A-6-3-3
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = ? OR t1.c1 = ?;',
-	'',
-	'SeqScan(t1)'
-);
+SELECT get_query_id('SELECT * FROM s1.t1 WHERE t1.c1 = 1 OR t1.c1 = 2') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', '', 'SeqScan(t1)');
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1 OR t1.c1 = 0;
 LOG:  pg_hint_plan:
 used hint:
@@ -2116,11 +2084,9 @@ SHOW pg_hint_plan.parse_messages;
 ----
 ---- No. A-8-5 original GUC parameter pg_hint_plan.enable_hint_table
 ----
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints)
-	VALUES (
-	'EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = ?;',
-	'',
-	'SeqScan(t1)');
+SELECT get_query_id('SELECT * FROM s1.t1 WHERE t1.c1 = 1;') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+	VALUES (:'query_id', '', 'SeqScan(t1)');
 -- No. A-8-5-1
 SET pg_hint_plan.enable_hint_table TO on;
 SHOW pg_hint_plan.enable_hint_table;

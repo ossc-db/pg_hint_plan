@@ -188,4 +188,16 @@ Objects in extension "pg_hint_plan"
  type hint_plan.hints[]
 (4 rows)
 
+\d hint_plan.hints
+                                     Table "hint_plan.hints"
+      Column      |  Type   | Collation | Nullable |                   Default                   
+------------------+---------+-----------+----------+---------------------------------------------
+ id               | integer |           | not null | nextval('hint_plan.hints_id_seq'::regclass)
+ query_id         | bigint  |           | not null | 
+ application_name | text    |           | not null | 
+ hints            | text    |           | not null | 
+Indexes:
+    "hints_pkey" PRIMARY KEY, btree (id)
+    "hints_norm_and_app" UNIQUE, btree (query_id, application_name)
+
 DROP EXTENSION pg_hint_plan;
