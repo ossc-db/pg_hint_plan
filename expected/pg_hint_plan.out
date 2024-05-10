@@ -1045,19 +1045,19 @@ EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = $3)
-   InitPlan 2 (returns $1)
+   Index Cond: (id = (InitPlan 4).col1)
+   InitPlan 2
      ->  Result
-           InitPlan 1 (returns $0)
+           InitPlan 1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
-   InitPlan 4 (returns $3)
+                         Index Cond: (id < 10)
+   InitPlan 4
      ->  Result
-           InitPlan 3 (returns $2)
+           InitPlan 3
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
+                         Index Cond: (id < 10)
 (14 rows)
 
 /*+BitmapScan(v_1)*/
@@ -1072,19 +1072,19 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = $3)
-   InitPlan 1 (returns $1)
+   Index Cond: (id = (InitPlan 3).col1)
+   InitPlan 1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 3 (returns $3)
+   InitPlan 3
      ->  Result
-           InitPlan 2 (returns $2)
+           InitPlan 2
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
+                         Index Cond: (id < 10)
 (14 rows)
 
 /*+BitmapScan(v_2)*/
@@ -1099,14 +1099,14 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = $3)
-   InitPlan 2 (returns $1)
+   Index Cond: (id = (InitPlan 3).col1)
+   InitPlan 2
      ->  Result
-           InitPlan 1 (returns $0)
+           InitPlan 1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
-   InitPlan 3 (returns $3)
+                         Index Cond: (id < 10)
+   InitPlan 3
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
@@ -1126,21 +1126,21 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = $3)
-   InitPlan 2 (returns $1)
+   Recheck Cond: (id = (InitPlan 4).col1)
+   InitPlan 2
      ->  Result
-           InitPlan 1 (returns $0)
+           InitPlan 1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
-   InitPlan 4 (returns $3)
+                         Index Cond: (id < 10)
+   InitPlan 4
      ->  Result
-           InitPlan 3 (returns $2)
+           InitPlan 3
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
+                         Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = $3)
+         Index Cond: (id = (InitPlan 4).col1)
 (16 rows)
 
 /*+BitmapScan(v_1)BitmapScan(v_2)*/
@@ -1156,14 +1156,14 @@ error hint:
                     QUERY PLAN                    
 --------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = $3)
-   InitPlan 1 (returns $1)
+   Index Cond: (id = (InitPlan 2).col1)
+   InitPlan 1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
@@ -1184,21 +1184,21 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = $3)
-   InitPlan 1 (returns $1)
+   Recheck Cond: (id = (InitPlan 3).col1)
+   InitPlan 1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 3 (returns $3)
+   InitPlan 3
      ->  Result
-           InitPlan 2 (returns $2)
+           InitPlan 2
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
+                         Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = $3)
+         Index Cond: (id = (InitPlan 3).col1)
 (16 rows)
 
 /*+BitmapScan(v_2)BitmapScan(t1)*/
@@ -1214,21 +1214,21 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = $3)
-   InitPlan 2 (returns $1)
+   Recheck Cond: (id = (InitPlan 3).col1)
+   InitPlan 2
      ->  Result
-           InitPlan 1 (returns $0)
+           InitPlan 1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
-                         Index Cond: ((id IS NOT NULL) AND (id < 10))
-   InitPlan 3 (returns $3)
+                         Index Cond: (id < 10)
+   InitPlan 3
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = $3)
+         Index Cond: (id = (InitPlan 3).col1)
 (16 rows)
 
 /*+BitmapScan(v_1)BitmapScan(v_2)BitmapScan(t1)*/
@@ -1245,21 +1245,21 @@ error hint:
                     QUERY PLAN                    
 --------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = $3)
-   InitPlan 1 (returns $1)
+   Recheck Cond: (id = (InitPlan 2).col1)
+   InitPlan 1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = $3)
+         Index Cond: (id = (InitPlan 2).col1)
 (16 rows)
 
 -- full scan hint pattern test
@@ -4620,7 +4620,7 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                                   QUERY PLAN                                  
 ------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4631,7 +4631,7 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $1)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4648,19 +4648,19 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = $1)
+                                       Index Cond: (id = (InitPlan 2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = $1)
+                                       Index Cond: (id = (InitPlan 2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = $1)
+                                 Filter: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $1)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = $1)
+                     Index Cond: (id = (InitPlan 2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = $1)
+               Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $1)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Merge Join
@@ -4698,7 +4698,7 @@ error hint:
                                   QUERY PLAN                                  
 ------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4709,7 +4709,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4726,19 +4726,19 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = $3)
+                                       Index Cond: (id = (InitPlan 2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = $3)
+                                       Index Cond: (id = (InitPlan 2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = $3)
+                                 Filter: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = $3)
+                     Index Cond: (id = (InitPlan 2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = $3)
+               Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $3)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -4777,7 +4777,7 @@ error hint:
                                   QUERY PLAN                                  
 ------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4788,7 +4788,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4805,19 +4805,19 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = $3)
+                                       Index Cond: (id = (InitPlan 2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = $3)
+                                       Index Cond: (id = (InitPlan 2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = $3)
+                                 Filter: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = $3)
+                     Index Cond: (id = (InitPlan 2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = $3)
+               Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $3)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -4856,7 +4856,7 @@ error hint:
                                   QUERY PLAN                                  
 ------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4867,7 +4867,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4884,19 +4884,19 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = $3)
+                                       Index Cond: (id = (InitPlan 2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = $3)
+                                       Index Cond: (id = (InitPlan 2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = $3)
+                                 Filter: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = $3)
+                     Index Cond: (id = (InitPlan 2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = $3)
+               Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $3)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -4938,7 +4938,7 @@ error hint:
                                            QUERY PLAN                                           
 ------------------------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_2.id = t1_2.id)
@@ -4949,7 +4949,7 @@ error hint:
                              Sort Key: t3_2.id
                              ->  Seq Scan on t3 t3_2
                  ->  Index Only Scan using t1_pkey on t1 t1_2
-   InitPlan 2 (returns $1)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_4.id = t1_4.id)
@@ -4966,9 +4966,9 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Seq Scan on t3 t3_3
-                                       Filter: (id = $1)
+                                       Filter: (id = (InitPlan 2).col1)
                                  ->  Aggregate
-                                       Filter: (max(t1_5.id) = $1)
+                                       Filter: (max(t1_5.id) = (InitPlan 2).col1)
                                        ->  Merge Join
                                              Merge Cond: (t2_5.id = t1_5.id)
                                              ->  Merge Join
@@ -4979,15 +4979,15 @@ error hint:
                                                          ->  Seq Scan on t3 t3_5
                                              ->  Index Only Scan using t1_pkey on t1 t1_5
                            ->  Index Only Scan using t2_pkey on t2 t2_3
-                                 Index Cond: (id = $1)
+                                 Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $1)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = $1)
+                     Filter: (id = (InitPlan 2).col1)
          ->  Index Only Scan using t2_pkey on t2 t2_1
-               Index Cond: (id = $1)
+               Index Cond: (id = (InitPlan 2).col1)
    ->  Index Only Scan using t1_pkey on t1 t1_1
-         Index Cond: (id = $1)
+         Index Cond: (id = (InitPlan 2).col1)
 (51 rows)
 
 SET from_collapse_limit TO 1;
@@ -5005,7 +5005,7 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5016,7 +5016,7 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $1)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5031,21 +5031,21 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = $1)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = $1)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = $1)
+                     Filter: (id = (InitPlan 2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $1)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = $1)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = $1)
+                     Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $1)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Merge Join
@@ -5083,7 +5083,7 @@ error hint:
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5094,7 +5094,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5109,21 +5109,21 @@ error hint:
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = $3)
+                     Filter: (id = (InitPlan 2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = $3)
+                     Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $3)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -5162,7 +5162,7 @@ error hint:
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5173,7 +5173,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5188,21 +5188,21 @@ error hint:
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = $3)
+                     Filter: (id = (InitPlan 2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = $3)
+                     Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $3)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -5241,7 +5241,7 @@ error hint:
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5252,7 +5252,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2 (returns $3)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5267,21 +5267,21 @@ error hint:
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = $3)
+                     Filter: (id = (InitPlan 2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = $3)
+                           Index Cond: (id = (InitPlan 2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = $3)
+                     Filter: (id = (InitPlan 2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = $3)
+         Filter: (max(t1_5.id) = (InitPlan 2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -5323,7 +5323,7 @@ error hint:
                                      QUERY PLAN                                     
 ------------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_2.id = t1_2.id)
@@ -5334,7 +5334,7 @@ error hint:
                              Sort Key: t3_2.id
                              ->  Seq Scan on t3 t3_2
                  ->  Index Only Scan using t1_pkey on t1 t1_2
-   InitPlan 2 (returns $1)
+   InitPlan 2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_4.id = t1_4.id)
@@ -5351,13 +5351,13 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_3
-                                       Index Cond: (id = $1)
+                                       Index Cond: (id = (InitPlan 2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_3
-                                       Index Cond: (id = $1)
+                                       Index Cond: (id = (InitPlan 2).col1)
                            ->  Seq Scan on t3 t3_3
-                                 Filter: (id = $1)
+                                 Filter: (id = (InitPlan 2).col1)
                      ->  Aggregate
-                           Filter: (max(t1_5.id) = $1)
+                           Filter: (max(t1_5.id) = (InitPlan 2).col1)
                            ->  Merge Join
                                  Merge Cond: (t2_5.id = t1_5.id)
                                  ->  Merge Join
@@ -5368,11 +5368,11 @@ error hint:
                                              ->  Seq Scan on t3 t3_5
                                  ->  Index Only Scan using t1_pkey on t1 t1_5
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = $1)
+                     Filter: (id = (InitPlan 2).col1)
          ->  Index Only Scan using t2_pkey on t2 t2_1
-               Index Cond: (id = $1)
+               Index Cond: (id = (InitPlan 2).col1)
    ->  Index Only Scan using t1_pkey on t1 t1_1
-         Index Cond: (id = $1)
+         Index Cond: (id = (InitPlan 2).col1)
 (51 rows)
 
 -- ambiguous error
@@ -5947,7 +5947,7 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.id = t2.id AND t2.val = 
 --------------------------------------------------------------------
  Hash Join
    Hash Cond: (t2.val = t3.val)
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Limit
            ->  Sort
                  Sort Key: t1_2.id
@@ -5959,7 +5959,7 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.id = t2.id AND t2.val = 
    ->  Merge Join
          Merge Cond: (t1.id = t2.id)
          ->  Index Scan using t1_pkey on t1
-               Index Cond: (id < $1)
+               Index Cond: (id < (InitPlan 1).col1)
          ->  Index Scan using t2_pkey on t2
    ->  Hash
          ->  Seq Scan on t3
@@ -5981,7 +5981,7 @@ error hint:
 --------------------------------------------------------------------
  Hash Join
    Hash Cond: (t1.id = t2.id)
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Limit
            ->  Sort
                  Sort Key: t1_2.id
@@ -5995,7 +5995,7 @@ error hint:
          ->  Seq Scan on t3
          ->  Hash
                ->  Index Scan using t1_pkey on t1
-                     Index Cond: (id < $1)
+                     Index Cond: (id < (InitPlan 1).col1)
    ->  Hash
          ->  Seq Scan on t2
 (19 rows)
@@ -6014,7 +6014,7 @@ error hint:
 --------------------------------------------------------------
  Hash Join
    Hash Cond: (t2.val = t3.val)
-   InitPlan 1 (returns $0)
+   InitPlan 1
      ->  Limit
            ->  Merge Join
                  Merge Cond: (t1_2.id = t2_2.id)
@@ -6026,7 +6026,7 @@ error hint:
    ->  Merge Join
          Merge Cond: (t1.id = t2.id)
          ->  Index Scan using t1_pkey on t1
-               Index Cond: (id < $0)
+               Index Cond: (id < (InitPlan 1).col1)
          ->  Index Scan using t2_pkey on t2
    ->  Hash
          ->  Seq Scan on t3
@@ -6045,7 +6045,7 @@ error hint:
 --------------------------------------------------------------------
  Hash Join
    Hash Cond: (t2.val = t3.val)
-   InitPlan 1 (returns $1)
+   InitPlan 1
      ->  Limit
            ->  Sort
                  Sort Key: t1_2.id
@@ -6057,7 +6057,7 @@ error hint:
    ->  Merge Join
          Merge Cond: (t1.id = t2.id)
          ->  Index Scan using t1_pkey on t1
-               Index Cond: (id < $1)
+               Index Cond: (id < (InitPlan 1).col1)
          ->  Index Scan using t2_pkey on t2
    ->  Hash
          ->  Seq Scan on t3
