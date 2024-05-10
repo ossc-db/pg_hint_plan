@@ -124,13 +124,6 @@ SELECT current_database() AS datname \gset
 ALTER DATABASE :"datname" SET effective_cache_size TO 16384;
 SET effective_cache_size TO 16384;
 
-/*
- * enable_self_join_removal makes many hint tests with self joins irrelevant,
- * so turn it off.
- */
-ALTER DATABASE :"datname" SET enable_self_join_removal TO off;
-SET enable_self_join_removal TO off;
-
 CREATE VIEW settings AS
 SELECT name, setting, category
   FROM pg_settings
