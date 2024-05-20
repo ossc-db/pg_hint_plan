@@ -6,7 +6,7 @@
  * This lexer can be used to extra hints from query contents, taking into
  * account what the backend would consider as values, for example.
  *
- * Portions Copyright (c) 1996-2023, PostgreSQL Global Development Group
+ * Portions Copyright (c) 1996-2024, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * query_scan.h
