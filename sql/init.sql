@@ -118,8 +118,7 @@ CREATE VIEW v4 AS SELECT v_2.t1_id, t_3.id FROM v2 v_2, t3 t_3 WHERE v_2.t1_id =
  * Utility function to retrieve a query ID from a query.
  *
  * This wraps the input query within an EXPLAIN (VERBOSE, FORMAT json) and
- * returns its query ID.  This removes the need to use pg_stat_statements
- * while minimizing the number of queries executed.
+ * returns its query ID.
  */
 CREATE FUNCTION get_query_id(text) RETURNS bigint
 LANGUAGE plpgsql AS

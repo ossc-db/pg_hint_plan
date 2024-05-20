@@ -926,15 +926,9 @@ SHOW pg_hint_plan.debug_print;
 ----
 
 -- No. A-11-5-1
-SELECT pg_stat_statements_reset() IS NOT NULL as t;
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 /*+Set(enable_seqscan off)*/ SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 /*+SeqScan(t1)*/ SELECT * FROM s1.t1 WHERE t1.c1 = 1;
-SELECT s.query, s.calls
-  FROM public.pg_stat_statements s
-  JOIN pg_catalog.pg_database d
-    ON (s.dbid = d.oid)
- ORDER BY 1;
 
 ----
 ---- No. A-12-1 reset of global variable of core at the error

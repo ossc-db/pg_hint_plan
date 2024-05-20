@@ -1,6 +1,5 @@
 SET search_path TO public;
 
-CREATE EXTENSION pg_stat_statements;
 CREATE EXTENSION btree_gist;
 CREATE EXTENSION btree_gin;
 

@@ -3147,12 +3147,6 @@ SHOW pg_hint_plan.debug_print;
 ---- No. A-11-5 EXECUTE statement name error
 ----
 -- No. A-11-5-1
-SELECT pg_stat_statements_reset() IS NOT NULL as t;
- t 
----
- t
-(1 row)
-
 SELECT * FROM s1.t1 WHERE t1.c1 = 1;
  c1 | c2 | c3 | c4 
 ----+----+----+----
@@ -3184,17 +3178,6 @@ error hint:
 ----+----+----+----
   1 |  1 |  1 | 1
 (1 row)
-
-SELECT s.query, s.calls
-  FROM public.pg_stat_statements s
-  JOIN pg_catalog.pg_database d
-    ON (s.dbid = d.oid)
- ORDER BY 1;
-                       query                        | calls 
-----------------------------------------------------+-------
- SELECT * FROM s1.t1 WHERE t1.c1 = $1               |     3
- SELECT pg_stat_statements_reset() IS NOT NULL as t |     1
-(2 rows)
 
 ----
 ---- No. A-12-1 reset of global variable of core at the error

@@ -1248,15 +1248,13 @@ Parallel()
 
 -- Hints on unhintable relations are just ignored
 /*+Parallel(p1 5 hard) Parallel(s1 3 hard) IndexScan(ft1) SeqScan(cte1)
-  TidScan(fs1) IndexScan(t) IndexScan(*VALUES*) */
+  IndexScan(t) IndexScan(*VALUES*) */
 \o results/ut-W.tmpout
 EXPLAIN (COSTS false) SELECT id FROM p1_c1_c1 as s1 TABLESAMPLE SYSTEM(10)
  UNION ALL
 SELECT id FROM ft1
  UNION ALL
 (WITH cte1 AS (SELECT id FROM p1 WHERE id % 2 = 0) SELECT id FROM cte1)
- UNION ALL
-SELECT userid FROM pg_stat_statements fs1
  UNION ALL
 SELECT x FROM (VALUES (1), (2), (3)) t(x);
 LOG:  pg_hint_plan:
@@ -1265,7 +1263,6 @@ Parallel(p1 5 hard)
 not used hint:
 IndexScan(*VALUES*)
 SeqScan(cte1)
-TidScan(fs1)
 IndexScan(ft1)
 IndexScan(t)
 Parallel(s1 3 hard)
@@ -1276,38 +1273,35 @@ error hint:
 \! sql/maskout2.sh results/ut-W.tmpout
 --(snip..)
 --(snip..)
- Append
-   ->  Result
-         ->  Append
-               ->  Sample Scan on p1_c1_c1 s1
-                     Sampling: system ('10'::real)
-               ->  Foreign Scan on ft1
-                     Foreign File:  (snip..)
-               ->  Gather
-                     Workers Planned: 5
-                     ->  Parallel Append
-                           ->  Seq Scan on p1 p1_1
-                                 Filter: ((id % 2) = 0)
-                           ->  Seq Scan on p1_c1 p1_2
-                                 Filter: ((id % 2) = 0)
-                           ->  Seq Scan on p1_c3 p1_4
-                                 Filter: ((id % 2) = 0)
-                           ->  Parallel Seq Scan on p1_c2 p1_3
-                                 Filter: ((id % 2) = 0)
-                           ->  Parallel Seq Scan on p1_c4 p1_5
-                                 Filter: ((id % 2) = 0)
-                           ->  Parallel Seq Scan on p1_c1_c1 p1_6
-                                 Filter: ((id % 2) = 0)
-                           ->  Parallel Seq Scan on p1_c1_c2 p1_7
-                                 Filter: ((id % 2) = 0)
-                           ->  Parallel Seq Scan on p1_c3_c1 p1_8
-                                 Filter: ((id % 2) = 0)
-                           ->  Parallel Seq Scan on p1_c3_c2 p1_9
-                                 Filter: ((id % 2) = 0)
-   ->  Function Scan on pg_stat_statements
-   ->  Subquery Scan on "*SELECT* 5"
+ Gather
+   Workers Planned: 1
+   Single Copy: true
+   ->  Parallel Append
+         ->  Sample Scan on p1_c1_c1 s1
+               Sampling: system ('10'::real)
+         ->  Foreign Scan on ft1
+               Foreign File:  (snip..)
          ->  Values Scan on "*VALUES*"
-(31 rows)
+         ->  Parallel Append
+               ->  Seq Scan on p1 p1_1
+                     Filter: ((id % 2) = 0)
+               ->  Seq Scan on p1_c1 p1_2
+                     Filter: ((id % 2) = 0)
+               ->  Seq Scan on p1_c3 p1_4
+                     Filter: ((id % 2) = 0)
+               ->  Parallel Seq Scan on p1_c2 p1_3
+                     Filter: ((id % 2) = 0)
+               ->  Parallel Seq Scan on p1_c4 p1_5
+                     Filter: ((id % 2) = 0)
+               ->  Parallel Seq Scan on p1_c1_c1 p1_6
+                     Filter: ((id % 2) = 0)
+               ->  Parallel Seq Scan on p1_c1_c2 p1_7
+                     Filter: ((id % 2) = 0)
+               ->  Parallel Seq Scan on p1_c3_c1 p1_8
+                     Filter: ((id % 2) = 0)
+               ->  Parallel Seq Scan on p1_c3_c2 p1_9
+                     Filter: ((id % 2) = 0)
+(28 rows)
 
 ALTER SYSTEM SET session_preload_libraries TO DEFAULT;
 SELECT pg_reload_conf();
