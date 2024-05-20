@@ -1,6 +1,5 @@
-core.c and make_join_rel.c and pg_stat_statements.c are the parts of
-PostgreSQL Database Management System.
-(formerly known as Postgres, then as Postgres95)
+core.c and make_join_rel.c are the parts of PostgreSQL Database Management
+System (formerly known as Postgres, then as Postgres95).
 Copyright holders of those files are following organizations:
 
 Portions Copyright (c) 1996-2023, PostgreSQL Global Development Group

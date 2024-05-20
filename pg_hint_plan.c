@@ -54,9 +54,6 @@
 
 #include "plpgsql.h"
 
-/* partially copied from pg_stat_statements */
-#include "normalize_query.h"
-
 /* Owner scanner */
 #include "query_scan.h"
 
@@ -1863,24 +1860,23 @@ parse_hints(HintState *hstate, Query *parse, const char *str)
 
 
 /*
- * Get hints from table by client-supplied query string and application name.
+ * Get hints from table by client-supplied query ID and application name.
  */
 static const char *
-get_hints_from_table(const char *client_query, const char *client_application)
+get_hints_from_table(uint64 queryId, const char *client_application)
 {
 	const char *search_query =
 		"SELECT hints "
 		"  FROM hint_plan.hints "
-		" WHERE norm_query_string = $1 "
+		" WHERE query_id = $1 "
 		"   AND ( application_name = $2 "
 		"    OR application_name = '' ) "
 		" ORDER BY application_name DESC";
 	static SPIPlanPtr plan = NULL;
 	char   *hints = NULL;
-	Oid		argtypes[2] = { TEXTOID, TEXTOID };
+	Oid		argtypes[2] = { INT8OID, TEXTOID };
 	Datum	values[2];
 	char 	nulls[2] = {' ', ' '};
-	text   *qry;
 	text   *app;
 
 	PG_TRY();
@@ -1905,9 +1901,9 @@ get_hints_from_table(const char *client_query, const char *client_application)
 			SPI_freeplan(p);
 		}
 
-		qry = cstring_to_text(client_query);
+
 		app = cstring_to_text(client_application);
-		values[0] = PointerGetDatum(qry);
+		values[0] = Int64GetDatum(queryId);
 		values[1] = PointerGetDatum(app);
 
 		SPI_execute_plan(plan, values, nulls, true, 1);
@@ -2872,9 +2868,6 @@ get_current_hint_string(Query *query, const char *query_str,
 	/* search the hint table for a hint if requested */
 	if (pg_hint_plan_enable_hint_table)
 	{
-		int			query_len;
-		char	   *normalized_query;
-
 		if (!IsQueryIdEnabled())
 		{
 			/*
@@ -2897,34 +2890,13 @@ get_current_hint_string(Query *query, const char *query_str,
 			hint_table_deactivated = false;
 		}
 
-		if (!jstate)
-			jstate = JumbleQuery(query);
-
-		if (!jstate)
-			return;
-
 		/*
-		 * Normalize the query string by replacing constants with '?'
-		 */
-		/*
-		 * Search hint string which is stored keyed by query string
-		 * and application name.  The query string is normalized to allow
-		 * fuzzy matching.
-		 *
-		 * Adding 1 byte to query_len ensures that the returned string has
-		 * a terminating NULL.
-		 */
-		query_len = strlen(query_str) + 1;
-		normalized_query =
-			generate_normalized_query(jstate, query_str, 0, &query_len);
-
-		/*
-		 * find a hint for the normalized query. the result should be in
-		 * TopMemoryContext
+		 * Find a hint for the query.  The result should be in
+		 * TopMemoryContext.
 		 */
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
 		current_hint_str =
-			get_hints_from_table(normalized_query, application_name);
+			get_hints_from_table(query->queryId, application_name);
 		MemoryContextSwitchTo(oldcontext);
 
 		if (debug_level > 1)
@@ -2933,10 +2905,11 @@ get_current_hint_string(Query *query, const char *query_str,
 				ereport(pg_hint_plan_debug_message_level,
 						(errmsg("pg_hint_plan[qno=0x%x]: "
 								"hints from table: \"%s\": "
-								"normalized_query=\"%s\", "
+								"query_id=\"%lld\", "
 								"application name =\"%s\"",
 								qno, current_hint_str,
-								normalized_query, application_name),
+								(long long) query->queryId,
+								application_name),
 						 errhidestmt(msgqno != qno),
 						 errhidecontext(msgqno != qno)));
 			else
@@ -2944,9 +2917,9 @@ get_current_hint_string(Query *query, const char *query_str,
 						(errmsg("pg_hint_plan[qno=0x%x]: "
 								"no match found in table:  "
 								"application name = \"%s\", "
-								"normalized_query=\"%s\"",
+								"query_id=\"%lld\"",
 								qno, application_name,
-								normalized_query),
+								(long long) query->queryId),
 						 errhidestmt(msgqno != qno),
 						 errhidecontext(msgqno != qno)));
 
@@ -4980,5 +4953,3 @@ static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
 #define make_join_rel pg_hint_plan_make_join_rel
 #define add_paths_to_joinrel add_paths_to_joinrel_wrapper
 #include "make_join_rel.c"
-
-#include "pg_stat_statements.c"

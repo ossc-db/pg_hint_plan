@@ -8036,18 +8036,13 @@ error hint:
          Filter: (val = 1)
 (19 rows)
 
--- search from hint table
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints) VALUES ('EXPLAIN (COSTS false) SELECT * FROM t1 WHERE t1.id = ?;', '', 'SeqScan(t1)');
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints) VALUES ('EXPLAIN (COSTS false) SELECT id FROM t1 WHERE t1.id = ?;', '', 'IndexScan(t1)');
-INSERT INTO hint_plan.hints (norm_query_string, application_name, hints) VALUES ('EXPLAIN SELECT * FROM t1 WHERE t1.id = ?;', '', 'BitmapScan(t1)');
-SELECT * FROM hint_plan.hints ORDER BY id;
- id |                    norm_query_string                     | application_name |     hints      
-----+----------------------------------------------------------+------------------+----------------
-  1 | EXPLAIN (COSTS false) SELECT * FROM t1 WHERE t1.id = ?;  |                  | SeqScan(t1)
-  2 | EXPLAIN (COSTS false) SELECT id FROM t1 WHERE t1.id = ?; |                  | IndexScan(t1)
-  3 | EXPLAIN SELECT * FROM t1 WHERE t1.id = ?;                |                  | BitmapScan(t1)
-(3 rows)
-
+-- Search from hint table
+SELECT get_query_id('SELECT * FROM t1 WHERE t1.id = 1') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+  VALUES (:'query_id', '', 'SeqScan(t1)');
+SELECT get_query_id('SELECT id FROM t1 WHERE t1.id = 1') AS query_id \gset
+INSERT INTO hint_plan.hints (query_id, application_name, hints)
+  VALUES (:'query_id', '', 'IndexScan(t1)');
 SET pg_hint_plan.enable_hint_table = on;
 EXPLAIN (COSTS false) SELECT * FROM t1 WHERE t1.id = 1;
 LOG:  pg_hint_plan:

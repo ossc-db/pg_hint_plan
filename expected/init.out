@@ -140,6 +140,27 @@ CREATE VIEW v2 AS SELECT t1.id t1_id, t1.val t1_val, t2.id t2_id, t2.val t2_val 
 CREATE VIEW v3 AS SELECT t_1.id t1_id, t_1.val t1_val, t_2.id t2_id, t_2.val t2_val FROM t1 t_1, t2 t_2 WHERE t_1.id = t_2.id;
 CREATE VIEW v4 AS SELECT v_2.t1_id, t_3.id FROM v2 v_2, t3 t_3 WHERE v_2.t1_id = t_3.id;
 /*
+ * Utility function to retrieve a query ID from a query.
+ *
+ * This wraps the input query within an EXPLAIN (VERBOSE, FORMAT json) and
+ * returns its query ID.  This removes the need to use pg_stat_statements
+ * while minimizing the number of queries executed.
+ */
+CREATE FUNCTION get_query_id(text) RETURNS bigint
+LANGUAGE plpgsql AS
+$$
+DECLARE
+  query text;
+  explain_output text;
+  query_id bigint;
+BEGIN
+  query = 'EXPLAIN (VERBOSE, FORMAT json) ' || $1;
+  EXECUTE query INTO explain_output;
+  SELECT INTO query_id ((explain_output::jsonb)->0->'Query Identifier')::bigint;
+  return query_id;
+END;
+$$;
+/*
  * The following GUC parameters need the setting of the default value to
  * succeed in regression test.
  */
