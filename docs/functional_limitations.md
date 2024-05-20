@@ -23,8 +23,8 @@ ECPG removes comments in queries written as embedded SQLs so hints cannot
 be passed to it.  The only exception `EXECUTE`, that passes the query string
 to the server as-is.  The hint table can be used in the case.
 
-## `pg_stat_statements`
+## Query Identifiers
 
-`pg_stat_statements` generates a query ID, ignoring comments.  Hence,
-queries with different hints, still written the same way, may compute the
-same query ID.
+When `compute_query_id` is enabled, PostgreSQL generates a query ID,
+ignoring comments.  Hence, queries with different hints, still written
+the same way, may compute the same query ID.
