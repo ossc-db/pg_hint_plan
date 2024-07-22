@@ -28,13 +28,17 @@ DATA = \
 	pg_hint_plan--1.3.6--1.3.7.sql \
 	pg_hint_plan--1.3.7--1.3.8.sql \
 	pg_hint_plan--1.3.8--1.3.9.sql \
-	pg_hint_plan--1.3.9--1.4.sql \
+	pg_hint_plan--1.3.9--1.3.10.sql \
+	pg_hint_plan--1.3.10--1.4.sql \
 	pg_hint_plan--1.4--1.4.1.sql \
 	pg_hint_plan--1.4.1--1.4.2.sql \
-	pg_hint_plan--1.4.2--1.5.sql \
+	pg_hint_plan--1.4.2--1.4.3.sql \
+	pg_hint_plan--1.4.3--1.5.sql \
 	pg_hint_plan--1.5--1.5.1.sql \
-	pg_hint_plan--1.5.1--1.6.0.sql \
-	pg_hint_plan--1.6.0--1.7.0.sql
+	pg_hint_plan--1.5.1--1.5.2.sql \
+	pg_hint_plan--1.5.2--1.6.0.sql \
+	pg_hint_plan--1.6.0--1.6.1.sql \
+	pg_hint_plan--1.6.1--1.7.0.sql
 
 EXTRA_CLEAN = RPMS
 
