@@ -21,8 +21,8 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../index.md:1 1477c3a63d6140379ebc8ee8e6949aac
-msgid "pg_hint_plan 1.7"
-msgstr "pg_hint_plan 1.7"
+msgid "pg_hint_plan 1.8"
+msgstr "pg_hint_plan 1.8"
 
 #: ../../index.md:2 b5608f9be7e34270a28850acab4a3fae
 msgid "Table of Contents"

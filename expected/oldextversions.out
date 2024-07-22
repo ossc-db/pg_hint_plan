@@ -244,4 +244,15 @@ Indexes:
     "hints_pkey" PRIMARY KEY, btree (id)
     "hints_id_and_app" UNIQUE, btree (query_id, application_name)
 
+ALTER EXTENSION pg_hint_plan UPDATE TO "1.8.0";
+\dx+ pg_hint_plan
+Objects in extension "pg_hint_plan"
+       Object description        
+---------------------------------
+ sequence hint_plan.hints_id_seq
+ table hint_plan.hints
+ type hint_plan.hints
+ type hint_plan.hints[]
+(4 rows)
+
 DROP EXTENSION pg_hint_plan;

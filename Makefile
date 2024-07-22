@@ -10,7 +10,7 @@ OBJS = \
 	pg_hint_plan.o \
 	query_scan.o
 
-HINTPLANVER = 1.7.0
+HINTPLANVER = 1.8.0
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
 	ut-fdw ut-W ut-T ut-fini plpgsql oldextversions
@@ -38,7 +38,8 @@ DATA = \
 	pg_hint_plan--1.5.1--1.5.2.sql \
 	pg_hint_plan--1.5.2--1.6.0.sql \
 	pg_hint_plan--1.6.0--1.6.1.sql \
-	pg_hint_plan--1.6.1--1.7.0.sql
+	pg_hint_plan--1.6.1--1.7.0.sql \
+	pg_hint_plan--1.7.0--1.8.0.sql
 
 EXTRA_CLEAN = RPMS
 
@@ -58,8 +59,8 @@ include $(DESTDIR)/../src/Makefile.global
 include $(DESTDIR)/../contrib/contrib-global.mk
 endif
 
-STARBALL17 = pg_hint_plan17-$(HINTPLANVER).tar.gz
-STARBALLS = $(STARBALL17)
+STARBALL18 = pg_hint_plan18-$(HINTPLANVER).tar.gz
+STARBALLS = $(STARBALL18)
 
 TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	pg_hint_plan--*.sql \
@@ -67,7 +68,7 @@ TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	docs/* expected/*.out sql/*.sql sql/maskout*.sh \
 	data/data.csv SPECS/*.spec
 
-rpms: rpm17
+rpms: rpm18
 
 # pg_hint_plan.c includes core.c and make_join_rel.c
 pg_hint_plan.o: core.c make_join_rel.c
@@ -82,5 +83,5 @@ $(STARBALLS): $(TARSOURCES)
 	tar -chzf $@ $(addprefix $(subst .tar.gz,,$@)/, $^)
 	rm $(subst .tar.gz,,$@)
 
-rpm17: $(STARBALL17)
-	MAKE_ROOT=`pwd` rpmbuild -bb SPECS/pg_hint_plan17.spec
+rpm18: $(STARBALL18)
+	MAKE_ROOT=`pwd` rpmbuild -bb SPECS/pg_hint_plan18.spec

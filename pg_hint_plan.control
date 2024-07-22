@@ -1,6 +1,6 @@
 # pg_hint_plan extension
 
 comment = 'optimizer hints for PostgreSQL'
-default_version = '1.7.0'
+default_version = '1.8.0'
 relocatable = false
 schema = hint_plan

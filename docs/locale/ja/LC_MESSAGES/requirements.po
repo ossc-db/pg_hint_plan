@@ -26,16 +26,16 @@ msgid "Requirements"
 msgstr "動作環境"
 
 #: ../../requirements.md:3 e2a338fd547c4102a8ba452a1ce76fe4
-msgid "pg_hint_plan 1.7 requires PostgreSQL 17."
-msgstr "pg_hint_plan 1.7 は PostgreSQL 17 のみをサポートします。"
+msgid "pg_hint_plan 1.8 requires PostgreSQL 18."
+msgstr "pg_hint_plan 1.8 は PostgreSQL 18 のみをサポートします。"
 
 #: ../../requirements.md:5 2f43757380444e08ab0e181a788a1b78
 msgid "PostgreSQL versions tested"
 msgstr "テスト済みのPostgreSQLバージョン"
 
 #: ../../requirements.md:7 744d9ef1bc3240a9af15e103cf476a19
-msgid "Version 17"
-msgstr "・バージョン 17"
+msgid "Version 18"
+msgstr "・バージョン 18"
 
 #: ../../requirements.md:9 27a4d38176f445efaec1e1f5367ab674
 msgid "OS versions tested"
