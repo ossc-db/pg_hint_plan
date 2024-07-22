@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 12
 Name:       pg_hint_plan14
-Version:    1.4.2
+Version:    1.4.3
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 14.
 
 %package llvmjit
 Requires: postgresql14-server, postgresql14-llvmjit
-Requires: pg_hint_plan14 = 1.4.2
+Requires: pg_hint_plan14 = 1.4.3
 Summary:  Just-in-time compilation support for pg_hint_plan14
 
 %description llvmjit
@@ -83,9 +83,11 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.3.6--1.3.7.sql
 %{_datadir}/extension/pg_hint_plan--1.3.7--1.3.8.sql
 %{_datadir}/extension/pg_hint_plan--1.3.8--1.3.9.sql
-%{_datadir}/extension/pg_hint_plan--1.3.9--1.4.sql
+%{_datadir}/extension/pg_hint_plan--1.3.9--1.3.10.sql
+%{_datadir}/extension/pg_hint_plan--1.3.10--1.4.sql
 %{_datadir}/extension/pg_hint_plan--1.4--1.4.1.sql
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
+%{_datadir}/extension/pg_hint_plan--1.4.2--1.4.3.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -97,6 +99,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Thu Aug 29 2024 Michael Paquier
+- Version 1.4.3.
 * Tue Aug 29 2023 Michael Paquier
 - Version 1.4.2.
 * Fri Jan 20 2023 Michael Paquier
