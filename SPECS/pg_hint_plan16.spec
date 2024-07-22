@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 16
 Name:       pg_hint_plan16
-Version:    1.6.0
+Version:    1.6.1
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 16.
 
 %package llvmjit
 Requires: postgresql16-server, postgresql16-llvmjit
-Requires: pg_hint_plan16 = 1.6.0
+Requires: pg_hint_plan16 = 1.6.1
 Summary:  Just-in-time compilation support for pg_hint_plan16
 
 %description llvmjit
@@ -83,12 +83,16 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.3.6--1.3.7.sql
 %{_datadir}/extension/pg_hint_plan--1.3.7--1.3.8.sql
 %{_datadir}/extension/pg_hint_plan--1.3.8--1.3.9.sql
-%{_datadir}/extension/pg_hint_plan--1.3.9--1.4.sql
+%{_datadir}/extension/pg_hint_plan--1.3.9--1.3.10.sql
+%{_datadir}/extension/pg_hint_plan--1.3.10--1.4.sql
 %{_datadir}/extension/pg_hint_plan--1.4--1.4.1.sql
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
-%{_datadir}/extension/pg_hint_plan--1.4.2--1.5.sql
+%{_datadir}/extension/pg_hint_plan--1.4.2--1.4.3.sql
+%{_datadir}/extension/pg_hint_plan--1.4.3--1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.5--1.5.1.sql
-%{_datadir}/extension/pg_hint_plan--1.5.1--1.6.0.sql
+%{_datadir}/extension/pg_hint_plan--1.5.1--1.5.2.sql
+%{_datadir}/extension/pg_hint_plan--1.5.2--1.6.0.sql
+%{_datadir}/extension/pg_hint_plan--1.6.0--1.6.1.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -100,5 +104,7 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Tue Aug 27 2024 Michael Paquier
+- Version 1.6.1.
 * Thu Jan 17 2023 Michael Paquier
 - Support PostgreSQL 16.
