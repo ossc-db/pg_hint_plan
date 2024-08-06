@@ -9,6 +9,7 @@ SET search_path TO public;
 
 -- This hint affects queries with an equivalent query ID when executed as
 -- a subquery.
+SET pg_hint_plan.enable_hint_table TO on;
 SELECT get_query_id('SELECT * FROM t1 WHERE id = 1;') AS query_id \gset
 INSERT INTO hint_plan.hints VALUES (DEFAULT, :'query_id', '', 'SeqScan(t1)');
 
