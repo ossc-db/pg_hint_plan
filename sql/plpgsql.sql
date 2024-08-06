@@ -8,7 +8,7 @@ SET client_min_messages TO log;
 
 LOAD 'pg_hint_plan';
 SET pg_hint_plan.debug_print TO on;
-SELECT setting <> 'off' FROM pg_settings WHERE name = 'compute_query_id';
+SET compute_query_id = on;
 SHOW pg_hint_plan.enable_hint_table;
 
 -- Internal handling of hints within plpgsql functions.
