@@ -19,7 +19,8 @@ SELECT * FROM ft1;
 \o results/ut-fdw.tmpout
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout
+\set EXP_STR `cat results/ut-fdw.tmpout`
+SELECT explain_filter(:'EXP_STR');
 
 ----
 ---- No. S-1-5 object type for the hint
@@ -30,7 +31,8 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1
 /*+SeqScan(t1)SeqScan(ft_1)SeqScan(ft_2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout;
+\set EXP_STR `cat results/ut-fdw.tmpout;`
+SELECT explain_filter(:'EXP_STR');
 
 ----
 ---- No. J-1-6 object type for the hint
@@ -41,7 +43,8 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1
 /*+MergeJoin(ft_1 ft_2)Leading(ft_1 ft_2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout;
+\set EXP_STR `cat results/ut-fdw.tmpout;`
+SELECT explain_filter(:'EXP_STR');
 
 ----
 ---- No. L-1-6 object type for the hint
@@ -52,7 +55,8 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1
 /*+Leading(ft_1 ft_2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout;
+\set EXP_STR `cat results/ut-fdw.tmpout;`
+SELECT explain_filter(:'EXP_STR');
 
 ----
 ---- No. R-1-6 object type for the hint
@@ -63,5 +67,6 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1
 /*+Rows(ft_1 ft_2 #1)Leading(ft_1 ft_2 t1)*/
 EXPLAIN SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
 \o
-\! sql/maskout.sh results/ut-fdw.tmpout | sql/maskout2.sh
+\set EXP_STR `cat results/ut-fdw.tmpout`
+SELECT explain_filter(:'EXP_STR');
 \! rm results/ut-fdw.tmpout

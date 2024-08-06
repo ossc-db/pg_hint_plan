@@ -8898,12 +8898,12 @@ Rows()
 (1 row)
 
 -- value types
+\t
 \o results/pg_hint_plan.tmpout
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id);
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=1000 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -8920,9 +8920,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=99 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -8939,9 +8938,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=1099 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -8958,9 +8956,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=901 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -8977,9 +8974,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=99000 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -8996,9 +8992,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=10 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -9017,9 +9012,8 @@ error hint:
 Rows(t1 t2 #aa)
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=1000 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -9038,9 +9032,8 @@ error hint:
 Rows(t1 t2 /99)
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=1000 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -9059,9 +9052,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.id = t2.id)
    ->  Index Scan using t1_pkey on t1  (cost=xxx..xxx rows=10000 width=xxx)
@@ -9071,9 +9063,8 @@ error hint:
 \o results/pg_hint_plan.tmpout
 EXPLAIN SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=10 width=xxx)
    Merge Cond: (t1.id = t3.id)
    ->  Merge Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -9095,9 +9086,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.id = t3.id)
    ->  Merge Join  (cost=xxx..xxx rows=22 width=xxx)
@@ -9120,9 +9110,8 @@ error hint:
 
 \o
 set max_parallel_workers_per_gather to DEFAULT;
-\! sql/maskout.sh results/pg_hint_plan.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/pg_hint_plan.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.id = t3.id)
    ->  Merge Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -9135,6 +9124,7 @@ set max_parallel_workers_per_gather to DEFAULT;
 
 \! rm results/pg_hint_plan.tmpout
 -- Query with join RTE and outer-join relids
+\t
 /*+Leading(ft_1 ft_2 t1)*/
 SELECT relname, seq_scan > 0 AS seq_scan, idx_scan > 0 AS idx_scan
   FROM pg_stat_user_tables WHERE schemaname = 'public' AND relname = 't1';

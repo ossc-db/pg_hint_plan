@@ -4411,8 +4411,10 @@ error hint:
 ---- No. S-3-5 not used index
 ----
 -- No. S-3-5-1
+\t
 \o results/ut-S.tmpout
-/*+IndexScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+IndexScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 LOG:  available indexes for IndexScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4422,15 +4424,15 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Seq Scan on ti1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 100)
 
 -- No. S-3-5-2
 \o results/ut-S.tmpout
-/*+BitmapScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+BitmapScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 LOG:  available indexes for BitmapScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4440,15 +4442,15 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Seq Scan on ti1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 100)
 
 -- No. S-3-5-3
 \o results/ut-S.tmpout
-/*+IndexOnlyScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+/*+IndexOnlyScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
 LOG:  available indexes for IndexOnlyScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4458,15 +4460,15 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Seq Scan on ti1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 100)
 
 -- No. S-3-5-4
 \o results/ut-S.tmpout
-/*+IndexScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+IndexScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 LOG:  available indexes for IndexScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4476,15 +4478,15 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Index Scan using ti1_hash on ti1  (cost=xxx..xxx rows=1 width=xxx)
    Index Cond: (c1 = 100)
 
 -- No. S-3-5-5
 \o results/ut-S.tmpout
-/*+BitmapScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+BitmapScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 LOG:  available indexes for BitmapScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4494,15 +4496,15 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Index Scan using ti1_hash on ti1  (cost=xxx..xxx rows=1 width=xxx)
    Index Cond: (c1 = 100)
 
 -- No. S-3-5-6
 \o results/ut-S.tmpout
-/*+IndexOnlyScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+/*+IndexOnlyScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
 LOG:  available indexes for IndexOnlyScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4512,22 +4514,19 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Index Scan using ti1_hash on ti1  (cost=xxx..xxx rows=1 width=xxx)
    Index Cond: (c1 = 100)
 
 -- No. S-3-5-7
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
-          QUERY PLAN          
-------------------------------
  Index Scan using t1_i1 on t1
    Index Cond: (c1 = 1)
-(2 rows)
 
 \o results/ut-S.tmpout
-/*+TidScan(t1)*/ EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+/*+TidScan(t1)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 LOG:  pg_hint_plan:
 used hint:
 TidScan(t1)
@@ -4536,9 +4535,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Seq Scan on t1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 1)
 
@@ -4546,15 +4544,12 @@ error hint:
 ---- No. S-3-6 query structure
 ----
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.ctid = '(1,1)';
-                  QUERY PLAN                   
------------------------------------------------
  Hash Join
    Hash Cond: (t2.c1 = t1.c1)
    ->  Seq Scan on t2
    ->  Hash
          ->  Tid Scan on t1
                TID Cond: (ctid = '(1,1)'::tid)
-(6 rows)
 
 -- No. S-3-6-1
 /*+SeqScan(t1)*/
@@ -4566,11 +4561,8 @@ not used hint:
 duplication hint:
 error hint:
 
-      QUERY PLAN      
-----------------------
  Seq Scan on t1
    Filter: (c1 = 100)
-(2 rows)
 
 -- No. S-3-6-2
 /*+SeqScan(t1)BitmapScan(t2)*/
@@ -4583,8 +4575,6 @@ not used hint:
 duplication hint:
 error hint:
 
-               QUERY PLAN               
-----------------------------------------
  Nested Loop
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
@@ -4592,7 +4582,6 @@ error hint:
          Recheck Cond: (t1.c1 = c1)
          ->  Bitmap Index Scan on t2_i1
                Index Cond: (c1 = t1.c1)
-(7 rows)
 
 -- No. S-3-6-3
 /*+SeqScan(t1)*/
@@ -4604,15 +4593,12 @@ not used hint:
 duplication hint:
 error hint:
 
-                 QUERY PLAN                  
----------------------------------------------
  Hash Join
    Hash Cond: (t2.c1 = t1.c1)
    ->  Seq Scan on t2
    ->  Hash
          ->  Seq Scan on t1
                Filter: (ctid = '(1,1)'::tid)
-(6 rows)
 
 ----
 ---- No. S-3-7 number of tables in a query block
@@ -4625,8 +4611,6 @@ SELECT max(b3t1.c1), (
 SELECT max(b2t1.c1) FROM s1.t1 b2t1 WHERE b2t1.c1 = 1
                   ) FROM s1.t1 b3t1 WHERE b3t1.c1 = (
 SELECT max(b4t1.c1) FROM s1.t1 b4t1 WHERE b4t1.c1 = 1);
-                          QUERY PLAN                          
---------------------------------------------------------------
  Aggregate
    InitPlan 2
      ->  Result
@@ -4642,7 +4626,6 @@ SELECT max(b4t1.c1) FROM s1.t1 b4t1 WHERE b4t1.c1 = 1);
                          Index Cond: (c1 = 1)
    ->  Index Only Scan using t1_i1 on t1 b3t1
          Index Cond: (c1 = (InitPlan 4).col1)
-(15 rows)
 
 /*+SeqScan(b1t1)IndexScan(b2t1 t1_pkey)BitmapScan(b3t1 t1_pkey)TidScan(b4t1)
 */
@@ -4666,8 +4649,6 @@ SeqScan(b1t1)
 duplication hint:
 error hint:
 
-                        QUERY PLAN                         
------------------------------------------------------------
  Aggregate
    InitPlan 2
      ->  Result
@@ -4685,7 +4666,6 @@ error hint:
          Recheck Cond: (c1 = (InitPlan 4).col1)
          ->  Bitmap Index Scan on t1_pkey
                Index Cond: (c1 = (InitPlan 4).col1)
-(17 rows)
 
 -- No. S-3-7-2
 EXPLAIN (COSTS false) 
@@ -4695,8 +4675,6 @@ SELECT max(b3t1.c1), (
 SELECT max(b2t1.c1) FROM s1.t1 b2t1 JOIN s1.t2 b2t2 ON(b2t1.c1 = b2t2.c1) WHERE b2t1.c1 = 1
                   ) FROM s1.t1 b3t1 JOIN s1.t2 b3t2 ON(b3t1.c1 = b3t2.c1) JOIN cte1 ON(b3t1.c1 = cte1.c1) WHERE b3t1.c1 = (
 SELECT max(b4t1.c1) FROM s1.t1 b4t1 JOIN s1.t2 b4t2 ON(b4t1.c1 = b4t2.c1) WHERE b4t1.c1 = 1);
-                           QUERY PLAN                           
-----------------------------------------------------------------
  Aggregate
    InitPlan 1
      ->  Aggregate
@@ -4725,7 +4703,6 @@ SELECT max(b4t1.c1) FROM s1.t1 b4t1 JOIN s1.t2 b4t2 ON(b4t1.c1 = b4t2.c1) WHERE 
                            Index Cond: (c1 = 1)
                      ->  Seq Scan on t2 b1t2
                            Filter: (c1 = 1)
-(28 rows)
 
 /*+SeqScan(b1t1)IndexScan(b2t1 t1_pkey)BitmapScan(b3t1 t1_pkey)TidScan(b4t1)
 TidScan(b1t2)SeqScan(b2t2)IndexScan(b3t2 t2_pkey)BitmapScan(b4t2 t2_pkey)
@@ -4755,8 +4732,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                           QUERY PLAN                           
-----------------------------------------------------------------
  Aggregate
    InitPlan 1
      ->  Aggregate
@@ -4789,7 +4764,6 @@ error hint:
                            Filter: (c1 = 1)
                      ->  Seq Scan on t2 b1t2
                            Filter: (c1 = 1)
-(32 rows)
 
 -- No. S-3-7-3
 EXPLAIN (COSTS false) 
@@ -4799,8 +4773,6 @@ SELECT max(b3t1.c1), (
 SELECT max(b2t1.c1) FROM s1.t1 b2t1 WHERE b2t1.c1 = 1
                   ) FROM s1.t1 b3t1 JOIN s1.t2 b3t2 ON(b3t1.c1 = b3t2.c1) JOIN cte1 ON(b3t1.c1 = cte1.c1) WHERE b3t1.c1 = (
 SELECT max(b4t1.c1) FROM s1.t1 b4t1 WHERE b4t1.c1 = 1);
-                           QUERY PLAN                           
-----------------------------------------------------------------
  Aggregate
    InitPlan 2
      ->  Result
@@ -4827,7 +4799,6 @@ SELECT max(b4t1.c1) FROM s1.t1 b4t1 WHERE b4t1.c1 = 1);
                            Index Cond: (c1 = 1)
                      ->  Seq Scan on t2 b1t2
                            Filter: (c1 = 1)
-(26 rows)
 
 /*+SeqScan(b1t1)IndexScan(b2t1 t1_pkey)BitmapScan(b3t1 t1_pkey)TidScan(b4t1)
 TidScan(b1t2)IndexScan(b3t2 t2_pkey)
@@ -4855,8 +4826,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                           QUERY PLAN                           
-----------------------------------------------------------------
  Aggregate
    InitPlan 2
      ->  Result
@@ -4885,18 +4854,14 @@ error hint:
                            Filter: (c1 = 1)
                      ->  Seq Scan on t2 b1t2
                            Filter: (c1 = 1)
-(28 rows)
 
 ----
 ---- No. S-3-8 inheritance table select/update type
 ----
 -- No. S-3-8-1
 EXPLAIN (COSTS false) SELECT * FROM ONLY s1.p1 WHERE c1 = 1;
-     QUERY PLAN     
---------------------
  Seq Scan on p1
    Filter: (c1 = 1)
-(2 rows)
 
 /*+IndexScan(p1)*/
 EXPLAIN (COSTS false) SELECT * FROM ONLY s1.p1 WHERE c1 = 1;
@@ -4907,22 +4872,16 @@ not used hint:
 duplication hint:
 error hint:
 
-         QUERY PLAN          
------------------------------
  Index Scan using p1_i on p1
    Index Cond: (c1 = 1)
-(2 rows)
 
 -- No. S-3-8-2
 EXPLAIN (COSTS false) SELECT * FROM s1.p1 WHERE c1 = 1;
-         QUERY PLAN          
------------------------------
  Append
    ->  Seq Scan on p1 p1_1
          Filter: (c1 = 1)
    ->  Seq Scan on p1c1 p1_2
          Filter: (c1 = 1)
-(5 rows)
 
 /*+IndexScan(p1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p1 WHERE c1 = 1;
@@ -4933,23 +4892,17 @@ not used hint:
 duplication hint:
 error hint:
 
-                 QUERY PLAN                 
---------------------------------------------
  Append
    ->  Index Scan using p1_i on p1 p1_1
          Index Cond: (c1 = 1)
    ->  Index Scan using p1c1_i on p1c1 p1_2
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-8-3
 EXPLAIN (COSTS false) UPDATE ONLY s1.p1 SET c4 = c4 WHERE c1 = 1;
-        QUERY PLAN        
---------------------------
  Update on p1
    ->  Seq Scan on p1
          Filter: (c1 = 1)
-(3 rows)
 
 /*+IndexScan(p1)*/
 EXPLAIN (COSTS false) UPDATE ONLY s1.p1 SET c4 = c4 WHERE c1 = 1;
@@ -4960,12 +4913,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN             
------------------------------------
  Update on p1
    ->  Index Scan using p1_i on p1
          Index Cond: (c1 = 1)
-(3 rows)
 
 /*+IndexScan(p1 p1_pkey)*/
 EXPLAIN (COSTS false) UPDATE ONLY s1.p1 SET c4 = c4 WHERE c1 = 1;
@@ -4977,17 +4927,12 @@ not used hint:
 duplication hint:
 error hint:
 
-              QUERY PLAN              
---------------------------------------
  Update on p1
    ->  Index Scan using p1_pkey on p1
          Index Cond: (c1 = 1)
-(3 rows)
 
 -- No. S-3-8-4
 EXPLAIN (COSTS false) UPDATE s1.p1 SET c4 = c4 WHERE c1 = 1;
-            QUERY PLAN             
------------------------------------
  Update on p1
    Update on p1 p1_1
    Update on p1c1 p1_2
@@ -4996,7 +4941,6 @@ EXPLAIN (COSTS false) UPDATE s1.p1 SET c4 = c4 WHERE c1 = 1;
                Filter: (c1 = 1)
          ->  Seq Scan on p1c1 p1_2
                Filter: (c1 = 1)
-(8 rows)
 
 /*+IndexScan(p1)*/
 EXPLAIN (COSTS false) UPDATE s1.p1 SET c4 = c4 WHERE c1 = 1;
@@ -5007,8 +4951,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                    QUERY PLAN                    
---------------------------------------------------
  Update on p1
    Update on p1 p1_1
    Update on p1c1 p1_2
@@ -5017,7 +4959,6 @@ error hint:
                Index Cond: (c1 = 1)
          ->  Index Scan using p1c1_i on p1c1 p1_2
                Index Cond: (c1 = 1)
-(8 rows)
 
 /*+IndexScan(p1 p1_pkey)*/
 EXPLAIN (COSTS false) UPDATE s1.p1 SET c4 = c4 WHERE c1 = 1;
@@ -5030,8 +4971,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                     QUERY PLAN                      
------------------------------------------------------
  Update on p1
    Update on p1 p1_1
    Update on p1c1 p1_2
@@ -5040,21 +4979,17 @@ error hint:
                Index Cond: (c1 = 1)
          ->  Index Scan using p1c1_pkey on p1c1 p1_2
                Index Cond: (c1 = 1)
-(8 rows)
 
 ----
 ---- No. S-3-9 inheritance table number
 ----
 -- No. S-3-9-1
 EXPLAIN (COSTS false) SELECT * FROM s1.p1 WHERE c1 = 1;
-         QUERY PLAN          
------------------------------
  Append
    ->  Seq Scan on p1 p1_1
          Filter: (c1 = 1)
    ->  Seq Scan on p1c1 p1_2
          Filter: (c1 = 1)
-(5 rows)
 
 /*+IndexScan(p1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p1 WHERE c1 = 1;
@@ -5065,19 +5000,14 @@ not used hint:
 duplication hint:
 error hint:
 
-                 QUERY PLAN                 
---------------------------------------------
  Append
    ->  Index Scan using p1_i on p1 p1_1
          Index Cond: (c1 = 1)
    ->  Index Scan using p1c1_i on p1c1 p1_2
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-9-2
 EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
-          QUERY PLAN           
--------------------------------
  Append
    ->  Seq Scan on p2 p2_1
          Filter: (c1 = 1)
@@ -5085,7 +5015,6 @@ EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
          Filter: (c1 = 1)
    ->  Seq Scan on p2c1c1 p2_3
          Filter: (c1 = 1)
-(7 rows)
 
 /*+IndexScan(p2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
@@ -5096,8 +5025,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                   
-------------------------------------------------
  Append
    ->  Index Scan using p2_i on p2 p2_1
          Index Cond: (c1 = 1)
@@ -5105,14 +5032,11 @@ error hint:
          Index Cond: (c1 = 1)
    ->  Index Scan using p2c1c1_i on p2c1c1 p2_3
          Index Cond: (c1 = 1)
-(7 rows)
 
 ----
 ---- No. S-3-10 inheritance table specified table
 ----
 EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
-          QUERY PLAN           
--------------------------------
  Append
    ->  Seq Scan on p2 p2_1
          Filter: (c1 = 1)
@@ -5120,7 +5044,6 @@ EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
          Filter: (c1 = 1)
    ->  Seq Scan on p2c1c1 p2_3
          Filter: (c1 = 1)
-(7 rows)
 
 -- No. S-3-10-1
 /*+IndexScan(p2)*/
@@ -5132,8 +5055,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                   
-------------------------------------------------
  Append
    ->  Index Scan using p2_i on p2 p2_1
          Index Cond: (c1 = 1)
@@ -5141,7 +5062,6 @@ error hint:
          Index Cond: (c1 = 1)
    ->  Index Scan using p2c1c1_i on p2c1c1 p2_3
          Index Cond: (c1 = 1)
-(7 rows)
 
 -- No. S-3-10-2
 /*+IndexScan(p2c1)*/
@@ -5153,8 +5073,6 @@ not used hint:
 duplication hint:
 error hint:
 
-                 QUERY PLAN                 
---------------------------------------------
  Append
    ->  Seq Scan on p2 p2_1
          Filter: (c1 = 1)
@@ -5162,15 +5080,13 @@ error hint:
          Index Cond: (c1 = 1)
    ->  Seq Scan on p2c1c1 p2_3
          Filter: (c1 = 1)
-(7 rows)
 
 -- No. S-3-10-3
 \o results/ut-S.tmpout
 EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Seq Scan on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: ((c1 < 10) AND ((c2 * 2) < 100))
@@ -5178,7 +5094,8 @@ EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
          Filter: ((c1 < 10) AND ((c2 * 2) < 100))
 
 \o results/ut-S.tmpout
-/*+IndexScan(p1 p1_parent)*/ EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
+/*+IndexScan(p1 p1_parent)*/
+EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
 LOG:  available indexes for IndexScan(p1): p1_parent
 LOG:  available indexes for IndexScan(p1c1): p1c1_c4_expr_idx
 LOG:  pg_hint_plan:
@@ -5189,9 +5106,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Index Scan using p1_parent on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: ((c2 * 2) < 100)
@@ -5200,7 +5116,8 @@ error hint:
 
 -- No. S-3-10-4
 \o results/ut-S.tmpout
-/*+IndexScan(p1 p1_i2)*/ EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
+/*+IndexScan(p1 p1_i2)*/
+EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
 LOG:  available indexes for IndexScan(p1): p1_i2
 LOG:  available indexes for IndexScan(p1c1):
 LOG:  available indexes for IndexScan(p1c2):
@@ -5213,9 +5130,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Index Scan using p1_i2 on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c2 = 1)
@@ -5228,7 +5144,8 @@ error hint:
 
 -- No. S-3-10-5
 \o results/ut-S.tmpout
-/*+IndexScan(p2 p2c1_pkey)*/ EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
+/*+IndexScan(p2 p2c1_pkey)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
 LOG:  available indexes for IndexScan(p2):
 LOG:  available indexes for IndexScan(p2c1): p2c1_pkey
 LOG:  available indexes for IndexScan(p2c1c1):
@@ -5240,9 +5157,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Append  (cost=xxx..xxx rows=3 width=xxx)
    ->  Seq Scan on p2 p2_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c1 = 1)
@@ -5267,14 +5183,11 @@ duplication hint:
 IndexScan(ti1)
 error hint:
 
-             QUERY PLAN              
--------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_hash
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-12-2
 /*+IndexScan(ti1 ti1_pkey) BitmapScan(ti1 ti1_btree)*/
@@ -5290,14 +5203,11 @@ duplication hint:
 IndexScan(ti1 ti1_pkey)
 error hint:
 
-              QUERY PLAN              
---------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_btree
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-12-3
 /*+BitmapScan(ti1) IndexScan(ti1) BitmapScan(ti1)*/
@@ -5315,14 +5225,11 @@ BitmapScan(ti1)
 IndexScan(ti1)
 error hint:
 
-             QUERY PLAN              
--------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_hash
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-12-4
 /*+BitmapScan(ti1 ti1_hash) IndexScan(ti1 ti1_pkey) BitmapScan(ti1 ti1_btree)*/
@@ -5341,14 +5248,11 @@ BitmapScan(ti1 ti1_hash)
 IndexScan(ti1 ti1_pkey)
 error hint:
 
-              QUERY PLAN              
---------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_btree
          Index Cond: (c1 = 1)
-(5 rows)
 
 ----
 ---- No. S-3-13 message output of hint
@@ -5363,11 +5267,8 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                   
-------------------------------------------------
  Seq Scan on ti1
    Filter: ((c1 = 1) AND (ctid = '(1,1)'::tid))
-(2 rows)
 
 -- No. S-3-13-2
 /*+SeqScan(ti1 ti1_pkey)*/
@@ -5381,12 +5282,9 @@ duplication hint:
 error hint:
 SeqScan(ti1 ti1_pkey)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-3
 /*+SeqScan(ti1 ti1_pkey ti1_btree)*/
@@ -5400,12 +5298,9 @@ duplication hint:
 error hint:
 SeqScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-4
 /*+IndexScan(ti1)*/
@@ -5417,12 +5312,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN            
-----------------------------------
  Index Scan using ti1_hash on ti1
    Index Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
-(3 rows)
 
 -- No. S-3-13-5
 /*+IndexScan(ti1 ti1_pkey)*/
@@ -5435,12 +5327,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN            
-----------------------------------
  Index Scan using ti1_pkey on ti1
    Index Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
-(3 rows)
 
 -- No. S-3-13-6
 /*+IndexScan(ti1 ti1_pkey ti1_btree)*/
@@ -5453,12 +5342,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN             
------------------------------------
  Index Scan using ti1_btree on ti1
    Index Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
-(3 rows)
 
 -- No. S-3-13-7
 /*+BitmapScan(ti1)*/
@@ -5470,14 +5356,11 @@ not used hint:
 duplication hint:
 error hint:
 
-             QUERY PLAN              
--------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_hash
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-13-8
 /*+BitmapScan(ti1 ti1_pkey)*/
@@ -5490,14 +5373,11 @@ not used hint:
 duplication hint:
 error hint:
 
-             QUERY PLAN              
--------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_pkey
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-13-9
 /*+BitmapScan(ti1 ti1_pkey ti1_btree)*/
@@ -5510,14 +5390,11 @@ not used hint:
 duplication hint:
 error hint:
 
-              QUERY PLAN              
---------------------------------------
  Bitmap Heap Scan on ti1
    Recheck Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Index Scan on ti1_btree
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-13-10
 /*+TidScan(ti1)*/
@@ -5529,12 +5406,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-11
 /*+TidScan(ti1 ti1_pkey)*/
@@ -5548,12 +5422,9 @@ duplication hint:
 error hint:
 TidScan(ti1 ti1_pkey)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-12
 /*+TidScan(ti1 ti1_pkey ti1_btree)*/
@@ -5567,12 +5438,9 @@ duplication hint:
 error hint:
 TidScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-13
 /*+NoSeqScan(ti1)*/
@@ -5584,12 +5452,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-14
 /*+NoSeqScan(ti1 ti1_pkey)*/
@@ -5603,12 +5468,9 @@ duplication hint:
 error hint:
 NoSeqScan(ti1 ti1_pkey)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-15
 /*+NoSeqScan(ti1 ti1_pkey ti1_btree)*/
@@ -5622,12 +5484,9 @@ duplication hint:
 error hint:
 NoSeqScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-16
 /*+NoIndexScan(ti1)*/
@@ -5639,12 +5498,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-17
 /*+NoIndexScan(ti1 ti1_pkey)*/
@@ -5658,12 +5514,9 @@ duplication hint:
 error hint:
 NoIndexScan(ti1 ti1_pkey)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-18
 /*+NoIndexScan(ti1 ti1_pkey ti1_btree)*/
@@ -5677,12 +5530,9 @@ duplication hint:
 error hint:
 NoIndexScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-19
 /*+NoBitmapScan(ti1)*/
@@ -5694,12 +5544,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-20
 /*+NoBitmapScan(ti1 ti1_pkey)*/
@@ -5713,12 +5560,9 @@ duplication hint:
 error hint:
 NoBitmapScan(ti1 ti1_pkey)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-21
 /*+NoBitmapScan(ti1 ti1_pkey ti1_btree)*/
@@ -5732,12 +5576,9 @@ duplication hint:
 error hint:
 NoBitmapScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-22
 /*+NoTidScan(ti1)*/
@@ -5749,12 +5590,9 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN            
-----------------------------------
  Index Scan using ti1_hash on ti1
    Index Cond: (c1 = 1)
    Filter: (ctid = '(1,1)'::tid)
-(3 rows)
 
 -- No. S-3-13-23
 /*+NoTidScan(ti1 ti1_pkey)*/
@@ -5768,12 +5606,9 @@ duplication hint:
 error hint:
 NoTidScan(ti1 ti1_pkey)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-24
 /*+NoTidScan(ti1 ti1_pkey ti1_btree)*/
@@ -5787,12 +5622,9 @@ duplication hint:
 error hint:
 NoTidScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN             
------------------------------------
  Tid Scan on ti1
    TID Cond: (ctid = '(1,1)'::tid)
    Filter: (c1 = 1)
-(3 rows)
 
 -- No. S-3-13-25
 /*+IndexOnlyScan(ti1)*/
@@ -5804,11 +5636,8 @@ not used hint:
 duplication hint:
 error hint:
 
-              QUERY PLAN               
----------------------------------------
  Index Only Scan using ti1_uniq on ti1
    Index Cond: (c1 >= 1)
-(2 rows)
 
 -- No. S-3-13-26
 /*+IndexOnlyScan(ti1 ti1_pkey)*/
@@ -5821,11 +5650,8 @@ not used hint:
 duplication hint:
 error hint:
 
-              QUERY PLAN               
----------------------------------------
  Index Only Scan using ti1_pkey on ti1
    Index Cond: (c1 >= 1)
-(2 rows)
 
 -- No. S-3-13-27
 /*+IndexOnlyScan(ti1 ti1_pkey ti1_btree)*/
@@ -5838,11 +5664,8 @@ not used hint:
 duplication hint:
 error hint:
 
-               QUERY PLAN               
-----------------------------------------
  Index Only Scan using ti1_btree on ti1
    Index Cond: (c1 >= 1)
-(2 rows)
 
 -- No. S-3-13-28
 /*+NoIndexOnlyScan(ti1)*/
@@ -5854,11 +5677,8 @@ not used hint:
 duplication hint:
 error hint:
 
-            QUERY PLAN            
-----------------------------------
  Index Scan using ti1_hash on ti1
    Index Cond: (c1 = 1)
-(2 rows)
 
 -- No. S-3-13-29
 /*+NoIndexOnlyScan(ti1 ti1_pkey)*/
@@ -5872,11 +5692,8 @@ duplication hint:
 error hint:
 NoIndexOnlyScan(ti1 ti1_pkey)
 
-            QUERY PLAN            
-----------------------------------
  Index Scan using ti1_hash on ti1
    Index Cond: (c1 = 1)
-(2 rows)
 
 -- No. S-3-13-30
 /*+NoIndexOnlyScan(ti1 ti1_pkey ti1_btree)*/
@@ -5890,21 +5707,15 @@ duplication hint:
 error hint:
 NoIndexOnlyScan(ti1 ti1_pkey ti1_btree)
 
-            QUERY PLAN            
-----------------------------------
  Index Scan using ti1_hash on ti1
    Index Cond: (c1 = 1)
-(2 rows)
 
 ----
 ---- No. S-3-14 regular expression
 ----
 EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i4 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-14-1
 /*+IndexScanRegexp(ti1 ti1_.*_key)*/
@@ -5917,11 +5728,8 @@ not used hint:
 duplication hint:
 error hint:
 
-             QUERY PLAN             
-------------------------------------
  Index Scan using ti1_c2_key on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-14-2
 /*+IndexScanRegexp(ti1 ti1_i.)*/
@@ -5934,11 +5742,8 @@ not used hint:
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i4 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-14-3
 /*+IndexScanRegexp(ti1 no.*_exist)*/
@@ -5951,11 +5756,8 @@ IndexScanRegexp(ti1 no.*_exist)
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i4 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-14-4
 /*+IndexScanRegexp(p1 .*pkey)*/
@@ -5969,14 +5771,11 @@ not used hint:
 duplication hint:
 error hint:
 
-                  QUERY PLAN                   
------------------------------------------------
  Append
    ->  Index Scan using p1_pkey on p1 p1_1
          Index Cond: (c1 = 1)
    ->  Index Scan using p1c1_pkey on p1c1 p1_2
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-14-5
 /*+IndexScanRegexp(p1 p1.*i)*/
@@ -5990,14 +5789,11 @@ not used hint:
 duplication hint:
 error hint:
 
-                 QUERY PLAN                 
---------------------------------------------
  Append
    ->  Index Scan using p1_i on p1 p1_1
          Index Cond: (c1 = 1)
    ->  Index Scan using p1c1_i on p1c1 p1_2
          Index Cond: (c1 = 1)
-(5 rows)
 
 -- No. S-3-14-6
 /*+IndexScanRegexp(p1 no.*_exist)*/
@@ -6011,14 +5807,11 @@ IndexScanRegexp(p1 no.*_exist)
 duplication hint:
 error hint:
 
-         QUERY PLAN          
------------------------------
  Append
    ->  Seq Scan on p1 p1_1
          Filter: (c1 = 1)
    ->  Seq Scan on p1c1 p1_2
          Filter: (c1 = 1)
-(5 rows)
 
 ----
 ---- No. S-3-15 message output of index candidate
@@ -6034,11 +5827,8 @@ not used hint:
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i1 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-15-2
 /*+IndexScan(ti1 not_exist)*/
@@ -6051,11 +5841,8 @@ IndexScan(ti1 not_exist)
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i4 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-15-3
 /*+IndexScan(ti1 ti1_i1 ti1_i2)*/
@@ -6068,11 +5855,8 @@ not used hint:
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i2 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-15-4
 /*+IndexScan(ti1 ti1_i1 not_exist)*/
@@ -6085,11 +5869,8 @@ not used hint:
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i1 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 -- No. S-3-15-5
 /*+IndexScan(ti1 not_exist1 not_exist2)*/
@@ -6102,10 +5883,7 @@ IndexScan(ti1 not_exist1 not_exist2)
 duplication hint:
 error hint:
 
-           QUERY PLAN           
---------------------------------
  Index Scan using ti1_i4 on ti1
    Index Cond: (c2 = 1)
-(2 rows)
 
 \! rm results/ut-S.tmpout

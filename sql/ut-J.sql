@@ -151,12 +151,14 @@ EXPLAIN (COSTS false) SELECT * FROM s1.v1 t1, s1.v1_ t2 WHERE t1.c1 = t2.c1;
 
 -- No. J-1-6-11
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(st1.c1) FROM s1.t1 st1, s1.t2 st2 WHERE st1.c1 = st2.c1);
-
+\t
 \o results/ut-J.tmpout
 /*+MergeJoin(t1 t2)NestLoop(st1 st2)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(st1.c1) FROM s1.t1 st1, s1.t2 st2 WHERE st1.c1 = st2.c1);
 \o
-\! sql/maskout.sh results/ut-J.tmpout
+\set EXP_STR `cat results/ut-J.tmpout`
+SELECT explain_filter(:'EXP_STR');
+\t
 
 --
 -- There are cases where difference in the measured value and predicted value
@@ -813,11 +815,15 @@ SELECT * FROM s1.t1, s1.t2, s1.t3 WHERE false;
 ----
 -- No. J-3-5-1
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 FULL OUTER JOIN s1.t2 ON (t1.c1 = t2.c1);
+
+\t
 \o results/ut-J.tmpout
 /*+NestLoop(t1 t2)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.t1 FULL OUTER JOIN s1.t2 ON (t1.c1 = t2.c1);
 \o
-\! sql/maskout.sh results/ut-J.tmpout
+\set EXP_STR `cat results/ut-J.tmpout`
+SELECT explain_filter(:'EXP_STR');
+\t
 \! rm results/ut-J.tmpout
 
 -- Memoize
