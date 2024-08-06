@@ -1,5 +1,5 @@
 {
-  "name": "pg_hint_plan17",
+  "name": "pg_hint_plan18",
   "abstract": "Query hints in SQL comments",
   "description": "This library adds support for query hints in SQL comments in PostgreSQL 18.",
   "version": "1.8.0",
