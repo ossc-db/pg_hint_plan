@@ -799,41 +799,56 @@ EXPLAIN (COSTS false) SELECT c2 FROM s1.ti1 WHERE c2 >= 1;
 ----
 
 -- No. S-3-5-1
+\t
 \o results/ut-S.tmpout
-/*+IndexScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+IndexScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 -- No. S-3-5-2
 \o results/ut-S.tmpout
-/*+BitmapScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+BitmapScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 -- No. S-3-5-3
 \o results/ut-S.tmpout
-/*+IndexOnlyScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+/*+IndexOnlyScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 -- No. S-3-5-4
 \o results/ut-S.tmpout
-/*+IndexScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+IndexScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 -- No. S-3-5-5
 \o results/ut-S.tmpout
-/*+BitmapScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+/*+BitmapScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 -- No. S-3-5-6
 \o results/ut-S.tmpout
-/*+IndexOnlyScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+/*+IndexOnlyScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 -- No. S-3-5-7
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 \o results/ut-S.tmpout
-/*+TidScan(t1)*/ EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+/*+TidScan(t1)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 ----
 ---- No. S-3-6 query structure
 ----
@@ -972,25 +987,32 @@ EXPLAIN (COSTS false) SELECT * FROM s1.p2 WHERE c1 = 1;
 \o results/ut-S.tmpout
 EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 
 \o results/ut-S.tmpout
-/*+IndexScan(p1 p1_parent)*/ EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
+/*+IndexScan(p1 p1_parent)*/
+EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 
 
 -- No. S-3-10-4
 \o results/ut-S.tmpout
-/*+IndexScan(p1 p1_i2)*/ EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
+/*+IndexScan(p1 p1_i2)*/
+EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 
 -- No. S-3-10-5
 \o results/ut-S.tmpout
-/*+IndexScan(p2 p2c1_pkey)*/ EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
+/*+IndexScan(p2 p2c1_pkey)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
 \o
-\! sql/maskout.sh results/ut-S.tmpout
+\set EXP_STR `cat results/ut-S.tmpout`
+SELECT explain_filter(:'EXP_STR');
 
 
 ----

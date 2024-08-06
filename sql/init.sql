@@ -153,4 +153,32 @@ SELECT name, setting, category
  ORDER BY category, name;
 SELECT * FROM settings;
 
+CREATE OR REPLACE FUNCTION explain_filter(text) RETURNS SETOF text
+LANGUAGE plpgsql AS
+$$
+DECLARE
+    ln text;
+BEGIN
+    FOREACH ln IN array string_to_array($1, chr(10))
+    LOOP
+        -- 
+        CONTINUE WHEN (ln ~ '^ *$');
+        CONTINUE WHEN (ln ~ '^ *QUERY PLAN *$');
+        CONTINUE WHEN (ln ~ '^--*$');
+
+        ln := regexp_replace(ln, '^ ', '');
+        ln := regexp_replace(ln, 'cost=10{7}[.0-9]+ ', 'cost={inf}..{inf} ');
+        ln := regexp_replace(ln, 'cost=[.0-9]+ ', 'cost=xxx..xxx ');
+        ln := regexp_replace(ln, 'width=[0-9]+([^0-9])', 'width=xxx\1');
+        --ln := regexp_replace(ln, '^ *QUERY PLAN *$', '  QUERY PLAN');
+        --ln := regexp_replace(ln, '^-*$', '----------------');
+        --ln := regexp_replace(ln, '^-+$', '--(snip..)');
+        --ln := regexp_replace(ln, '^ *QUERY PLAN *$', '--(snip..)');
+        --ln := regexp_replace(ln, '^-+$', '--(snip..)');
+        ln := regexp_replace(ln, '^( +Foreign File: ).*$', '\1 (snip..)');
+        return next ln;
+    END LOOP;
+END;
+$$;
+
 ANALYZE;

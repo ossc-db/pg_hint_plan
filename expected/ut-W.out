@@ -1270,9 +1270,9 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout2.sh results/ut-W.tmpout
---(snip..)
---(snip..)
+\set EXP_STR `cat results/ut-W.tmpout`
+\t
+SELECT explain_filter(:'EXP_STR');
  Gather
    Workers Planned: 1
    Single Copy: true
@@ -1301,8 +1301,9 @@ error hint:
                      Filter: ((id % 2) = 0)
                ->  Parallel Seq Scan on p1_c3_c2 p1_9
                      Filter: ((id % 2) = 0)
-(28 rows)
+ (28 rows)
 
+\t
 ALTER SYSTEM SET session_preload_libraries TO DEFAULT;
 SELECT pg_reload_conf();
  pg_reload_conf 

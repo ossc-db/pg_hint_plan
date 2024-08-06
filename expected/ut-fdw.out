@@ -30,7 +30,8 @@ SELECT * FROM ft1;
 \o results/ut-fdw.tmpout
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, ft1 ft_1, ft1 ft_2 WHERE t1.c1 = ft_1.id AND t1.c1 = ft_2.id;
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout
+\set EXP_STR `cat results/ut-fdw.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Nested Loop
    Join Filter: (t1.c1 = ft_1.id)
    ->  Nested Loop
@@ -59,7 +60,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout;
+\set EXP_STR `cat results/ut-fdw.tmpout;`
+SELECT explain_filter(:'EXP_STR');
  Nested Loop
    Join Filter: (t1.c1 = ft_2.id)
    ->  Hash Join
@@ -87,7 +89,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout;
+\set EXP_STR `cat results/ut-fdw.tmpout;`
+SELECT explain_filter(:'EXP_STR');
  Nested Loop
    Join Filter: (t1.c1 = ft_1.id)
    ->  Merge Join
@@ -118,7 +121,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout2.sh results/ut-fdw.tmpout;
+\set EXP_STR `cat results/ut-fdw.tmpout;`
+SELECT explain_filter(:'EXP_STR');
  Nested Loop
    Join Filter: (t1.c1 = ft_1.id)
    ->  Nested Loop
@@ -146,7 +150,8 @@ duplication hint:
 error hint:
 
 \o
-\! sql/maskout.sh results/ut-fdw.tmpout | sql/maskout2.sh
+\set EXP_STR `cat results/ut-fdw.tmpout`
+SELECT explain_filter(:'EXP_STR');
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    Join Filter: (t1.c1 = ft_1.id)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
