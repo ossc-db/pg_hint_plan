@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the pg_hint_plan
 # package.
 # Julien Rouhaud <rjuju123@gmail.com>, 2023.
-# Tatsuro Yamada <yamatattsu@gmail.com>, 2023.
+# Tatsuro Yamada <yamatattsu@gmail.com>, 2023-2024.
 #
 msgid ""
 msgstr ""
@@ -76,6 +76,3 @@ msgid ""
 msgstr ""
 "[Parallel Plans](http://www.postgresql.org/docs/current/static/parallel-plans."
 "html)"
-
-#~ msgid "PostgreSQL documents"
-#~ msgstr "PostgreSQLドキュメント"

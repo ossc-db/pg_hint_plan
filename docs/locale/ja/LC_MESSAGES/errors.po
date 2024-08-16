@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the pg_hint_plan
 # package.
 # Julien Rouhaud <rjuju123@gmail.com>, 2023.
-# Tatsuro Yamada <yamatattsu@gmail.com>, 2023.
+# Tatsuro Yamada <yamatattsu@gmail.com>, 2023-2024.
 #
 msgid ""
 msgstr ""
@@ -71,13 +71,3 @@ msgstr "ネストされたコメント"
 #: ../../errors.md:26 020914d49a2d42b28d82f4fd898d99dc
 msgid "Hint comments cannot be recursive.   If detected, hint parsing is immediately stopped and all the hints already parsed are ignored."
 msgstr "ヒントコメントは再帰的に使用できません。 検出された場合、ヒントの構文解析は直ちに停止され、既に解析されたヒントはすべて無視されます。"
-
-#~ msgid "Object misspecifications"
-#~ msgstr "オブジェクトの指定誤り"
-
-#~ msgid ""
-#~ "Hint comment cannot include another block comment within. If `pg_hint_plan` finds it, differently from other erros, it stops parsing and "
-#~ "abandans all hints already parsed. This kind of error is reported in the same manner as other errors."
-#~ msgstr ""
-#~ "コメントヒント内に別のブロックコメントを含めることはできません。`pg_hint_plan` はそれを見つけた場合、他のエラーとは異なり構文解析を中止し、既に"
-#~ "構文解析された全てのヒントを破棄します。この種類のエラーは他のエラーと同様の方法で出力されます。"

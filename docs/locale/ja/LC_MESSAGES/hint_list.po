@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the pg_hint_plan
 # package.
 # Julien Rouhaud <rjuju123@gmail.com>, 2023.
-# Tatsuro Yamada <yamatattsu@gmail.com>, 2023.
+# Tatsuro Yamada <yamatattsu@gmail.com>, 2023-2024.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: pg_hint_plan\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-11-09 10:50+0900\n"
-"PO-Revision-Date: 2023-11-09 17:25+0900\n"
+"PO-Revision-Date: 2024-08-16 14:15+0900\n"
 "Last-Translator: Tatsuro Yamada <yamatattsu@gmail.com>\n"
 "Language-Team: \n"
 "Language: ja\n"
@@ -19,10 +19,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "Generated-By: Babel 2.12.1\n"
-"X-Generator: Poedit 3.2.2\n"
+"X-Generator: Poedit 3.3.1\n"
 
 #: ../../hint_list.md:2 c40cade5f7394eff896a1fae64bb3ca2
-#, fuzzy
 msgid "Hint list"
 msgstr "ヒント一覧"
 
@@ -95,8 +94,8 @@ msgstr "`IndexScanRegexp(テーブル[ POSIX正規表現...])`<br>`IndexOnlyScan
 #: ../../hint_list.md 5d6890da45c349078f67f070a5ee21da
 msgid "Forces index scan, index-only scan (For PostgreSQL 9.2 and later) or bitmap scan on the table.  Restricts to indexes that matches the specified POSIX regular expression pattern."
 msgstr ""
-"指定されたテーブルにインデックススキャン、インデックスオンリースキャン（PostgreSQL 9.2以降）、ビットマップスキャンを強制します。指定されたPOSIX正規表現パターンに一致するインデックスに限定"
-"されます。"
+"指定されたテーブルにインデックススキャン、インデックスオンリースキャン（PostgreSQL 9.2以降）、ビットマップスキャンを強制します。指定されたPOSIX正規表現パターンに一致するインデックスに限"
+"定されます。"
 
 #: ../../hint_list.md c78d46c767ff4c3b9137559cd9926280
 msgid "`NoSeqScan(table)`"
@@ -271,9 +270,3 @@ msgstr "`Set(GUCパラメータ 値)`"
 #: ../../hint_list.md 44a5a20bd91841e19c3a21d01286b5b4
 msgid "Sets GUC parameter to the value defined while planner is running."
 msgstr "プランナが実行中の間、GUCパラメータの値を設定します。"
-
-#~ msgid "copyright (c) 2012-2024, nippon telegraph and telephone corporation"
-#~ msgstr "copyright (c) 2012-2024, nippon telegraph and telephone corporation"
-
-#~ msgid "Forces not to do index only scan on the table. Available for PostgreSQL 9.2 and later."
-#~ msgstr "指定されたテーブルにインデックスオンリースキャンを行わないように強制します。PostgreSQL 9.2以降で利用可能です。"
