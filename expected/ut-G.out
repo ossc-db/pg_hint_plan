@@ -675,7 +675,6 @@ error hint:
                Filter: ((ctid = '(1,1)'::tid) AND (c1 = 1))
 (65 rows)
 
-RESET client_min_messages;
 ----
 ---- No. G-2-1 GUC parameter
 ----

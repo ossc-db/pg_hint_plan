@@ -1,5 +1,4 @@
 LOAD 'pg_hint_plan';
-ALTER SYSTEM SET session_preload_libraries TO 'pg_hint_plan';
 SET pg_hint_plan.enable_hint TO on;
 SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
@@ -1423,11 +1422,4 @@ error hint:
                ->  Parallel Seq Scan on p1_c3_c2 p1_9
                      Filter: ((id % 2) = 0)
 (28 rows)
-
-ALTER SYSTEM SET session_preload_libraries TO DEFAULT;
-SELECT pg_reload_conf();
- pg_reload_conf 
-----------------
- t
-(1 row)
 
