@@ -1,5 +1,4 @@
 LOAD 'pg_hint_plan';
-ALTER SYSTEM SET session_preload_libraries TO 'pg_hint_plan';
 SET pg_hint_plan.enable_hint TO on;
 SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
@@ -233,6 +232,3 @@ SELECT id FROM ft1
  UNION ALL
 SELECT x FROM (VALUES (1), (2), (3)) t(x);
 ');
-
-ALTER SYSTEM SET session_preload_libraries TO DEFAULT;
-SELECT pg_reload_conf();
