@@ -62,13 +62,11 @@ jobs:
           ./configure --prefix=$HOME/pgsql --enable-cassert --enable-debug
 
           make -j 2
-          make -C contrib/pg_stat_statements
           make -C contrib/file_fdw
           make -C contrib/btree_gist
           make -C contrib/btree_gin
 
           sudo make install
-          sudo make -C contrib/pg_stat_statements install
           sudo make -C contrib/file_fdw install
           sudo make -C contrib/btree_gist install
           sudo make -C contrib/btree_gin install
@@ -84,7 +82,7 @@ jobs:
       - name: Start PostgreSQL Server
         run: |
           initdb -D regression_data --no-locale -E UTF8 -A trust
-          echo "shared_preload_libraries = 'pg_hint_plan,pg_stat_statements,file_fdw'" >> regression_data/postgresql.conf
+          echo "shared_preload_libraries = 'pg_hint_plan'" >> regression_data/postgresql.conf
           pg_ctl start -D regression_data -o "-p ${PGPORT}"
 
       - name: Make installcheck
