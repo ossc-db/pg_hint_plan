@@ -112,23 +112,7 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 	if (sjinfo == NULL)
 	{
 		sjinfo = &sjinfo_data;
-		sjinfo->type = T_SpecialJoinInfo;
-		sjinfo->min_lefthand = rel1->relids;
-		sjinfo->min_righthand = rel2->relids;
-		sjinfo->syn_lefthand = rel1->relids;
-		sjinfo->syn_righthand = rel2->relids;
-		sjinfo->jointype = JOIN_INNER;
-		sjinfo->ojrelid = 0;
-		sjinfo->commute_above_l = NULL;
-		sjinfo->commute_above_r = NULL;
-		sjinfo->commute_below_l = NULL;
-		sjinfo->commute_below_r = NULL;
-		/* we don't bother trying to make the remaining fields valid */
-		sjinfo->lhs_strict = false;
-		sjinfo->semi_can_btree = false;
-		sjinfo->semi_can_hash = false;
-		sjinfo->semi_operators = NIL;
-		sjinfo->semi_rhs_exprs = NIL;
+		init_dummy_sjinfo(sjinfo, rel1->relids, rel2->relids);
 	}
 
 	/*

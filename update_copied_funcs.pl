@@ -21,7 +21,8 @@ my %defs =
 				 'build_child_join_sjinfo',
 				 'get_matching_part_pairs',
 				 'compute_partition_bounds',
-				 'try_partitionwise_join'],
+				 'try_partitionwise_join',
+				 'free_child_join_sjinfo'],
 	   head => core_c_head()},
    'make_join_rel.c'
    => {protos => [],

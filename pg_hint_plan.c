@@ -493,14 +493,15 @@ void pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 static void create_plain_partial_paths(PlannerInfo *root,
 									   RelOptInfo *rel);
 static void make_rels_by_clause_joins(PlannerInfo *root, RelOptInfo *old_rel,
-									  List *other_rels_list,
-									  ListCell *other_rels);
+									  List *other_rels,
+									  int first_rel_idx);
 static void make_rels_by_clauseless_joins(PlannerInfo *root,
 										  RelOptInfo *old_rel,
 										  List *other_rels);
 static bool has_join_restriction(PlannerInfo *root, RelOptInfo *rel);
 static void set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 								   RangeTblEntry *rte);
+static void free_child_join_sjinfo(SpecialJoinInfo *sjinfo);
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
