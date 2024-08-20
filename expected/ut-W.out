@@ -1121,6 +1121,80 @@ error hint:
          ->  Parallel Seq Scan on p2_c3_c2 p2_8
 (21 rows)
 
+-- On empty tables, parallel hints can only be enforced for index scans
+-- and not sequential scans.  Adding a single row allows a parallel
+-- hint to be enforced on a sequential scan.  It is a bit weird that
+-- having no rows controls how parallel workers are triggered, but
+-- at the same time we have nothing to query, and this is an old
+-- historical (and accidental) behavior.
+/*+Parallel(t5 4 hard) Parallel(t6 2 hard)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
+LOG:  pg_hint_plan:
+used hint:
+Parallel(t5 4 hard)
+Parallel(t6 2 hard)
+not used hint:
+duplication hint:
+error hint:
+
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t5.c1 = t6.c1) AND (t6.c2 = t5.c2) AND (t6.c3 = t5.c3) AND (t6.c4 = t5.c4))
+   ->  Seq Scan on t5
+   ->  Seq Scan on t6
+(4 rows)
+
+/*+Parallel(t5 4 hard) Parallel(t6 2 hard) NoSeqScan(t5) NoSeqScan(t6) */
+EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
+LOG:  pg_hint_plan:
+used hint:
+NoSeqScan(t5)
+NoSeqScan(t6)
+Parallel(t5 4 hard)
+Parallel(t6 2 hard)
+not used hint:
+duplication hint:
+error hint:
+
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t5.c1 = t6.c1) AND (t6.c2 = t5.c2) AND (t6.c3 = t5.c3) AND (t6.c4 = t5.c4))
+   ->  Gather
+         Workers Planned: 4
+         ->  Parallel Index Scan using t5_pkey on t5
+   ->  Gather
+         Workers Planned: 2
+         ->  Parallel Index Scan using t6_pkey on t6
+(8 rows)
+
+INSERT INTO s1.t5 SELECT i, i, i % 10, i FROM (SELECT generate_series(1, 1) i) t;
+INSERT INTO s1.t6 SELECT i, i, i % 10, i FROM (SELECT generate_series(1, 1) i) t;
+ANALYZE s1.t5;
+ANALYZE s1.t6;
+/*+Parallel(t5 4 hard) Parallel(t6 2 hard)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
+LOG:  pg_hint_plan:
+used hint:
+Parallel(t5 4 hard)
+Parallel(t6 2 hard)
+not used hint:
+duplication hint:
+error hint:
+
+                                          QUERY PLAN                                          
+----------------------------------------------------------------------------------------------
+ Nested Loop
+   Join Filter: ((t5.c1 = t6.c1) AND (t6.c2 = t5.c2) AND (t6.c3 = t5.c3) AND (t6.c4 = t5.c4))
+   ->  Gather
+         Workers Planned: 4
+         ->  Parallel Seq Scan on t5
+   ->  Gather
+         Workers Planned: 2
+         ->  Parallel Seq Scan on t6
+(8 rows)
+
 -- Negative hints
 SET enable_indexscan to DEFAULT;
 SET parallel_setup_cost to 0;

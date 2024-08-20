@@ -183,6 +183,22 @@ SET max_parallel_workers_per_gather to 8;
 /*+Parallel(p1 5 hard)Parallel(p2 6 hard) */
 EXPLAIN (COSTS false) SELECT id FROM p1 UNION ALL SELECT id FROM p2;
 
+-- On empty tables, parallel hints can only be enforced for index scans
+-- and not sequential scans.  Adding a single row allows a parallel
+-- hint to be enforced on a sequential scan.  It is a bit weird that
+-- having no rows controls how parallel workers are triggered, but
+-- at the same time we have nothing to query, and this is an old
+-- historical (and accidental) behavior.
+/*+Parallel(t5 4 hard) Parallel(t6 2 hard)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
+/*+Parallel(t5 4 hard) Parallel(t6 2 hard) NoSeqScan(t5) NoSeqScan(t6) */
+EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
+INSERT INTO s1.t5 SELECT i, i, i % 10, i FROM (SELECT generate_series(1, 1) i) t;
+INSERT INTO s1.t6 SELECT i, i, i % 10, i FROM (SELECT generate_series(1, 1) i) t;
+ANALYZE s1.t5;
+ANALYZE s1.t6;
+/*+Parallel(t5 4 hard) Parallel(t6 2 hard)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
 
 -- Negative hints
 SET enable_indexscan to DEFAULT;
