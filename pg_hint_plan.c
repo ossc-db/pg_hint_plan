@@ -415,7 +415,6 @@ static void assign_enable_hint_table(bool newval, void *extra);
 
 /* Module callbacks */
 void		_PG_init(void);
-void		_PG_fini(void);
 
 static void push_hint(HintState *hstate);
 static void pop_hint(void);
@@ -789,28 +788,6 @@ _PG_init(void)
 	needs_fmgr_hook = pg_hint_plan_needs_fmgr_hook;
 	prev_ExecutorEnd = ExecutorEnd_hook;
 	ExecutorEnd_hook = pg_hint_ExecutorEnd;
-}
-
-/*
- * Module unload callback
- * XXX never called
- */
-void
-_PG_fini(void)
-{
-	PLpgSQL_plugin	**var_ptr;
-
-	/* Uninstall hooks. */
-	planner_hook = prev_planner;
-	join_search_hook = prev_join_search;
-	set_rel_pathlist_hook = prev_set_rel_pathlist;
-	needs_fmgr_hook = prev_needs_fmgr_hook;
-	fmgr_hook = prev_fmgr_hook;
-	ExecutorEnd_hook = prev_ExecutorEnd;
-
-	/* uninstall PL/pgSQL plugin hook */
-	var_ptr = (PLpgSQL_plugin **) find_rendezvous_variable("PLpgSQL_plugin");
-	*var_ptr = NULL;
 }
 
 static bool
