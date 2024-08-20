@@ -1247,9 +1247,9 @@ Parallel()
 (21 rows)
 
 -- Hints on unhintable relations are just ignored
+SELECT explain_filter('
 /*+Parallel(p1 5 hard) Parallel(s1 3 hard) IndexScan(ft1) SeqScan(cte1)
   IndexScan(t) IndexScan(*VALUES*) */
-\o results/ut-W.tmpout
 EXPLAIN (COSTS false) SELECT id FROM p1_c1_c1 as s1 TABLESAMPLE SYSTEM(10)
  UNION ALL
 SELECT id FROM ft1
@@ -1257,6 +1257,7 @@ SELECT id FROM ft1
 (WITH cte1 AS (SELECT id FROM p1 WHERE id % 2 = 0) SELECT id FROM cte1)
  UNION ALL
 SELECT x FROM (VALUES (1), (2), (3)) t(x);
+');
 LOG:  pg_hint_plan:
 used hint:
 Parallel(p1 5 hard)
@@ -1269,10 +1270,56 @@ Parallel(s1 3 hard)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout2.sh results/ut-W.tmpout
---(snip..)
---(snip..)
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(*VALUES*)
+SeqScan(cte1)
+IndexScan(ft1)
+IndexScan(t)
+Parallel(p1 5 hard)
+Parallel(s1 3 hard)
+duplication hint:
+error hint:
+
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(*VALUES*)
+SeqScan(cte1)
+IndexScan(ft1)
+IndexScan(t)
+Parallel(p1 5 hard)
+Parallel(s1 3 hard)
+duplication hint:
+error hint:
+
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(*VALUES*)
+SeqScan(cte1)
+IndexScan(ft1)
+IndexScan(t)
+Parallel(p1 5 hard)
+Parallel(s1 3 hard)
+duplication hint:
+error hint:
+
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(*VALUES*)
+SeqScan(cte1)
+IndexScan(ft1)
+IndexScan(t)
+Parallel(p1 5 hard)
+Parallel(s1 3 hard)
+duplication hint:
+error hint:
+
+                    explain_filter                    
+------------------------------------------------------
  Gather
    Workers Planned: 1
    Single Copy: true
