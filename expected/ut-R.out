@@ -3,26 +3,27 @@ SET pg_hint_plan.enable_hint TO on;
 SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
 SET search_path TO public;
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-1-1 specified pattern of the object name
 ----
 -- No. R-1-1-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -30,21 +31,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-1-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1 t_1, s1.t2 t_2 WHERE t_1.c1 = t_2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -52,21 +53,21 @@ Rows(t1 t2 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t_1.c1 = t_2.c1)
    ->  Index Scan using t1_i1 on t1 t_1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t_2.c1
          ->  Seq Scan on t2 t_2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-1-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t_1 t_2 #1)*/
 EXPLAIN SELECT * FROM s1.t1 t_1, s1.t2 t_2 WHERE t_1.c1 = t_2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t_1 t_2 #1)
@@ -74,24 +75,24 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t_1.c1 = t_2.c1)
    ->  Index Scan using t1_i1 on t1 t_1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t_2.c1
          ->  Seq Scan on t2 t_2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-1-2 specified schema name in the hint option
 ----
 -- No. R-1-2-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -99,21 +100,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-2-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(s1.t1 s1.t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -121,24 +122,24 @@ Rows(s1.t1 s1.t2 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-1-3 table doesn't exist in the hint option
 ----
 -- No. R-1-3-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -146,21 +147,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-3-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t3 t4 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -168,24 +169,24 @@ Rows(t3 t4 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-1-4 conflict table name
 ----
 -- No. R-1-4-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -193,34 +194,34 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-4-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s2.t1 WHERE s1.t1.c1 = s2.t1.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t1_1.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t1_1.c1
          ->  Seq Scan on t1 t1_1  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s2.t1 WHERE s1.t1.c1 = s2.t1.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t1 #1)"
 DETAIL:  Relation name "t1" is ambiguous.
 LOG:  pg_hint_plan:
@@ -230,20 +231,20 @@ duplication hint:
 error hint:
 Rows(t1 t1 #1)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t1_1.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t1_1.c1
          ->  Seq Scan on t1 t1_1  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(s1.t1 s2.t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s2.t1 WHERE s1.t1.c1 = s2.t1.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -251,33 +252,33 @@ Rows(s1.t1 s2.t1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t1_1.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t1_1.c1
          ->  Seq Scan on t1 t1_1  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s2.t1 s2t1 WHERE s1.t1.c1 = s2t1.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = s2t1.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: s2t1.c1
          ->  Seq Scan on t1 s2t1  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 s2t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s2.t1 s2t1 WHERE s1.t1.c1 = s2t1.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(s2t1 t1 #1)
@@ -285,24 +286,22 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = s2t1.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: s2t1.c1
          ->  Seq Scan on t1 s2t1  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-4-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT *, (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                         explain_filter                                          
+-------------------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    InitPlan 1
@@ -317,10 +316,12 @@ EXPLAIN SELECT *, (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1) FROM
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(14 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT *, (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -328,10 +329,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                         explain_filter                                          
+-------------------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    InitPlan 1
@@ -346,10 +345,12 @@ error hint:
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(14 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(st1 st2 #1)Rows(t1 t2 #1)*/
 EXPLAIN SELECT *, (SELECT max(st1.c1) FROM s1.t1 st1, s1.t2 st2 WHERE st1.c1 = st2.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(st1 st2 #1)
@@ -358,10 +359,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                         explain_filter                                         
+------------------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    InitPlan 1
@@ -376,14 +375,16 @@ error hint:
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(14 rows)
 
 ----
 ---- No. R-1-5 conflict table name
 ----
 -- No. R-1-5-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -391,21 +392,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-5-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t1 #1)"
 DETAIL:  Relation name "t1" is duplicated.
 LOG:  pg_hint_plan:
@@ -415,40 +416,38 @@ duplication hint:
 error hint:
 Rows(t1 t1 #1)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-5-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+(t1 t1)(t2 t2)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "(t1 t1)(t2 t2)"
 DETAIL:  Unrecognized hint keyword "".
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2, s1.t3 WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                explain_filter                                 
+-------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Merge Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -458,16 +457,16 @@ EXPLAIN SELECT * FROM s1.t1, s1.t2, s1.t3 WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(9 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+(t1 t2 t1 t2)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2, s1.t3, s1.t4 WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "(t1 t2 t1 t2)"
 DETAIL:  Unrecognized hint keyword "".
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
    ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
          Merge Cond: (t1.c1 = t2.c1)
@@ -480,14 +479,16 @@ DETAIL:  Unrecognized hint keyword "".
                ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Scan using t4_i1 on t4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t1.c1)
+(12 rows)
 
 ----
 ---- No. R-1-6 object type for the hint
 ----
 -- No. R-1-6-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -495,24 +496,22 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-6-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.p1 t1, s1.p1 t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=301 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Append  (cost=xxx..xxx rows=301 width=xxx)
@@ -526,10 +525,12 @@ EXPLAIN SELECT * FROM s1.p1 t1, s1.p1 t2 WHERE t1.c1 = t2.c1;
                ->  Seq Scan on p1c1 t2_2  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c2 t2_3  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c3 t2_4  (cost=xxx..xxx rows=100 width=xxx)
+(13 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.p1 t1, s1.p1 t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -537,10 +538,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Append  (cost=xxx..xxx rows=301 width=xxx)
@@ -554,23 +553,25 @@ error hint:
                ->  Seq Scan on p1c1 t2_2  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c2 t2_3  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c3 t2_4  (cost=xxx..xxx rows=100 width=xxx)
+(13 rows)
 
 -- No. R-1-6-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.ul1 t1, s1.ul1 t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                           explain_filter                            
+---------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1130 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Seq Scan on ul1 t1  (cost=xxx..xxx rows=1130 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1130 width=xxx)
          ->  Seq Scan on ul1 t2  (cost=xxx..xxx rows=1130 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.ul1 t1, s1.ul1 t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -578,33 +579,33 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                           explain_filter                            
+---------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Seq Scan on ul1 t1  (cost=xxx..xxx rows=1130 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1130 width=xxx)
          ->  Seq Scan on ul1 t2  (cost=xxx..xxx rows=1130 width=xxx)
+(5 rows)
 
 -- No. R-1-6-4
 CREATE TEMP TABLE tm1 (LIKE s1.t1 INCLUDING ALL);
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM tm1 t1, tm1 t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                           explain_filter                            
+---------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1130 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Seq Scan on tm1 t1  (cost=xxx..xxx rows=1130 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1130 width=xxx)
          ->  Seq Scan on tm1 t2  (cost=xxx..xxx rows=1130 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM tm1 t1, tm1 t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -612,33 +613,33 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                           explain_filter                            
+---------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Seq Scan on tm1 t1  (cost=xxx..xxx rows=1130 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1130 width=xxx)
          ->  Seq Scan on tm1 t2  (cost=xxx..xxx rows=1130 width=xxx)
+(5 rows)
 
 -- No. R-1-6-5
 CREATE TEMP TABLE t_pg_class AS SELECT * from pg_class LIMIT 100;
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM t_pg_class t1, t_pg_class t2 WHERE t1.oid = t2.oid;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                              explain_filter                               
+---------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=450 width=xxx)
    Hash Cond: (t1.oid = t2.oid)
    ->  Seq Scan on t_pg_class t1  (cost=xxx..xxx rows=300 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=300 width=xxx)
          ->  Seq Scan on t_pg_class t2  (cost=xxx..xxx rows=300 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM t_pg_class t1, t_pg_class t2 WHERE t1.oid = t2.oid;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -646,33 +647,33 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                              explain_filter                               
+---------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (t1.oid = t2.oid)
    ->  Seq Scan on t_pg_class t1  (cost=xxx..xxx rows=300 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=300 width=xxx)
          ->  Seq Scan on t_pg_class t2  (cost=xxx..xxx rows=300 width=xxx)
+(5 rows)
 
 -- No. R-1-6-6
 -- refer ut-fdw.sql
 -- No. R-1-6-7
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.f1() t1, s1.f1() t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                         explain_filter                         
+----------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    Join Filter: (t1.c1 = t2.c1)
    ->  Function Scan on f1 t1  (cost=xxx..xxx rows=1 width=xxx)
    ->  Function Scan on f1 t2  (cost=xxx..xxx rows=1 width=xxx)
+(4 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.f1() t1, s1.f1() t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -680,31 +681,31 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                         explain_filter                         
+----------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    Join Filter: (t1.c1 = t2.c1)
    ->  Function Scan on f1 t1  (cost=xxx..xxx rows=1 width=xxx)
    ->  Function Scan on f1 t2  (cost=xxx..xxx rows=1 width=xxx)
+(4 rows)
 
 -- No. R-1-6-8
-\o results/ut-R.tmpout
-EXPLAIN SELECT * FROM (VALUES(1,1,1,'1'), (2,2,2,'2'), (3,3,3,'3')) AS t1 (c1, c2, c3, c4),  s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+SELECT explain_filter('
+EXPLAIN SELECT * FROM (VALUES(1,1,1,''1''), (2,2,2,''2''), (3,3,3,''3'')) AS t1 (c1, c2, c3, c4),  s1.t2 WHERE t1.c1 = t2.c1;
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=3 width=xxx)
    Hash Cond: (t2.c1 = "*VALUES*".column1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=3 width=xxx)
          ->  Values Scan on "*VALUES*"  (cost=xxx..xxx rows=3 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
-EXPLAIN SELECT * FROM (VALUES(1,1,1,'1'), (2,2,2,'2'), (3,3,3,'3')) AS t1 (c1, c2, c3, c4),  s1.t2 WHERE t1.c1 = t2.c1;
+EXPLAIN SELECT * FROM (VALUES(1,1,1,''1''), (2,2,2,''2''), (3,3,3,''3'')) AS t1 (c1, c2, c3, c4),  s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -712,19 +713,19 @@ Rows(t1 t2 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=3 width=xxx)
    Hash Cond: (t2.c1 = "*VALUES*".column1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=3 width=xxx)
          ->  Values Scan on "*VALUES*"  (cost=xxx..xxx rows=3 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(*VALUES* t2 #1)*/
-EXPLAIN SELECT * FROM (VALUES(1,1,1,'1'), (2,2,2,'2'), (3,3,3,'3')) AS t1 (c1, c2, c3, c4),  s1.t2 WHERE t1.c1 = t2.c1;
+EXPLAIN SELECT * FROM (VALUES(1,1,1,''1''), (2,2,2,''2''), (3,3,3,''3'')) AS t1 (c1, c2, c3, c4),  s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(*VALUES* t2 #1)
@@ -732,23 +733,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (t2.c1 = "*VALUES*".column1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=3 width=xxx)
          ->  Values Scan on "*VALUES*"  (cost=xxx..xxx rows=3 width=xxx)
+(5 rows)
 
 -- No. R-1-6-9
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN WITH c1(c1) AS (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1) SELECT * FROM s1.t1, c1 WHERE t1.c1 = c1.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                        explain_filter                                         
+-----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
          ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
@@ -759,10 +758,12 @@ EXPLAIN WITH c1(c1) AS (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1)
                      ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = (max(t1_1.c1)))
+(10 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)Rows(t1 c1 +1)*/
 EXPLAIN WITH c1(c1) AS (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1) SELECT * FROM s1.t1, c1 WHERE t1.c1 = c1.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(c1 t1 +1)
@@ -771,10 +772,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                         
+-----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
    ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
          ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -785,23 +784,25 @@ error hint:
                      ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = (max(t1_1.c1)))
+(10 rows)
 
 -- No. R-1-6-10
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.v1 t1, s1.v1 t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                             
+------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
    Hash Cond: (v1t1.c1 = v1t1_1.c1)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1000 width=xxx)
          ->  Seq Scan on t1 v1t1_1  (cost=xxx..xxx rows=1000 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.v1 t1, s1.v1 t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -809,19 +810,19 @@ Rows(t1 t2 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                             
+------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
    Hash Cond: (v1t1.c1 = v1t1_1.c1)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1000 width=xxx)
          ->  Seq Scan on t1 v1t1_1  (cost=xxx..xxx rows=1000 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(v1t1 v1t1_ #1)*/
 EXPLAIN SELECT * FROM s1.v1 t1, s1.v1_ t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(v1t1 v1t1_ #1)
@@ -829,23 +830,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                            explain_filter                             
+-----------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (v1t1.c1 = v1t1_.c1)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1000 width=xxx)
          ->  Seq Scan on t1 v1t1_  (cost=xxx..xxx rows=1000 width=xxx)
+(5 rows)
 
 -- No. R-1-6-11
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(st1.c1) FROM s1.t1 st1, s1.t2 st2 WHERE st1.c1 = st2.c1);
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                         explain_filter                                         
+------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -859,10 +858,12 @@ EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(s
          Index Cond: (c1 = (InitPlan 1).col1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c1 = (InitPlan 1).col1)
+(13 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)Rows(st1 st2 #1)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(st1.c1) FROM s1.t1 st1, s1.t2 st2 WHERE st1.c1 = st2.c1);
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(st1 st2 #1)
@@ -871,10 +872,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                         explain_filter                                         
+------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -888,27 +887,29 @@ error hint:
          Index Cond: (c1 = (InitPlan 1).col1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c1 = (InitPlan 1).col1)
+(13 rows)
 
 --
 -- There are cases where difference in the measured value and predicted value
 -- depending upon the version of PostgreSQL
 --
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, (SELECT t2.c1 FROM s1.t2) st2 WHERE t1.c1 = st2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 st2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, (SELECT t2.c1 FROM s1.t2) st2 WHERE t1.c1 = st2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -916,20 +917,20 @@ Rows(st2 t1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, (SELECT t2.c1 FROM s1.t2) st2 WHERE t1.c1 = st2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #1)
@@ -937,24 +938,24 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-1-7 specified number of conditions
 ----
 -- No. R-1-7-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near ""
 DETAIL:  Rows hint requires at least two relations.
 LOG:  pg_hint_plan:
@@ -964,21 +965,21 @@ duplication hint:
 error hint:
 Rows(t1 #1)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-7-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "1"
 DETAIL:  Unrecognized rows value type notation.
 LOG:  pg_hint_plan:
@@ -988,21 +989,21 @@ duplication hint:
 error hint:
 Rows(t1 t2 1)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-1-7-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #notrows)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "notrows"
 DETAIL:  Rows hint requires valid number as rows estimation.
 LOG:  pg_hint_plan:
@@ -1012,22 +1013,21 @@ duplication hint:
 error hint:
 Rows(t1 t2 #notrows)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-2-1 some complexity query blocks
 ----
 -- No. R-2-1-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1043,7 +1043,7 @@ SELECT max(b1t1.c1) FROM s1.t1 b1t1, s1.t2 b1t2, s1.t3 b1t3, s1.t4 b1t4 WHERE b1
 SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.c1 = b2t2.c1 AND b2t1.c1 = b2t3.c1 AND b2t1.c1 = b2t4.c1
 )
                     FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4 WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = bmt3.c1 AND bmt1.c1 = bmt4.c1
-;
+;');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1062,10 +1062,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                  explain_filter                                                   
+-------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1109,8 +1107,9 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(43 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1129,6 +1128,7 @@ SELECT max(b1t1.c1) FROM s1.t1 b1t1, s1.t2 b1t2, s1.t3 b1t3, s1.t4 b1t4 WHERE b1
 SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.c1 = b2t2.c1 AND b2t1.c1 = b2t3.c1 AND b2t1.c1 = b2t4.c1)
                     FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4 WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = bmt3.c1 AND bmt1.c1 = bmt4.c1
 ;
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1156,10 +1156,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                  explain_filter                                                   
+-------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1203,9 +1201,10 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(43 rows)
 
 -- No. R-2-1-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1226,6 +1225,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
 )
                     FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4 WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = bmt3.c1 AND bmt1.c1 = bmt4.c1
 ;
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1248,10 +1248,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                  explain_filter                                                   
+-------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1308,8 +1306,9 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(56 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1333,7 +1332,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
 SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.c1 = b3t2.c1 AND b3t1.c1 = b3t3.c1 AND b3t1.c1 = b3t4.c1
 )
                     FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4 WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = bmt3.c1 AND bmt1.c1 = bmt4.c1
-;
+;');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1368,10 +1367,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                  explain_filter                                                   
+-------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1428,13 +1425,15 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(56 rows)
 
 -- No. R-2-1-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 */
 EXPLAIN SELECT max(bmt1.c1) FROM s1.t1 bmt1, s1.t2 bmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -1442,10 +1441,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                        
+----------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
          Merge Cond: (bmt1.c1 = bmt2.c1)
@@ -1461,13 +1458,15 @@ error hint:
                                  ->  Seq Scan on t4 bmt4  (cost=xxx..xxx rows=1130 width=xxx)
                      ->  Hash  (cost=xxx..xxx rows=100 width=xxx)
                            ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
+(15 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 Rows(bmt4 bmt3 #1)Rows(bmt4 bmt3 bmt2 #1)Rows(bmt1 bmt2 bmt3 bmt4 #1)
 */
 EXPLAIN SELECT max(bmt1.c1) FROM s1.t1 bmt1, s1.t2 bmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -1478,10 +1477,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                       explain_filter                                       
+--------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (bmt1.c1 = bmt2.c1)
@@ -1495,13 +1492,15 @@ error hint:
                      Index Cond: (c1 = bmt3.c1)
          ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt3.c1)
+(13 rows)
 
 -- No. R-2-1-4
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 */
 EXPLAIN SELECT max(bmt1.c1) FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -1509,10 +1508,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                        
+----------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
          Merge Cond: (bmt1.c1 = bmt2.c1)
@@ -1528,13 +1525,15 @@ error hint:
                                  ->  Seq Scan on t4 bmt4  (cost=xxx..xxx rows=1130 width=xxx)
                      ->  Hash  (cost=xxx..xxx rows=100 width=xxx)
                            ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
+(15 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 Rows(bmt4 bmt3 #1)Rows(bmt4 bmt3 bmt2 #1)Rows(bmt1 bmt2 bmt3 bmt4 #1)
 */
 EXPLAIN SELECT max(bmt1.c1) FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -1545,10 +1544,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                       explain_filter                                       
+--------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (bmt1.c1 = bmt2.c1)
@@ -1562,9 +1559,10 @@ error hint:
                      Index Cond: (c1 = bmt3.c1)
          ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt3.c1)
+(13 rows)
 
 -- No. R-2-1-5
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1580,6 +1578,7 @@ SELECT max(b1t1.c1) FROM s1.t1 b1t1, s1.t2 b1t2, s1.t3 b1t3, s1.t4 b1t4 WHERE b1
 ) AND bmt1.c1 <> (
 SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.c1 = b2t2.c1 AND b2t1.c1 = b2t3.c1 AND b2t1.c1 = b2t4.c1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1598,10 +1597,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                  explain_filter                                                   
+-------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1646,8 +1643,9 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(44 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1666,7 +1664,7 @@ SELECT max(b1t1.c1) FROM s1.t1 b1t1, s1.t2 b1t2, s1.t3 b1t3, s1.t4 b1t4 WHERE b1
 ) AND bmt1.c1 <> (
 SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.c1 = b2t2.c1 AND b2t1.c1 = b2t3.c1 AND b2t1.c1 = b2t4.c1
 )
-;
+;');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1694,10 +1692,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                  explain_filter                                                   
+-------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1742,9 +1738,10 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(44 rows)
 
 -- No. R-2-1-6
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1764,7 +1761,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
 ) AND bmt1.c1 <> (
 SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.c1 = b3t2.c1 AND b3t1.c1 = b3t3.c1 AND b3t1.c1 = b3t4.c1
 )
-;
+;');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1787,10 +1784,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                         explain_filter                                                          
+---------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1848,8 +1843,9 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(57 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1873,7 +1869,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
 ) AND bmt1.c1 <> (
 SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.c1 = b3t2.c1 AND b3t1.c1 = b3t3.c1 AND b3t1.c1 = b3t4.c1
 )
-;
+;');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -1908,10 +1904,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                         explain_filter                                                          
+---------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
@@ -1969,9 +1963,10 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(57 rows)
 
 -- No. R-2-1-7
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c2 c1 bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -1992,7 +1987,7 @@ SELECT max(bmt1.c1) FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4
                                                                         WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = bmt3.c1 AND bmt1.c1 = bmt4.c1
 AND bmt1.c1 = c1.c1
 AND bmt1.c1 = c2.c1
-;
+;');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -2013,10 +2008,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                                            explain_filter                                                                             
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
          Hash Cond: (bmt4.c1 = bmt1.c1)
@@ -2067,8 +2060,9 @@ error hint:
                                                                            Index Cond: (c1 = b2t1.c1)
                                  ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
                                        Index Cond: (c1 = bmt1.c1)
+(50 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c2 c1 bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -2092,6 +2086,7 @@ SELECT max(bmt1.c1) FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4
                                                                         WHERE bmt1.c1 = bmt2.c1 AND bmt1.c1 = bmt3.c1 AND bmt1.c1 = bmt4.c1
 AND bmt1.c1 = c1.c1
 AND bmt1.c1 = c2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -2123,10 +2118,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                                            explain_filter                                                                             
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
          Hash Cond: (bmt4.c1 = bmt1.c1)
@@ -2177,9 +2170,10 @@ error hint:
                                                                            Index Cond: (c1 = b2t1.c1)
                                  ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
                                        Index Cond: (c1 = bmt1.c1)
+(50 rows)
 
 -- No. R-2-1-8
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c3 c2 c1 bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -2206,6 +2200,7 @@ SELECT max(bmt1.c1) FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4
 AND bmt1.c1 = c1.c1
 AND bmt1.c1 = c2.c1
 AND bmt1.c1 = c3.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -2231,10 +2226,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                                         explain_filter                                                                          
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -2302,8 +2295,9 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(67 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c3 c2 c1 bmt1 bmt2 bmt3 bmt4)
 Leading(b1t2 b1t3 b1t4 b1t1)
@@ -2334,6 +2328,7 @@ SELECT max(bmt1.c1) FROM s1.t1 bmt1, s1.t2 bmt2, s1.t3 bmt3, s1.t4 bmt4
 AND bmt1.c1 = c1.c1
 AND bmt1.c1 = c2.c1
 AND bmt1.c1 = c3.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t2 b1t3)
@@ -2374,10 +2369,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                                            explain_filter                                                                             
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -2445,12 +2438,13 @@ error hint:
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(67 rows)
 
 ----
 ---- No. R-2-2 the number of the tables per quiry block
 ----
 -- No. R-2-2-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt1)
 */
@@ -2466,6 +2460,7 @@ AND bmt1.c1 = c1.c1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1 WHERE b3t1.c1 = 1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -2473,10 +2468,8 @@ Leading(c1 bmt1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                  explain_filter                                  
+----------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1 width=xxx)
@@ -2489,8 +2482,9 @@ error hint:
          Filter: (c1 <> (InitPlan 2).col1)
    ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = 1)
+(12 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt1)
 Rows(bmt1 c1 #1)
@@ -2510,6 +2504,7 @@ AND bmt1.c1 = c1.c1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1 WHERE b3t1.c1 = 1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -2521,10 +2516,8 @@ Rows(bmt1 c1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                  explain_filter                                  
+----------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    InitPlan 1
      ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1 width=xxx)
@@ -2537,9 +2530,10 @@ error hint:
          Filter: (c1 <> (InitPlan 2).col1)
    ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = 1)
+(12 rows)
 
 -- No. R-2-2-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt2 bmt1)
 Leading(b1t2 b1t1)
@@ -2563,6 +2557,7 @@ AND bmt1.c1 = c1.c1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1, s1.t2 b3t2 WHERE b3t1.c1 = b3t2.c1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t1 b1t2)
@@ -2578,10 +2573,8 @@ Leading(c1 bmt2 bmt1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                         
+-----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Join Filter: (bmt1.c1 = bmt2.c1)
    InitPlan 1
@@ -2610,8 +2603,9 @@ error hint:
                Filter: (c1 <> (InitPlan 2).col1)
    ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = b1t1.c1)
+(28 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt2 bmt1)
 Leading(b1t2 b1t1)
@@ -2641,6 +2635,7 @@ AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1, s1.t2 b3t2 WHERE b3t1.c1 = b3t2.c1
 )
 ;
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t1 b1t2)
@@ -2661,10 +2656,8 @@ Rows(bmt1 bmt2 c1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                         
+-----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Join Filter: (bmt1.c1 = bmt2.c1)
    InitPlan 1
@@ -2693,9 +2686,10 @@ error hint:
                Filter: (c1 <> (InitPlan 2).col1)
    ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = b1t1.c1)
+(28 rows)
 
 -- No. R-2-2-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt4 bmt3 bmt2 bmt1)
 Leading(b1t4 b1t3 b1t2 b1t1) 
@@ -2726,6 +2720,7 @@ SELECT b2t1.c1 FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.c1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.c1 = b3t2.c1 AND b3t1.c1 = b3t3.c1 AND b3t1.c1 = b3t4.c1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 HashJoin(b1t3 b1t4)
@@ -2749,10 +2744,8 @@ Leading(c1 bmt4 bmt3 bmt2 bmt1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                   explain_filter                                                   
+--------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Join Filter: (bmt1.c1 = bmt4.c1)
    InitPlan 1
@@ -2811,8 +2804,9 @@ error hint:
                Index Cond: (c1 = b1t3.c1)
    ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt3.c1)
+(58 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt4 bmt3 bmt2 bmt1)
 Leading(b1t4 b1t3 b1t2 b1t1) 
@@ -2856,6 +2850,7 @@ SELECT b2t1.c1 FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.c1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.c1 = b3t2.c1 AND b3t1.c1 = b3t3.c1 AND b3t1.c1 = b3t4.c1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 HashJoin(b1t3 b1t4)
@@ -2892,10 +2887,8 @@ Rows(bmt1 bmt2 bmt3 bmt4 c1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                   explain_filter                                                   
+--------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Join Filter: (bmt1.c1 = bmt4.c1)
    InitPlan 1
@@ -2954,9 +2947,10 @@ error hint:
                Index Cond: (c1 = b1t3.c1)
    ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt3.c1)
+(58 rows)
 
 -- No. R-2-2-4
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt4 bmt3 bmt2 bmt1)
 Leading(b1t4 b1t3 b1t2 b1t1)
@@ -2979,6 +2973,7 @@ SELECT b2t1.c1 FROM s1.t1 b2t1 WHERE b2t1.c1 = 1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t3 b1t4)
@@ -2994,10 +2989,8 @@ Leading(c1 bmt4 bmt3 bmt2 bmt1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                       explain_filter                                                        
+-----------------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Join Filter: (bmt1.c1 = bmt4.c1)
    InitPlan 1
@@ -3032,8 +3025,9 @@ error hint:
                Index Cond: (c1 = b1t3.c1)
    ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt3.c1)
+(34 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(c1 bmt4 bmt3 bmt2 bmt1)
 Leading(b1t4 b1t3 b1t2 b1t1)
@@ -3063,6 +3057,7 @@ SELECT b2t1.c1 FROM s1.t1 b2t1 WHERE b2t1.c1 = 1
 AND bmt1.c1 <> (
 SELECT b3t1.c1 FROM s1.t1 b3t1
 );
+');
 LOG:  pg_hint_plan:
 used hint:
 MergeJoin(b1t3 b1t4)
@@ -3085,10 +3080,8 @@ Rows(bmt1 bmt2 bmt3 bmt4 c1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                                       explain_filter                                                        
+-----------------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Join Filter: (bmt1.c1 = bmt4.c1)
    InitPlan 1
@@ -3123,16 +3116,18 @@ error hint:
                Index Cond: (c1 = b1t3.c1)
    ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt3.c1)
+(34 rows)
 
 ----
 ---- No. R-2-3 RULE or VIEW
 ----
 -- No. R-2-3-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r1 t1 t2 t3 t4)
 */
 EXPLAIN UPDATE s1.r1 SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r1 t1 t2 t3 t4)
@@ -3140,10 +3135,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                        
+----------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (t1.c1 = t4.c1)
@@ -3164,8 +3157,9 @@ error hint:
                      TID Cond: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t4  (cost=xxx..xxx rows=1 width=xxx)
                TID Cond: (ctid = '(1,1)'::tid)
+(20 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r1 t1 t2 t3 t4)
 Rows(r1 t1 t2 t3 t4 #2)
@@ -3174,6 +3168,7 @@ Rows(r1 t1 t2 #2)
 Rows(r1 t1 #2)
 */
 EXPLAIN UPDATE s1.r1 SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r1 t1 t2 t3 t4)
@@ -3185,10 +3180,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                 explain_filter                                 
+--------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          Join Filter: (t1.c1 = t4.c1)
@@ -3207,12 +3200,14 @@ error hint:
                                  TID Cond: (ctid = '(1,1)'::tid)
                            ->  Seq Scan on r1  (cost=xxx..xxx rows=6 width=xxx)
                                  Filter: (c1 = 1)
+(18 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r1_ b1t1 b1t2 b1t3 b1t4)
 */
 EXPLAIN UPDATE s1.r1_ SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r1_ b1t1 b1t2 b1t3 b1t4)
@@ -3220,10 +3215,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                          explain_filter                                           
+---------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (b1t1.c1 = b1t4.c1)
@@ -3244,8 +3237,9 @@ error hint:
                      TID Cond: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t4 b1t4  (cost=xxx..xxx rows=1 width=xxx)
                TID Cond: (ctid = '(1,1)'::tid)
+(20 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r1_ b1t1 b1t2 b1t3 b1t4)
 Rows(r1_ b1t1 b1t2 b1t3 b1t4 #2)
@@ -3254,6 +3248,7 @@ Rows(r1_ b1t1 b1t2 #2)
 Rows(r1_ b1t1 #2)
 */
 EXPLAIN UPDATE s1.r1_ SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r1_ b1t1 b1t2 b1t3 b1t4)
@@ -3265,10 +3260,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          Join Filter: (b1t1.c1 = b1t4.c1)
@@ -3287,13 +3280,15 @@ error hint:
                                  TID Cond: (ctid = '(1,1)'::tid)
                            ->  Seq Scan on r1_  (cost=xxx..xxx rows=6 width=xxx)
                                  Filter: (c1 = 1)
+(18 rows)
 
 -- No. R-2-3-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r2 t1 t2 t3 t4)
 */
 EXPLAIN UPDATE s1.r2 SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r2 t1 t2 t3 t4)
@@ -3308,10 +3303,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                        
+----------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (t1.c1 = t4.c1)
@@ -3353,8 +3346,9 @@ error hint:
                      TID Cond: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t4  (cost=xxx..xxx rows=1 width=xxx)
                TID Cond: (ctid = '(1,1)'::tid)
+(41 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r2 t1 t2 t3 t4)
 Rows(r2 t1 t2 t3 t4 #2)
@@ -3363,6 +3357,7 @@ Rows(r2 t1 t2 #2)
 Rows(r2 t1 #2)
 */
 EXPLAIN UPDATE s1.r2 SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r2 t1 t2 t3 t4)
@@ -3385,10 +3380,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                 explain_filter                                 
+--------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          Join Filter: (t1.c1 = t4.c1)
@@ -3426,13 +3419,15 @@ error hint:
                                  TID Cond: (ctid = '(1,1)'::tid)
                            ->  Seq Scan on r2  (cost=xxx..xxx rows=6 width=xxx)
                                  Filter: (c1 = 1)
+(37 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r2_ b1t1 b1t2 b1t3 b1t4)
 Leading(r2_ b2t1 b2t2 b2t3 b2t4)
 */
 EXPLAIN UPDATE s1.r2_ SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r2_ b1t1 b1t2 b1t3 b1t4)
@@ -3449,10 +3444,8 @@ Leading(r2_ b1t1 b1t2 b1t3 b1t4)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                          explain_filter                                           
+---------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (b1t1.c1 = b1t4.c1)
@@ -3494,8 +3487,9 @@ error hint:
                      TID Cond: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t4 b2t4  (cost=xxx..xxx rows=1 width=xxx)
                TID Cond: (ctid = '(1,1)'::tid)
+(41 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r2_ b1t1 b1t2 b1t3 b1t4)
 Leading(r2_ b2t1 b2t2 b2t3 b2t4)
@@ -3509,6 +3503,7 @@ Rows(r2_ b2t1 b2t2 b2t3  #2)
 Rows(r2_ b2t1 b2t2 b2t3 b2t4 #2)
 */
 EXPLAIN UPDATE s1.r2_ SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r2_ b1t1 b1t2 b1t3 b1t4)
@@ -3541,10 +3536,8 @@ Rows(b1t1 b1t2 b1t3 b1t4 r2_ #2)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          Join Filter: (b1t1.c1 = b1t4.c1)
@@ -3582,13 +3575,15 @@ error hint:
                                  TID Cond: (ctid = '(1,1)'::tid)
                            ->  Seq Scan on r2_  (cost=xxx..xxx rows=6 width=xxx)
                                  Filter: (c1 = 1)
+(37 rows)
 
 -- No. R-2-3-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r3 t1 t2 t3 t4)
 */
 EXPLAIN UPDATE s1.r3 SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r3 t1 t2 t3 t4)
@@ -3610,10 +3605,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                        explain_filter                                        
+----------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (t1.c1 = t4.c1)
@@ -3676,8 +3669,9 @@ error hint:
                      TID Cond: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t4  (cost=xxx..xxx rows=1 width=xxx)
                TID Cond: (ctid = '(1,1)'::tid)
+(62 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r3 t1 t2 t3 t4)
 Rows(r3 t1 t2 t3 t4 #2)
@@ -3686,6 +3680,7 @@ Rows(r3 t1 t2 #2)
 Rows(r3 t1 #2)
 */
 EXPLAIN UPDATE s1.r3 SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r3 t1 t2 t3 t4)
@@ -3719,10 +3714,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                 explain_filter                                 
+--------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          Join Filter: (t1.c1 = t4.c1)
@@ -3779,14 +3772,16 @@ error hint:
                                  TID Cond: (ctid = '(1,1)'::tid)
                            ->  Seq Scan on r3  (cost=xxx..xxx rows=6 width=xxx)
                                  Filter: (c1 = 1)
+(56 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r3_ b1t1 b1t2 b1t3 b1t4)
 Leading(r3_ b2t1 b2t2 b2t3 b2t4)
 Leading(r3_ b3t1 b3t2 b3t3 b3t4)
 */
 EXPLAIN UPDATE s1.r3_ SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r3_ b1t1 b1t2 b1t3 b1t4)
@@ -3814,10 +3809,8 @@ Leading(r3_ b2t1 b2t2 b2t3 b2t4)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                          explain_filter                                           
+---------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (b1t1.c1 = b1t4.c1)
@@ -3880,8 +3873,9 @@ error hint:
                      TID Cond: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t4 b3t4  (cost=xxx..xxx rows=1 width=xxx)
                TID Cond: (ctid = '(1,1)'::tid)
+(62 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(r3_ b1t1 b1t2 b1t3 b1t4)
 Leading(r3_ b2t1 b2t2 b2t3 b2t4)
@@ -3900,6 +3894,7 @@ Rows(r3_ b3t1 b3t2 b3t3 #2)
 Rows(r3_ b3t1 b3t2 b3t3 b3t4 #2)
 */
 EXPLAIN UPDATE s1.r3_ SET c1 = c1 WHERE c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(r3_ b1t1 b1t2 b1t3 b1t4)
@@ -3963,10 +3958,8 @@ Rows(b2t1 b2t2 b2t3 b2t4 r3_ #2)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          Join Filter: (b1t1.c1 = b1t4.c1)
@@ -4023,11 +4016,13 @@ error hint:
                                  TID Cond: (ctid = '(1,1)'::tid)
                            ->  Seq Scan on r3_  (cost=xxx..xxx rows=6 width=xxx)
                                  Filter: (c1 = 1)
+(56 rows)
 
 -- No. R-2-3-4
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+HashJoin(v1t1 v1t1)*/
 EXPLAIN SELECT * FROM s1.v1 v1, s1.v1 v2 WHERE v1.c1 = v2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(v1t1 v1t1)"
 DETAIL:  Relation name "v1t1" is ambiguous.
 LOG:  pg_hint_plan:
@@ -4037,19 +4032,19 @@ duplication hint:
 error hint:
 HashJoin(v1t1 v1t1)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                             
+------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
    Hash Cond: (v1t1.c1 = v1t1_1.c1)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1000 width=xxx)
          ->  Seq Scan on t1 v1t1_1  (cost=xxx..xxx rows=1000 width=xxx)
+(5 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+HashJoin(v1t1 v1t1)Rows(v1t1 v1t1 #1)*/
 EXPLAIN SELECT * FROM s1.v1 v1, s1.v1 v2 WHERE v1.c1 = v2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(v1t1 v1t1)Rows(v1t1 v1t1 #1)"
 DETAIL:  Relation name "v1t1" is ambiguous.
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(v1t1 v1t1 #1)"
@@ -4062,20 +4057,20 @@ error hint:
 HashJoin(v1t1 v1t1)
 Rows(v1t1 v1t1 #1)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                             
+------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
    Hash Cond: (v1t1.c1 = v1t1_1.c1)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=1000 width=xxx)
          ->  Seq Scan on t1 v1t1_1  (cost=xxx..xxx rows=1000 width=xxx)
+(5 rows)
 
 -- No. R-2-3-5
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+NestLoop(v1t1 v1t1_)*/
 EXPLAIN SELECT * FROM s1.v1 v1, s1.v1_ v2 WHERE v1.c1 = v2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 NestLoop(v1t1 v1t1_)
@@ -4083,18 +4078,18 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                               
+----------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Index Scan using t1_i1 on t1 v1t1_  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = v1t1.c1)
+(4 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+NestLoop(v1t1 v1t1_)Rows(v1t1 v1t1_ #1)*/
 EXPLAIN SELECT * FROM s1.v1 v1, s1.v1_ v2 WHERE v1.c1 = v2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 NestLoop(v1t1 v1t1_)
@@ -4103,25 +4098,23 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                               
+----------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Seq Scan on t1 v1t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Index Scan using t1_i1 on t1 v1t1_  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = v1t1.c1)
+(4 rows)
 
 ----
 ---- No. R-2-4 VALUES clause
 ----
 -- No. R-2-4-1
-\o results/ut-R.tmpout
-EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t3 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
+');
+                                explain_filter                                 
+-------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Hash Join  (cost=xxx..xxx rows=2 width=xxx)
          Hash Cond: (t2.c1 = "*VALUES*".column1)
@@ -4130,10 +4123,12 @@ EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, 
                ->  Values Scan on "*VALUES*"  (cost=xxx..xxx rows=2 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t2.c1)
+(8 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+ Leading(t3 t1 t2) Rows(t3 t1 #2)Rows(t3 t1 t2 #2)*/
-EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
+EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t3 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4143,10 +4138,8 @@ Rows(t1 t2 t3 #2)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                explain_filter                                 
+-------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Hash Join  (cost=xxx..xxx rows=2 width=xxx)
          Hash Cond: (t2.c1 = "*VALUES*".column1)
@@ -4155,10 +4148,12 @@ error hint:
                ->  Values Scan on "*VALUES*"  (cost=xxx..xxx rows=2 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t2.c1)
+(8 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+ Leading(*VALUES* t1 t2) Rows(*VALUES* t1 #2)Rows(*VALUES* t1 t2 #20)*/
-EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
+EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t3 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(*VALUES* t1 t2)
@@ -4168,10 +4163,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                               
+----------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=20 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=2 width=xxx)
          ->  Values Scan on "*VALUES*"  (cost=xxx..xxx rows=2 width=xxx)
@@ -4179,14 +4172,14 @@ error hint:
                Index Cond: (c1 = "*VALUES*".column1)
    ->  Index Scan using t2_i1 on t2  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t1.c1)
+(7 rows)
 
 -- No. R-2-4-2
-\o results/ut-R.tmpout
-EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
+');
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (t2.c1 = "*VALUES*_1".column1)
@@ -4199,10 +4192,12 @@ EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, 
                ->  Values Scan on "*VALUES*_1"  (cost=xxx..xxx rows=2 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t2.c1)
+(12 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+ Leading(t4 t3 t2 t1) Rows(t4 t3 #2) Rows(t4 t3 t2 #2)Rows(t4 t3 t2 t1 #2)*/
-EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
+EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4213,10 +4208,8 @@ Rows(t1 t2 t3 t4 #2)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (t2.c1 = "*VALUES*_1".column1)
@@ -4229,10 +4222,12 @@ error hint:
                ->  Values Scan on "*VALUES*_1"  (cost=xxx..xxx rows=2 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t2.c1)
+(12 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+ Leading(*VALUES* t3 t2 t1) Rows(t4 t3 #2)Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)*/
-EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,'1'), (2,2,2,'2')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
+EXPLAIN SELECT * FROM s1.t1, s1.t2, (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t3 (c1, c2, c3, c4), (VALUES(1,1,1,''1''), (2,2,2,''2'')) AS t4 (c1, c2, c3, c4) WHERE t1.c1 = t2.c1 AND t1.c1 = t3.c1 AND t1.c1 = t4.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(*VALUES* t3 t2 #2)Rows(*VALUES* t3 t2 t1 #2)"
 DETAIL:  Relation name "*VALUES*" is ambiguous.
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(*VALUES* t3 t2 t1 #2)"
@@ -4249,10 +4244,8 @@ Leading(*VALUES* t3 t2 t1)
 Rows(*VALUES* t2 t3 #2)
 Rows(*VALUES* t1 t2 t3 #2)
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                   explain_filter                                    
+-------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
          Join Filter: (t2.c1 = "*VALUES*_1".column1)
@@ -4265,17 +4258,17 @@ Rows(*VALUES* t1 t2 t3 #2)
                ->  Values Scan on "*VALUES*_1"  (cost=xxx..xxx rows=2 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = t2.c1)
+(12 rows)
 
 ----
 ---- No. R-2-5
 ----
 -- No. R-2-5-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT max(bmt1.c1) FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                           explain_filter                                            
+-----------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
          ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
@@ -4289,13 +4282,15 @@ EXPLAIN SELECT max(bmt1.c1) FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sb
                      ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = bmt1.c1)
+(13 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 Rows(bmt1 bmt2 bmt3 bmt4 *0.7)
 */
 EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -4304,10 +4299,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                     explain_filter                                     
+----------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=70 width=xxx)
    Merge Cond: (bmt1.c1 = bmt2.c1)
    ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -4322,14 +4315,14 @@ error hint:
                            ->  Seq Scan on t4 bmt4  (cost=xxx..xxx rows=1130 width=xxx)
                ->  Hash  (cost=xxx..xxx rows=100 width=xxx)
                      ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
+(14 rows)
 
 -- No. R-2-5-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                        explain_filter                                         
+-----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
    ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
          Merge Cond: (bmt1.c1 = bmt2.c1)
@@ -4342,13 +4335,15 @@ EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, 
                ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt1.c1)
+(12 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 Rows(bmt4 bmt3 *0.6)
 */
 EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -4357,10 +4352,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                     explain_filter                                     
+----------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=60 width=xxx)
    Merge Cond: (bmt1.c1 = bmt2.c1)
    ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -4375,14 +4368,14 @@ error hint:
                            ->  Seq Scan on t4 bmt4  (cost=xxx..xxx rows=1130 width=xxx)
                ->  Hash  (cost=xxx..xxx rows=100 width=xxx)
                      ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
+(14 rows)
 
 -- No. R-2-5-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                                        explain_filter                                         
+-----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
    ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
          Merge Cond: (bmt1.c1 = bmt2.c1)
@@ -4395,13 +4388,15 @@ EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, 
                ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Only Scan using t4_i1 on t4 bmt4  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt1.c1)
+(12 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+
 Leading(bmt4 bmt3 bmt2 bmt1)
 Rows(bmt4 bmt1 *0.5)
 */
 EXPLAIN SELECT bmt1.c1 FROM s1.t1 bmt1, (SELECT ctid, * FROM s1.t2 bmt2) sbmt2, (SELECT ctid, * FROM s1.t3 bmt3) sbmt3, (SELECT ctid, * FROM s1.t4 bmt4) sbmt4 WHERE bmt1.c1 = sbmt2.c1 AND bmt1.c1 = sbmt3.c1 AND bmt1.c1 = sbmt4.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Leading(bmt4 bmt3 bmt2 bmt1)
@@ -4410,10 +4405,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                                     explain_filter                                     
+----------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=50 width=xxx)
    Merge Cond: (bmt1.c1 = bmt2.c1)
    ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -4428,14 +4421,16 @@ error hint:
                            ->  Seq Scan on t4 bmt4  (cost=xxx..xxx rows=1130 width=xxx)
                ->  Hash  (cost=xxx..xxx rows=100 width=xxx)
                      ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
+(14 rows)
 
 ----
 ---- No. R-3-1 abusolute value
 ----
 -- No. R-3-1-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #0)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 WARNING:  Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : Rows(t1 t2 #0)
 LOG:  pg_hint_plan:
 used hint:
@@ -4444,21 +4439,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-1-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #5)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 #5)
@@ -4466,24 +4461,24 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=5 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-3-2 increase or decrease value
 ----
 -- No. R-3-2-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 +1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 +1)
@@ -4491,21 +4486,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=101 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-2-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 -1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 -1)
@@ -4513,21 +4508,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=99 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-2-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 -1000)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 WARNING:  Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : Rows(t1 t2 -1000)
 LOG:  pg_hint_plan:
 used hint:
@@ -4536,24 +4531,24 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-3-3 multiple 
 ----
 -- No. R-3-3-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 *0)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 WARNING:  Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : Rows(t1 t2 *0)
 LOG:  pg_hint_plan:
 used hint:
@@ -4562,21 +4557,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-3-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 *2)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 *2)
@@ -4584,21 +4579,21 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=200 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-3-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 *0.1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(t1 t2 *0.1)
@@ -4606,27 +4601,25 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=10 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-3-4 join inherit tables
 ----
 -- No. R-3-4-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=301 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
@@ -4646,10 +4639,12 @@ EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
                ->  Seq Scan on p1c1 p1_2  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c2 p1_3  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c3 p1_4  (cost=xxx..xxx rows=100 width=xxx)
+(19 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(p1 p2 #1)*/
 EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 Rows(p1 p2 #1)
@@ -4657,10 +4652,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
@@ -4680,14 +4673,14 @@ error hint:
                ->  Seq Scan on p1c1 p1_2  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c2 p1_3  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c3 p1_4  (cost=xxx..xxx rows=100 width=xxx)
+(19 rows)
 
 -- No. R-3-4-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=301 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
@@ -4707,10 +4700,12 @@ EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
                ->  Seq Scan on p1c1 p1_2  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c2 p1_3  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c3 p1_4  (cost=xxx..xxx rows=100 width=xxx)
+(19 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(p1c1 p2c1 #1)*/
 EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
+');
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4718,10 +4713,8 @@ Rows(p1c1 p2c1 #1)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                               explain_filter                                
+-----------------------------------------------------------------------------
  Hash Join  (cost=xxx..xxx rows=301 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
@@ -4741,27 +4734,29 @@ error hint:
                ->  Seq Scan on p1c1 p1_2  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c2 p1_3  (cost=xxx..xxx rows=100 width=xxx)
                ->  Seq Scan on p1c3 p1_4  (cost=xxx..xxx rows=100 width=xxx)
+(19 rows)
 
 ----
 ---- No. R-3-5 conflict join method hint
 ----
 -- No. R-3-5-1
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)"
 DETAIL:  Conflict rows hint.
 LOG:  pg_hint_plan:
@@ -4772,34 +4767,34 @@ duplication hint:
 Rows(t1 t2 #1)
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-5-2
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)Rows(t1 t2 #1)Rows(t1 t2 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)Rows(t1 t2 #1)"
 DETAIL:  Conflict rows hint.
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t1 t2 #1)"
@@ -4813,34 +4808,34 @@ Rows(t1 t2 #1)
 Rows(t1 t2 #1)
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-5-3
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 #1)Rows(t2 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t2 t1 #1)"
 DETAIL:  Conflict rows hint.
 LOG:  pg_hint_plan:
@@ -4851,34 +4846,34 @@ duplication hint:
 Rows(t1 t2 #1)
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 -- No. R-3-5-4
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t2 t1 #1)Rows(t1 t2 #1)Rows(t2 t1 #1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t2 t1 #1)Rows(t1 t2 #1)Rows(t2 t1 #1)"
 DETAIL:  Conflict rows hint.
 INFO:  pg_hint_plan: hint syntax error at or near "Rows(t1 t2 #1)Rows(t2 t1 #1)"
@@ -4892,38 +4887,38 @@ Rows(t1 t2 #1)
 Rows(t1 t2 #1)
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
 ----
 ---- No. R-3-6 hint state output
 ----
 -- No. R-3-6-1
 SET client_min_messages TO DEBUG1;
-\o results/ut-R.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+');
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\o results/ut-R.tmpout
+SELECT explain_filter('
 /*+Rows(t1 t2 +1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
+');
 DEBUG:  adjusted rows 100 to 101
 LOG:  pg_hint_plan:
 used hint:
@@ -4932,15 +4927,13 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-R.tmpout
-  QUERY PLAN
-----------------
+                             explain_filter                              
+-------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=101 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
          Sort Key: t2.c1
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
+(6 rows)
 
-\! rm results/ut-R.tmpout

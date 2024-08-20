@@ -4411,8 +4411,10 @@ error hint:
 ---- No. S-3-5 not used index
 ----
 -- No. S-3-5-1
-\o results/ut-S.tmpout
-/*+IndexScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+SELECT explain_filter('
+/*+IndexScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+');
 LOG:  available indexes for IndexScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4421,16 +4423,45 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(ti1 ti1_pred)
+duplication hint:
+error hint:
+
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(ti1 ti1_pred)
+duplication hint:
+error hint:
+
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(ti1 ti1_pred)
+duplication hint:
+error hint:
+
+LOG:  pg_hint_plan:
+used hint:
+not used hint:
+IndexScan(ti1 ti1_pred)
+duplication hint:
+error hint:
+
+                    explain_filter                     
+-------------------------------------------------------
  Seq Scan on ti1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 100)
+(2 rows)
 
 -- No. S-3-5-2
-\o results/ut-S.tmpout
-/*+BitmapScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+SELECT explain_filter('
+/*+BitmapScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+');
 LOG:  available indexes for BitmapScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4439,16 +4470,17 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                    explain_filter                     
+-------------------------------------------------------
  Seq Scan on ti1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 100)
+(2 rows)
 
 -- No. S-3-5-3
-\o results/ut-S.tmpout
-/*+IndexOnlyScan(ti1 ti1_pred)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+SELECT explain_filter('
+/*+IndexOnlyScan(ti1 ti1_pred)*/
+EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+');
 LOG:  available indexes for IndexOnlyScan(ti1): ti1_pred
 LOG:  pg_hint_plan:
 used hint:
@@ -4457,16 +4489,17 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                    explain_filter                     
+-------------------------------------------------------
  Seq Scan on ti1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 100)
+(2 rows)
 
 -- No. S-3-5-4
-\o results/ut-S.tmpout
-/*+IndexScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+SELECT explain_filter('
+/*+IndexScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+');
 LOG:  available indexes for IndexScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4475,16 +4508,17 @@ IndexScan(ti1 not_exist)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                           explain_filter                           
+--------------------------------------------------------------------
  Index Scan using ti1_hash on ti1  (cost=xxx..xxx rows=1 width=xxx)
    Index Cond: (c1 = 100)
+(2 rows)
 
 -- No. S-3-5-5
-\o results/ut-S.tmpout
-/*+BitmapScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+SELECT explain_filter('
+/*+BitmapScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
+');
 LOG:  available indexes for BitmapScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4493,16 +4527,17 @@ BitmapScan(ti1 not_exist)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                           explain_filter                           
+--------------------------------------------------------------------
  Index Scan using ti1_hash on ti1  (cost=xxx..xxx rows=1 width=xxx)
    Index Cond: (c1 = 100)
+(2 rows)
 
 -- No. S-3-5-6
-\o results/ut-S.tmpout
-/*+IndexOnlyScan(ti1 not_exist)*/ EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+SELECT explain_filter('
+/*+IndexOnlyScan(ti1 not_exist)*/
+EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
+');
 LOG:  available indexes for IndexOnlyScan(ti1):
 LOG:  pg_hint_plan:
 used hint:
@@ -4511,12 +4546,11 @@ IndexOnlyScan(ti1 not_exist)
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                           explain_filter                           
+--------------------------------------------------------------------
  Index Scan using ti1_hash on ti1  (cost=xxx..xxx rows=1 width=xxx)
    Index Cond: (c1 = 100)
+(2 rows)
 
 -- No. S-3-5-7
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
@@ -4526,8 +4560,10 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
    Index Cond: (c1 = 1)
 (2 rows)
 
-\o results/ut-S.tmpout
-/*+TidScan(t1)*/ EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+SELECT explain_filter('
+/*+TidScan(t1)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.t1 WHERE t1.c1 = 1;
+');
 LOG:  pg_hint_plan:
 used hint:
 TidScan(t1)
@@ -4535,12 +4571,11 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                    explain_filter                    
+------------------------------------------------------
  Seq Scan on t1  (cost={inf}..{inf} rows=1 width=xxx)
    Filter: (c1 = 1)
+(2 rows)
 
 ----
 ---- No. S-3-6 query structure
@@ -5165,20 +5200,22 @@ error hint:
 (7 rows)
 
 -- No. S-3-10-3
-\o results/ut-S.tmpout
+SELECT explain_filter('
 EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+');
+                        explain_filter                         
+---------------------------------------------------------------
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Seq Scan on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: ((c1 < 10) AND ((c2 * 2) < 100))
    ->  Seq Scan on p1c1 p1_2  (cost=xxx..xxx rows=3 width=xxx)
          Filter: ((c1 < 10) AND ((c2 * 2) < 100))
+(5 rows)
 
-\o results/ut-S.tmpout
-/*+IndexScan(p1 p1_parent)*/ EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
+SELECT explain_filter('
+/*+IndexScan(p1 p1_parent)*/
+EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
+');
 LOG:  available indexes for IndexScan(p1): p1_parent
 LOG:  available indexes for IndexScan(p1c1): p1c1_c4_expr_idx
 LOG:  pg_hint_plan:
@@ -5188,19 +5225,20 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                                     explain_filter                                     
+----------------------------------------------------------------------------------------
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Index Scan using p1_parent on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: ((c2 * 2) < 100)
    ->  Index Scan using p1c1_c4_expr_idx on p1c1 p1_2  (cost=xxx..xxx rows=3 width=xxx)
          Filter: ((c2 * 2) < 100)
+(5 rows)
 
 -- No. S-3-10-4
-\o results/ut-S.tmpout
-/*+IndexScan(p1 p1_i2)*/ EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
+SELECT explain_filter('
+/*+IndexScan(p1 p1_i2)*/
+EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
+');
 LOG:  available indexes for IndexScan(p1): p1_i2
 LOG:  available indexes for IndexScan(p1c1):
 LOG:  available indexes for IndexScan(p1c2):
@@ -5212,10 +5250,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                              explain_filter                               
+---------------------------------------------------------------------------
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Index Scan using p1_i2 on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c2 = 1)
@@ -5225,10 +5261,13 @@ error hint:
          Filter: (c2 = 1)
    ->  Seq Scan on p1c3 p1_4  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c2 = 1)
+(9 rows)
 
 -- No. S-3-10-5
-\o results/ut-S.tmpout
-/*+IndexScan(p2 p2c1_pkey)*/ EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
+SELECT explain_filter('
+/*+IndexScan(p2 p2c1_pkey)*/
+EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
+');
 LOG:  available indexes for IndexScan(p2):
 LOG:  available indexes for IndexScan(p2c1): p2c1_pkey
 LOG:  available indexes for IndexScan(p2c1c1):
@@ -5239,10 +5278,8 @@ not used hint:
 duplication hint:
 error hint:
 
-\o
-\! sql/maskout.sh results/ut-S.tmpout
-  QUERY PLAN
-----------------
+                                 explain_filter                                  
+---------------------------------------------------------------------------------
  Append  (cost=xxx..xxx rows=3 width=xxx)
    ->  Seq Scan on p2 p2_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c1 = 1)
@@ -5250,6 +5287,7 @@ error hint:
          Index Cond: (c1 = 1)
    ->  Seq Scan on p2c1c1 p2_3  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c1 = 1)
+(7 rows)
 
 ----
 ---- No. S-3-12 specified same table
@@ -6108,4 +6146,3 @@ error hint:
    Index Cond: (c2 = 1)
 (2 rows)
 
-\! rm results/ut-S.tmpout

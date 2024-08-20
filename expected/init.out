@@ -229,4 +229,33 @@ SELECT * FROM settings;
  enable_tidscan                 | on        | Query Tuning / Planner Method Configuration
 (51 rows)
 
+-- EXPLAIN filtering
+--
+-- A lot of tests rely on EXPLAIN being executed with costs enabled
+-- to check the validity of the plans generated with hints.
+--
+-- This function takes in input a query, executes it and applies some
+-- filtering to ensure a stable output.  See the tests calling this
+-- function to see how it can be used.
+--
+-- If required, this can be extended with new operation modes.
+CREATE OR REPLACE FUNCTION explain_filter(text) RETURNS SETOF text
+LANGUAGE plpgsql AS
+$$
+DECLARE
+  ln text;
+BEGIN
+  FOR ln IN EXECUTE $1
+  LOOP
+    -- Replace cost values with some 'xxx'
+    ln := regexp_replace(ln, 'cost=10{7}[.0-9]+ ', 'cost={inf}..{inf} ');
+    ln := regexp_replace(ln, 'cost=[.0-9]+ ', 'cost=xxx..xxx ');
+    -- Replace width with some 'xxx'
+    ln := regexp_replace(ln, 'width=[0-9]+([^0-9])', 'width=xxx\1');
+    -- Filter foreign files
+    ln := regexp_replace(ln, '^( +Foreign File: ).*$', '\1 (snip..)');
+    return next ln;
+  END LOOP;
+END;
+$$;
 ANALYZE;
