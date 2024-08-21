@@ -4771,12 +4771,13 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 			ListCell   *lcp;
 			Node	   *path = (Node *) lfirst(lc);
 			AppendPath *apath;
-			int			parallel_workers = 0;
+			int			parallel_workers;
 
 			if (!IsA(path, AppendPath))
 				continue;
 
 			apath = (AppendPath *) path;
+			parallel_workers = apath->path.parallel_workers;
 
 			foreach (lcp, apath->subpaths)
 			{
@@ -4787,7 +4788,8 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 					parallel_workers = spath->parallel_workers;
 			}
 
-			apath->path.parallel_workers = parallel_workers;
+			if (apath->path.parallel_workers < parallel_workers)
+				apath->path.parallel_workers = parallel_workers;
 			inhibit_nonparallel = true;
 		}
 
