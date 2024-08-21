@@ -4768,12 +4768,15 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 
 		foreach(lc, rel->partial_pathlist)
 		{
-			ListCell *lcp;
-			AppendPath *apath = (AppendPath *) lfirst(lc);
-			int		parallel_workers = 0;
+			ListCell   *lcp;
+			Node	   *path = (Node *) lfirst(lc);
+			AppendPath *apath;
+			int			parallel_workers = 0;
 
-			if (!IsA(apath, AppendPath))
+			if (!IsA(path, AppendPath))
 				continue;
+
+			apath = (AppendPath *) path;
 
 			foreach (lcp, apath->subpaths)
 			{
