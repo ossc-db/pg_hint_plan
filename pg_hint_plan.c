@@ -1857,6 +1857,18 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 	char 	nulls[2] = {' ', ' '};
 	text   *app;
 
+	/*
+	 * Make sure the extension is installed if trying to use the hint
+	 * table.
+	 */
+	if (!SearchSysCacheExists1(EXTENSIONNAME, CStringGetDatum("pg_hint_plan")))
+	{
+		ereport(WARNING,
+				(errmsg ("cannot use the hint table"),
+				 errhint("Run \"CREATE EXTENSION pg_hint_plan\" to create the hint table.")));
+		return NULL;
+	}
+
 	PG_TRY();
 	{
 		bool snapshot_set = false;
