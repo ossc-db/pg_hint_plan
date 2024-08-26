@@ -4,6 +4,7 @@ SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
 SET search_path TO public;
 SET max_parallel_workers_per_gather TO 0;
+SET jit = off;
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 
