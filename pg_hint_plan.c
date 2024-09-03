@@ -4648,7 +4648,7 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 	bool				leading_hint_enable;
 
 	/*
-	 * Use standard planner (or geqo planner) if pg_hint_plan is disabled or no
+	 * Use standard planner (or geqo planner) if pg_hint_plan is disabled, no
 	 * valid hint is supplied or current nesting depth is nesting depth of SPI
 	 * calls.
 	 */
@@ -4734,7 +4734,7 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 }
 
 /*
- * Force number of wokers if instructed by hint
+ * Force number of workers if instructed by hint
  */
 void
 pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
@@ -4757,7 +4757,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 		return;
 
 	/*
-	 * We can accept only plain relations, foreign tables and table saples are
+	 * We can accept only plain relations, foreign tables and tablesamples are
 	 * also unacceptable. See set_rel_pathlist.
 	 */
 	if ((rel->rtekind != RTE_RELATION &&
@@ -4828,7 +4828,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 	if (rel->lateral_relids)
 		return;
 
-	/* Return if this relation gets no enfocement */
+	/* Return if this relation gets no enforcement */
 	if ((found_hints = setup_hint_enforcement(root, rel, NULL, &phint)) == 0)
 		return;
 
@@ -4838,7 +4838,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 		/*
 		 * When hint is specified on non-parent relations, discard existing
 		 * paths and regenerate based on the hint considered. Otherwise we
-		 * already have hinted childx paths then just adjust the number of
+		 * already have hinted child paths then just adjust the number of
 		 * planned number of workers.
 		 */
 		if (root->simple_rte_array[rel->relid]->inh)
