@@ -4757,7 +4757,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 		return;
 
 	/*
-	 * We can accept only plain relations, foreign tables and table saples are
+	 * We can accept only plain relations, foreign tables and tablesamples are
 	 * also unacceptable. See set_rel_pathlist.
 	 */
 	if ((rel->rtekind != RTE_RELATION &&
