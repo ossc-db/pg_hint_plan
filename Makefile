@@ -64,7 +64,7 @@ TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 rpms: rpm16
 
 # pg_hint_plan.c includes core.c and make_join_rel.c
-pg_hint_plan.o: core.c make_join_rel.c # pg_stat_statements.c
+pg_hint_plan.o: core.c make_join_rel.c joinpath.c costsize.c # pg_stat_statements.c
 
 $(STARBALLS): $(TARSOURCES)
 	if [ -h $(subst .tar.gz,,$@) ]; then rm $(subst .tar.gz,,$@); fi
