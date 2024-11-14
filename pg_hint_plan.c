@@ -4612,6 +4612,12 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 
 	join_hint = find_join_hint(joinrelids);
 	memoize_hint = find_memoize_hint(joinrelids);
+
+	/* enable all join operators if there is no join hint for n rels */
+	if(current_hint_state->join_hint_level[bms_num_members(joinrelids)]==0)
+		set_join_config_options(ENABLE_ALL_JOIN, false,
+								current_hint_state->context);
+
 	bms_free(joinrelids);
 
 	/* reject the found hints if they don't match this join */
