@@ -10,7 +10,7 @@ babel==2.12.1
     # via
     #   sphinx
     #   sphinx-intl
-certifi>=2024.07.04
+certifi==2025.1.31
     # via requests
 charset-normalizer==3.0.1
     # via requests
@@ -26,7 +26,7 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==7.1.0
     # via sphinx
-jinja2==3.1.4
+jinja2==3.1.6
     # via
     #   myst-parser
     #   sphinx
@@ -48,7 +48,7 @@ pygments==2.16.1
     # via sphinx
 pyyaml==6.0
     # via myst-parser
-requests>=2.32.0
+requests==2.32.3
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
@@ -78,9 +78,9 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
-urllib3>=1.26.19
+urllib3==2.3.0
     # via requests
-zipp>=3.19.1
+zipp==3.21.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
