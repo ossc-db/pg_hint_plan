@@ -19,6 +19,7 @@
 #include "catalog/pg_proc.h"
 #include "commands/prepare.h"
 #include "commands/proclang.h"
+#include "foreign/fdwapi.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "nodes/nodeFuncs.h"
@@ -253,6 +254,13 @@ static const char *current_hint_str = NULL;
  * we *try* hint retrieval.
  */
 static bool current_hint_retrieved = false;
+
+/*
+ * The disable_cost(1e10) is not large enough to force the planner to select a 
+ * horrible plan, then we use 1e20 here to make sure the planner will not select 
+ * the plan.
+ */
+Cost pg_hint_disable_cost = 1e20;
 
 /* common data for all hints. */
 struct Hint
@@ -515,6 +523,32 @@ static int set_config_int32_option(const char *name, int32 value,
 									GucContext context);
 static int set_config_double_option(const char *name, double value,
 									GucContext context);
+static void pg_hint_add_paths_to_joinrel(PlannerInfo *root,
+										 RelOptInfo *joinrel,
+										 RelOptInfo *outerrel,
+										 RelOptInfo *innerrel,
+										 JoinType jointype,
+										 SpecialJoinInfo *sjinfo,
+										 List *restrictlist);
+static void pg_hint_initial_cost_nestloop(PlannerInfo *root,
+										  JoinCostWorkspace *workspace,
+										  JoinType jointype,
+										  Path *outer_path, Path *inner_path,
+										  JoinPathExtraData *extra);
+static void pg_hint_initial_cost_mergejoin(PlannerInfo *root,
+										   JoinCostWorkspace *workspace,
+										   JoinType jointype,
+										   List *mergeclauses,
+										   Path *outer_path, Path *inner_path,
+										   List *outersortkeys, List *innersortkeys,
+										   JoinPathExtraData *extra);
+static void pg_hint_initial_cost_hashjoin(PlannerInfo *root,
+										  JoinCostWorkspace *workspace,
+										  JoinType jointype,
+										  List *hashclauses,
+										  Path *outer_path, Path *inner_path,
+										  JoinPathExtraData *extra,
+										  bool parallel_hash);
 
 /* GUC variables */
 static bool	pg_hint_plan_enable_hint = true;
@@ -4648,9 +4682,13 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 		}
 	}
 
-	/* generate paths */
-	add_paths_to_joinrel(root, joinrel, outerrel, innerrel, jointype,
-						 sjinfo, restrictlist);
+	/* 
+	 * Generate paths. pg_hint_add_paths_to_joinrel is the same to 
+	 * add_paths_to_joinrel. We introduce this function to access the routine
+	 * to cost model functions.
+	 */
+	pg_hint_add_paths_to_joinrel(root, joinrel, outerrel, innerrel, jointype,
+								 sjinfo, restrictlist);
 
 	/* restore GUC variables */
 	if (join_hint || memoize_hint)
@@ -4981,6 +5019,412 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 	reset_hint_enforcement();
 }
 
+#include "costsize.c"
+
+/*
+ * We include the disable_cost in the preliminary estimate when nestloop 
+ * join is disabled. Additionally, we replace the initial 
+ * diable_cost(set to 1e10) with pg_hint_disable_cost(set to 1e20)
+ * to handle cases where the cost of selected path exceeds 1e10.
+ */
+static void pg_hint_initial_cost_nestloop(PlannerInfo *root,
+										  JoinCostWorkspace *workspace,
+										  JoinType jointype,
+										  Path *outer_path, Path *inner_path,
+										  JoinPathExtraData *extra)
+{
+	Cost		startup_cost = 0;
+	Cost		run_cost = 0;
+	double		outer_path_rows = outer_path->rows;
+	Cost		inner_rescan_start_cost;
+	Cost		inner_rescan_total_cost;
+	Cost		inner_run_cost;
+	Cost		inner_rescan_run_cost;
+
+	/* estimate costs to rescan the inner relation */
+	cost_rescan(root, inner_path,
+				&inner_rescan_start_cost,
+				&inner_rescan_total_cost);
+
+	/* cost of source data */
+
+	/*
+	 * NOTE: clearly, we must pay both outer and inner paths' startup_cost
+	 * before we can start returning tuples, so the join's startup cost is
+	 * their sum.  We'll also pay the inner path's rescan startup cost
+	 * multiple times.
+	 */
+	startup_cost += outer_path->startup_cost + inner_path->startup_cost;
+	run_cost += outer_path->total_cost - outer_path->startup_cost;
+	if (outer_path_rows > 1)
+		run_cost += (outer_path_rows - 1) * inner_rescan_start_cost;
+		
+	inner_run_cost = inner_path->total_cost - inner_path->startup_cost;
+	inner_rescan_run_cost = inner_rescan_total_cost - inner_rescan_start_cost;
+
+	/*
+	 * We include disable_cost in the preliminary estimate.
+	 */
+	if (!enable_nestloop)
+		startup_cost += pg_hint_disable_cost;
+
+	if (jointype == JOIN_SEMI || jointype == JOIN_ANTI ||
+		extra->inner_unique)
+	{
+		/*
+		 * With a SEMI or ANTI join, or if the innerrel is known unique, the
+		 * executor will stop after the first match.
+		 *
+		 * Getting decent estimates requires inspection of the join quals,
+		 * which we choose to postpone to final_cost_nestloop.
+		 */
+
+		/* Save private data for final_cost_nestloop */
+		workspace->inner_run_cost = inner_run_cost;
+		workspace->inner_rescan_run_cost = inner_rescan_run_cost;
+	}
+	else
+	{
+		/* Normal case; we'll scan whole input rel for each outer row */
+		run_cost += inner_run_cost;
+		if (outer_path_rows > 1)
+			run_cost += (outer_path_rows - 1) * inner_rescan_run_cost;
+	}
+
+	/* CPU costs left for later */
+
+	/* Public result fields */
+	workspace->startup_cost = startup_cost;
+	workspace->total_cost = startup_cost + run_cost;
+	/* Save private data for final_cost_nestloop */
+	workspace->run_cost = run_cost;
+}
+
+/*
+ * We include the disable_cost in the preliminary estimate when merge 
+ * join is disabled. Additionally, we replace the initial 
+ * diable_cost(set to 1e10) with pg_hint_disable_cost(set to 1e20)
+ * to handle cases where the cost of selected path exceeds 1e10.
+ */
+static void pg_hint_initial_cost_mergejoin(PlannerInfo *root,
+										   JoinCostWorkspace *workspace,
+										   JoinType jointype,
+										   List *mergeclauses,
+										   Path *outer_path, Path *inner_path,
+										   List *outersortkeys, List *innersortkeys,
+										   JoinPathExtraData *extra)
+{
+		Cost		startup_cost = 0;
+	Cost		run_cost = 0;
+	double		outer_path_rows = outer_path->rows;
+	double		inner_path_rows = inner_path->rows;
+	Cost		inner_run_cost;
+	double		outer_rows,
+				inner_rows,
+				outer_skip_rows,
+				inner_skip_rows;
+	Selectivity outerstartsel,
+				outerendsel,
+				innerstartsel,
+				innerendsel;
+	Path		sort_path;		/* dummy for result of cost_sort */
+
+	/* Protect some assumptions below that rowcounts aren't zero */
+	if (outer_path_rows <= 0)
+		outer_path_rows = 1;
+	if (inner_path_rows <= 0)
+		inner_path_rows = 1;
+
+	/*
+	 * A merge join will stop as soon as it exhausts either input stream
+	 * (unless it's an outer join, in which case the outer side has to be
+	 * scanned all the way anyway).  Estimate fraction of the left and right
+	 * inputs that will actually need to be scanned.  Likewise, we can
+	 * estimate the number of rows that will be skipped before the first join
+	 * pair is found, which should be factored into startup cost. We use only
+	 * the first (most significant) merge clause for this purpose. Since
+	 * mergejoinscansel() is a fairly expensive computation, we cache the
+	 * results in the merge clause RestrictInfo.
+	 */
+	if (mergeclauses && jointype != JOIN_FULL)
+	{
+		RestrictInfo *firstclause = (RestrictInfo *) linitial(mergeclauses);
+		List	   *opathkeys;
+		List	   *ipathkeys;
+		PathKey    *opathkey;
+		PathKey    *ipathkey;
+		MergeScanSelCache *cache;
+
+		/* Get the input pathkeys to determine the sort-order details */
+		opathkeys = outersortkeys ? outersortkeys : outer_path->pathkeys;
+		ipathkeys = innersortkeys ? innersortkeys : inner_path->pathkeys;
+		Assert(opathkeys);
+		Assert(ipathkeys);
+		opathkey = (PathKey *) linitial(opathkeys);
+		ipathkey = (PathKey *) linitial(ipathkeys);
+		/* debugging check */
+		if (opathkey->pk_opfamily != ipathkey->pk_opfamily ||
+			opathkey->pk_eclass->ec_collation != ipathkey->pk_eclass->ec_collation ||
+			opathkey->pk_strategy != ipathkey->pk_strategy ||
+			opathkey->pk_nulls_first != ipathkey->pk_nulls_first)
+			elog(ERROR, "left and right pathkeys do not match in mergejoin");
+
+		/* Get the selectivity with caching */
+		cache = cached_scansel(root, firstclause, opathkey);
+
+		if (bms_is_subset(firstclause->left_relids,
+						  outer_path->parent->relids))
+		{
+			/* left side of clause is outer */
+			outerstartsel = cache->leftstartsel;
+			outerendsel = cache->leftendsel;
+			innerstartsel = cache->rightstartsel;
+			innerendsel = cache->rightendsel;
+		}
+		else
+		{
+			/* left side of clause is inner */
+			outerstartsel = cache->rightstartsel;
+			outerendsel = cache->rightendsel;
+			innerstartsel = cache->leftstartsel;
+			innerendsel = cache->leftendsel;
+		}
+		if (jointype == JOIN_LEFT ||
+			jointype == JOIN_ANTI)
+		{
+			outerstartsel = 0.0;
+			outerendsel = 1.0;
+		}
+		else if (jointype == JOIN_RIGHT ||
+				 jointype == JOIN_RIGHT_ANTI)
+		{
+			innerstartsel = 0.0;
+			innerendsel = 1.0;
+		}
+	}
+	else
+	{
+		/* cope with clauseless or full mergejoin */
+		outerstartsel = innerstartsel = 0.0;
+		outerendsel = innerendsel = 1.0;
+	}
+
+	/*
+	 * Convert selectivities to row counts.  We force outer_rows and
+	 * inner_rows to be at least 1, but the skip_rows estimates can be zero.
+	 */
+	outer_skip_rows = rint(outer_path_rows * outerstartsel);
+	inner_skip_rows = rint(inner_path_rows * innerstartsel);
+	outer_rows = clamp_row_est(outer_path_rows * outerendsel);
+	inner_rows = clamp_row_est(inner_path_rows * innerendsel);
+
+	Assert(outer_skip_rows <= outer_rows);
+	Assert(inner_skip_rows <= inner_rows);
+
+	/*
+	 * Readjust scan selectivities to account for above rounding.  This is
+	 * normally an insignificant effect, but when there are only a few rows in
+	 * the inputs, failing to do this makes for a large percentage error.
+	 */
+	outerstartsel = outer_skip_rows / outer_path_rows;
+	innerstartsel = inner_skip_rows / inner_path_rows;
+	outerendsel = outer_rows / outer_path_rows;
+	innerendsel = inner_rows / inner_path_rows;
+
+	Assert(outerstartsel <= outerendsel);
+	Assert(innerstartsel <= innerendsel);
+
+	/* cost of source data */
+
+	if (outersortkeys)			/* do we need to sort outer? */
+	{
+		cost_sort(&sort_path,
+				  root,
+				  outersortkeys,
+				  outer_path->total_cost,
+				  outer_path_rows,
+				  outer_path->pathtarget->width,
+				  0.0,
+				  work_mem,
+				  -1.0);
+		startup_cost += sort_path.startup_cost;
+		startup_cost += (sort_path.total_cost - sort_path.startup_cost)
+			* outerstartsel;
+		run_cost += (sort_path.total_cost - sort_path.startup_cost)
+			* (outerendsel - outerstartsel);
+	}
+	else
+	{
+		startup_cost += outer_path->startup_cost;
+		startup_cost += (outer_path->total_cost - outer_path->startup_cost)
+			* outerstartsel;
+		run_cost += (outer_path->total_cost - outer_path->startup_cost)
+			* (outerendsel - outerstartsel);
+	}
+
+	if (innersortkeys)			/* do we need to sort inner? */
+	{
+		cost_sort(&sort_path,
+				  root,
+				  innersortkeys,
+				  inner_path->total_cost,
+				  inner_path_rows,
+				  inner_path->pathtarget->width,
+				  0.0,
+				  work_mem,
+				  -1.0);
+		startup_cost += sort_path.startup_cost;
+		startup_cost += (sort_path.total_cost - sort_path.startup_cost)
+			* innerstartsel;
+		inner_run_cost = (sort_path.total_cost - sort_path.startup_cost)
+			* (innerendsel - innerstartsel);
+	}
+	else
+	{
+		startup_cost += inner_path->startup_cost;
+		startup_cost += (inner_path->total_cost - inner_path->startup_cost)
+			* innerstartsel;
+		inner_run_cost = (inner_path->total_cost - inner_path->startup_cost)
+			* (innerendsel - innerstartsel);
+	}
+
+	/*
+	 * We include disable_cost in the preliminary estimate.
+	 */
+	if (!enable_mergejoin)
+		startup_cost += pg_hint_disable_cost;
+
+	/*
+	 * We can't yet determine whether rescanning occurs, or whether
+	 * materialization of the inner input should be done.  The minimum
+	 * possible inner input cost, regardless of rescan and materialization
+	 * considerations, is inner_run_cost.  We include that in
+	 * workspace->total_cost, but not yet in run_cost.
+	 */
+
+	/* CPU costs left for later */
+
+	/* Public result fields */
+	workspace->startup_cost = startup_cost;
+	workspace->total_cost = startup_cost + run_cost + inner_run_cost;
+	/* Save private data for final_cost_mergejoin */
+	workspace->run_cost = run_cost;
+	workspace->inner_run_cost = inner_run_cost;
+	workspace->outer_rows = outer_rows;
+	workspace->inner_rows = inner_rows;
+	workspace->outer_skip_rows = outer_skip_rows;
+	workspace->inner_skip_rows = inner_skip_rows;
+}
+
+/*
+ * We include the disable_cost in the preliminary estimate when hash 
+ * join is disabled. Additionally, we replace the initial 
+ * diable_cost(set to 1e10) with pg_hint_disable_cost(set to 1e20)
+ * to handle cases where the cost of selected path exceeds 1e10.
+ */
+static void pg_hint_initial_cost_hashjoin(PlannerInfo *root,
+										  JoinCostWorkspace *workspace,
+										  JoinType jointype,
+										  List *hashclauses,
+										  Path *outer_path, Path *inner_path,
+										  JoinPathExtraData *extra,
+										  bool parallel_hash)
+{
+	Cost		startup_cost = 0;
+	Cost		run_cost = 0;
+	double		outer_path_rows = outer_path->rows;
+	double		inner_path_rows = inner_path->rows;
+	double		inner_path_rows_total = inner_path_rows;
+	int			num_hashclauses = list_length(hashclauses);
+	int			numbuckets;
+	int			numbatches;
+	int			num_skew_mcvs;
+	size_t		space_allowed;	/* unused */
+
+	/* cost of source data */
+	startup_cost += outer_path->startup_cost;
+	run_cost += outer_path->total_cost - outer_path->startup_cost;
+	startup_cost += inner_path->total_cost;
+
+	/*
+	 * Cost of computing hash function: must do it once per input tuple. We
+	 * charge one cpu_operator_cost for each column's hash function.  Also,
+	 * tack on one cpu_tuple_cost per inner row, to model the costs of
+	 * inserting the row into the hashtable.
+	 *
+	 * XXX when a hashclause is more complex than a single operator, we really
+	 * should charge the extra eval costs of the left or right side, as
+	 * appropriate, here.  This seems more work than it's worth at the moment.
+	 */
+	startup_cost += (cpu_operator_cost * num_hashclauses + cpu_tuple_cost)
+		* inner_path_rows;
+	run_cost += cpu_operator_cost * num_hashclauses * outer_path_rows;
+
+	/*
+	 * If this is a parallel hash build, then the value we have for
+	 * inner_rows_total currently refers only to the rows returned by each
+	 * participant.  For shared hash table size estimation, we need the total
+	 * number, so we need to undo the division.
+	 */
+	if (parallel_hash)
+		inner_path_rows_total *= get_parallel_divisor(inner_path);
+
+	/*
+	 * Get hash table size that executor would use for inner relation.
+	 *
+	 * XXX for the moment, always assume that skew optimization will be
+	 * performed.  As long as SKEW_HASH_MEM_PERCENT is small, it's not worth
+	 * trying to determine that for sure.
+	 *
+	 * XXX at some point it might be interesting to try to account for skew
+	 * optimization in the cost estimate, but for now, we don't.
+	 */
+	ExecChooseHashTableSize(inner_path_rows_total,
+							inner_path->pathtarget->width,
+							true,	/* useskew */
+							parallel_hash,	/* try_combined_hash_mem */
+							outer_path->parallel_workers,
+							&space_allowed,
+							&numbuckets,
+							&numbatches,
+							&num_skew_mcvs);
+
+	/*
+	 * If inner relation is too big then we will need to "batch" the join,
+	 * which implies writing and reading most of the tuples to disk an extra
+	 * time.  Charge seq_page_cost per page, since the I/O should be nice and
+	 * sequential.  Writing the inner rel counts as startup cost, all the rest
+	 * as run cost.
+	 */
+	if (numbatches > 1)
+	{
+		double		outerpages = page_size(outer_path_rows,
+										   outer_path->pathtarget->width);
+		double		innerpages = page_size(inner_path_rows,
+										   inner_path->pathtarget->width);
+
+		startup_cost += seq_page_cost * innerpages;
+		run_cost += seq_page_cost * (innerpages + 2 * outerpages);
+	}
+
+	/*
+	 * We include disable_cost in the preliminary estimate.
+	 */
+	if (!enable_hashjoin)
+		startup_cost += pg_hint_disable_cost;
+
+	/* CPU costs left for later */
+
+	/* Public result fields */
+	workspace->startup_cost = startup_cost;
+	workspace->total_cost = startup_cost + run_cost;
+	/* Save private data for final_cost_hashjoin */
+	workspace->run_cost = run_cost;
+	workspace->numbuckets = numbuckets;
+	workspace->numbatches = numbatches;
+	workspace->inner_rows_total = inner_path_rows_total;
+}
+
 /* include core static functions */
 static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
 										RelOptInfo *rel2, RelOptInfo *joinrel,
@@ -4997,3 +5441,5 @@ static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
 #include "make_join_rel.c"
 
 #include "pg_stat_statements.c"
+
+#include "joinpath.c"
