@@ -739,9 +739,6 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 		 * Also, if the lateral reference is only indirect, we should reject
 		 * the join; whatever rel(s) the reference chain goes through must be
 		 * joined to first.
-		 *
-		 * Another case that might keep us from building a valid plan is the
-		 * implementation restriction described by have_dangerous_phv().
 		 */
 		lateral_fwd = bms_overlap(rel1->relids, rel2->lateral_relids);
 		lateral_rev = bms_overlap(rel2->relids, rel1->lateral_relids);
@@ -758,9 +755,6 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 			/* check there is a direct reference from rel2 to rel1 */
 			if (!bms_overlap(rel1->relids, rel2->direct_lateral_relids))
 				return false;	/* only indirect refs, so reject */
-			/* check we won't have a dangerous PHV */
-			if (have_dangerous_phv(root, rel1->relids, rel2->lateral_relids))
-				return false;	/* might be unable to handle required PHV */
 		}
 		else if (lateral_rev)
 		{
@@ -773,9 +767,6 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 			/* check there is a direct reference from rel1 to rel2 */
 			if (!bms_overlap(rel2->relids, rel1->direct_lateral_relids))
 				return false;	/* only indirect refs, so reject */
-			/* check we won't have a dangerous PHV */
-			if (have_dangerous_phv(root, rel2->relids, rel1->lateral_relids))
-				return false;	/* might be unable to handle required PHV */
 		}
 
 		/*
@@ -1403,7 +1394,7 @@ try_partitionwise_join(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 		 */
 		pfree(appinfos);
 		bms_free(child_relids);
-		free_child_join_sjinfo(child_sjinfo);
+		free_child_join_sjinfo(child_sjinfo, parent_sjinfo);
 	}
 }
 
@@ -1417,18 +1408,33 @@ try_partitionwise_join(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
  * SpecialJoinInfo are freed here.
  */
 static void
-free_child_join_sjinfo(SpecialJoinInfo *sjinfo)
+free_child_join_sjinfo(SpecialJoinInfo *child_sjinfo,
+					   SpecialJoinInfo *parent_sjinfo)
 {
 	/*
 	 * Dummy SpecialJoinInfos of inner joins do not have any translated fields
 	 * and hence no fields that to be freed.
 	 */
-	if (sjinfo->jointype != JOIN_INNER)
+	if (child_sjinfo->jointype != JOIN_INNER)
 	{
-		bms_free(sjinfo->min_lefthand);
-		bms_free(sjinfo->min_righthand);
-		bms_free(sjinfo->syn_lefthand);
-		bms_free(sjinfo->syn_righthand);
+		if (child_sjinfo->min_lefthand != parent_sjinfo->min_lefthand)
+			bms_free(child_sjinfo->min_lefthand);
+
+		if (child_sjinfo->min_righthand != parent_sjinfo->min_righthand)
+			bms_free(child_sjinfo->min_righthand);
+
+		if (child_sjinfo->syn_lefthand != parent_sjinfo->syn_lefthand)
+			bms_free(child_sjinfo->syn_lefthand);
+
+		if (child_sjinfo->syn_righthand != parent_sjinfo->syn_righthand)
+			bms_free(child_sjinfo->syn_righthand);
+
+		Assert(child_sjinfo->commute_above_l == parent_sjinfo->commute_above_l);
+		Assert(child_sjinfo->commute_above_r == parent_sjinfo->commute_above_r);
+		Assert(child_sjinfo->commute_below_l == parent_sjinfo->commute_below_l);
+		Assert(child_sjinfo->commute_below_r == parent_sjinfo->commute_below_r);
+
+		Assert(child_sjinfo->semi_operators == parent_sjinfo->semi_operators);
 
 		/*
 		 * semi_rhs_exprs may in principle be freed, but a simple pfree() does
@@ -1436,5 +1442,5 @@ free_child_join_sjinfo(SpecialJoinInfo *sjinfo)
 		 */
 	}
 
-	pfree(sjinfo);
+	pfree(child_sjinfo);
 }

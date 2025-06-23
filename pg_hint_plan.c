@@ -18,6 +18,7 @@
 #include "catalog/pg_proc.h"
 #include "commands/prepare.h"
 #include "commands/proclang.h"
+#include "executor/executor.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "nodes/nodeFuncs.h"
@@ -501,7 +502,8 @@ static void make_rels_by_clauseless_joins(PlannerInfo *root,
 static bool has_join_restriction(PlannerInfo *root, RelOptInfo *rel);
 static void set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 								   RangeTblEntry *rte);
-static void free_child_join_sjinfo(SpecialJoinInfo *sjinfo);
+static void free_child_join_sjinfo(SpecialJoinInfo *sjinfo,
+								   SpecialJoinInfo *parent_sjinfo);
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
