@@ -3256,6 +3256,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3273,10 +3274,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
@@ -3317,6 +3319,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3334,10 +3337,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3397,6 +3401,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3414,10 +3419,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
@@ -3458,6 +3464,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3475,10 +3482,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 EXPLAIN (COSTS false) EXECUTE p1;
              QUERY PLAN             
@@ -3527,6 +3535,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3544,10 +3553,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
@@ -3619,6 +3629,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3636,10 +3647,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 -- No. A-12-1-4
 -- No. A-12-2-4
@@ -3677,6 +3689,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3694,10 +3707,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
@@ -3747,6 +3761,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3764,10 +3779,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 DEALLOCATE p1;
 SET pg_hint_plan.parse_messages TO LOG;
@@ -3832,6 +3848,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3849,10 +3866,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3909,6 +3927,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3926,10 +3945,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
@@ -3988,6 +4008,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4005,10 +4026,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 BEGIN;
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
@@ -4068,6 +4090,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4085,10 +4108,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
@@ -4148,6 +4172,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4165,10 +4190,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -4229,6 +4255,7 @@ SELECT name, setting FROM settings;
  seq_page_cost                  | 1
  enable_async_append            | on
  enable_bitmapscan              | on
+ enable_distinct_reordering     | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4246,10 +4273,11 @@ SELECT name, setting FROM settings;
  enable_partitionwise_aggregate | off
  enable_partitionwise_join      | off
  enable_presorted_aggregate     | on
+ enable_self_join_elimination   | on
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(51 rows)
+(53 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
