@@ -825,7 +825,8 @@ error hint:
 
                                        explain_filter                                        
 ---------------------------------------------------------------------------------------------
- Nested Loop  (cost={inf}..{inf} rows=1 width=xxx)
+ Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
+   Disabled: true
    InitPlan 1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
@@ -836,7 +837,7 @@ error hint:
          Index Cond: (c1 = (InitPlan 1).col1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=1 width=xxx)
          Filter: (c1 = (InitPlan 1).col1)
-(11 rows)
+(12 rows)
 
 --
 -- There are cases where difference in the measured value and predicted value
@@ -2267,6 +2268,7 @@ error hint:
                          TID Cond: (ctid = '(1,1)'::tid)
                          Filter: (c1 = 1)
    ->  Nested Loop
+         Disabled: true
          ->  Tid Scan on t1 bmt1
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: ((c1 <> (InitPlan 4).col1) AND (c1 = 1))
@@ -2277,7 +2279,7 @@ error hint:
                        ->  Tid Scan on t1 b1t1
                              TID Cond: (ctid = '(1,1)'::tid)
                              Filter: (c1 = 1)
-(26 rows)
+(27 rows)
 
 -- No. J-2-2-2
 EXPLAIN (COSTS false)
@@ -2864,6 +2866,7 @@ error hint:
 -----------------------------------------------------------------------------
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (t1.c1 = t2.c1)
                ->  Tid Scan on t1
@@ -2886,7 +2889,7 @@ error hint:
          ->  Tid Scan on r1
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: (c1 = 1)
-(24 rows)
+(25 rows)
 
 EXPLAIN (COSTS false) UPDATE s1.r1_ SET c1 = c1 WHERE c1 = 1 AND ctid = '(1,1)';
                            QUERY PLAN                            
@@ -2935,6 +2938,7 @@ error hint:
 -----------------------------------------------------------------------------
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (b1t1.c1 = b1t2.c1)
                ->  Tid Scan on t1 b1t1
@@ -2957,7 +2961,7 @@ error hint:
          ->  Tid Scan on r1_
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: (c1 = 1)
-(24 rows)
+(25 rows)
 
 -- No. J-2-3-2
 EXPLAIN (COSTS false) UPDATE s1.r2 SET c1 = c1 WHERE c1 = 1 AND ctid = '(1,1)';
@@ -3038,6 +3042,7 @@ error hint:
 -----------------------------------------------------------------------------
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (t1.c1 = t2.c1)
                ->  Tid Scan on t1
@@ -3063,6 +3068,7 @@ error hint:
  
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (t1.c1 = t2.c1)
                ->  Tid Scan on t1
@@ -3085,7 +3091,7 @@ error hint:
          ->  Tid Scan on r2
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: (c1 = 1)
-(49 rows)
+(51 rows)
 
 EXPLAIN (COSTS false) UPDATE s1.r2_ SET c1 = c1 WHERE c1 = 1 AND ctid = '(1,1)';
                            QUERY PLAN                            
@@ -3180,6 +3186,7 @@ error hint:
 -----------------------------------------------------------------------------
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Nested Loop
                Join Filter: (b1t1.c1 = b1t4.c1)
                ->  Hash Join
@@ -3205,6 +3212,7 @@ error hint:
  
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Nested Loop
                Join Filter: (b2t1.c1 = b2t4.c1)
                ->  Hash Join
@@ -3227,7 +3235,7 @@ error hint:
          ->  Tid Scan on r2_
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: (c1 = 1)
-(49 rows)
+(51 rows)
 
 -- No. J-2-3-3
 EXPLAIN (COSTS false) UPDATE s1.r3 SET c1 = c1 WHERE c1 = 1 AND ctid = '(1,1)';
@@ -3339,6 +3347,7 @@ error hint:
 -----------------------------------------------------------------------------
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (t1.c1 = t2.c1)
                ->  Tid Scan on t1
@@ -3364,6 +3373,7 @@ error hint:
  
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (t1.c1 = t2.c1)
                ->  Tid Scan on t1
@@ -3389,6 +3399,7 @@ error hint:
  
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Hash Join
                Hash Cond: (t1.c1 = t2.c1)
                ->  Tid Scan on t1
@@ -3411,7 +3422,7 @@ error hint:
          ->  Tid Scan on r3
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: (c1 = 1)
-(74 rows)
+(77 rows)
 
 EXPLAIN (COSTS false) UPDATE s1.r3_ SET c1 = c1 WHERE c1 = 1 AND ctid = '(1,1)';
                            QUERY PLAN                            
@@ -3562,6 +3573,7 @@ error hint:
 -----------------------------------------------------------------------------
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Nested Loop
                Join Filter: (b1t1.c1 = b1t4.c1)
                ->  Hash Join
@@ -3587,6 +3599,7 @@ error hint:
  
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Nested Loop
                Join Filter: (b2t1.c1 = b2t4.c1)
                ->  Hash Join
@@ -3612,6 +3625,7 @@ error hint:
  
  Aggregate
    ->  Nested Loop
+         Disabled: true
          ->  Nested Loop
                Join Filter: (b3t1.c1 = b3t4.c1)
                ->  Hash Join
@@ -3634,7 +3648,7 @@ error hint:
          ->  Tid Scan on r3_
                TID Cond: (ctid = '(1,1)'::tid)
                Filter: (c1 = 1)
-(74 rows)
+(77 rows)
 
 -- No. J-2-3-4
 EXPLAIN (COSTS false) SELECT * FROM s1.v1 v1, s1.v1 v2 WHERE v1.c1 = v2.c1;
@@ -4068,10 +4082,11 @@ error hint:
              QUERY PLAN             
 ------------------------------------
  Nested Loop
+   Disabled: true
    ->  Seq Scan on t2
    ->  Index Scan using t1_i1 on t1
          Index Cond: (c1 = t2.c1)
-(4 rows)
+(5 rows)
 
 /*+NoMergeJoin(t1 t2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -4210,10 +4225,11 @@ error hint:
              QUERY PLAN             
 ------------------------------------
  Nested Loop
+   Disabled: true
    ->  Seq Scan on t2
    ->  Index Scan using t1_i1 on t1
          Index Cond: (c1 = t2.c1)
-(4 rows)
+(5 rows)
 
 SET enable_nestloop TO on;
 SET enable_mergejoin TO on;
@@ -4683,12 +4699,13 @@ error hint:
 
                          explain_filter                         
 ----------------------------------------------------------------
- Hash Full Join  (cost={inf}..{inf} rows=1000 width=xxx)
+ Hash Full Join  (cost=xxx..xxx rows=1000 width=xxx)
+   Disabled: true
    Hash Cond: (t1.c1 = t2.c1)
    ->  Seq Scan on t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Hash  (cost=xxx..xxx rows=100 width=xxx)
          ->  Seq Scan on t2  (cost=xxx..xxx rows=100 width=xxx)
-(5 rows)
+(6 rows)
 
 -- Memoize
 EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.val = t2.val and t2.id = t3.id;

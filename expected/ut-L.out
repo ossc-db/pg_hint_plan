@@ -3919,27 +3919,30 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                    
--------------------------------------------------
- Hash Join
-   Hash Cond: (t1.c1 = t3.c1)
-   ->  Hash Join
-         Hash Cond: (t1.c1 = t2.c1)
-         ->  Append
-               ->  Seq Scan on p2c1 t1_1
-               ->  Seq Scan on p2c1c1 t1_2
-               ->  Seq Scan on p2c1c2 t1_3
-         ->  Hash
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Merge Join
+   Merge Cond: (t1.c1 = t3.c1)
+   ->  Merge Join
+         Merge Cond: (t2.c1 = t1.c1)
+         ->  Merge Append
+               Sort Key: t2.c1
+               ->  Index Scan using p2c2_i on p2c2 t2_1
+               ->  Index Scan using p2c2c1_i on p2c2c1 t2_2
+               ->  Index Scan using p2c2c2_i on p2c2c2 t2_3
+         ->  Sort
+               Sort Key: t1.c1
                ->  Append
-                     ->  Seq Scan on p2c2 t2_1
-                     ->  Seq Scan on p2c2c1 t2_2
-                     ->  Seq Scan on p2c2c2 t2_3
-   ->  Hash
-         ->  Append
-               ->  Seq Scan on p2c3 t3_1
-               ->  Seq Scan on p2c3c1 t3_2
-               ->  Seq Scan on p2c3c2 t3_3
-(18 rows)
+                     ->  Seq Scan on p2c1 t1_1
+                     ->  Seq Scan on p2c1c1 t1_2
+                     ->  Seq Scan on p2c1c2 t1_3
+   ->  Materialize
+         ->  Merge Append
+               Sort Key: t3.c1
+               ->  Index Scan using p2c3_i on p2c3 t3_1
+               ->  Index Scan using p2c3c1_i on p2c3c1 t3_2
+               ->  Index Scan using p2c3c2_i on p2c3c2 t3_3
+(21 rows)
 
 -- No. L-3-3-2
 /*+Leading(p2c1c1 p2c2c1 p2c3c1)*/
@@ -3953,27 +3956,30 @@ Leading(p2c1c1 p2c2c1 p2c3c1)
 duplication hint:
 error hint:
 
-                   QUERY PLAN                    
--------------------------------------------------
- Hash Join
-   Hash Cond: (t1.c1 = t3.c1)
-   ->  Hash Join
-         Hash Cond: (t1.c1 = t2.c1)
-         ->  Append
-               ->  Seq Scan on p2c1 t1_1
-               ->  Seq Scan on p2c1c1 t1_2
-               ->  Seq Scan on p2c1c2 t1_3
-         ->  Hash
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Merge Join
+   Merge Cond: (t1.c1 = t3.c1)
+   ->  Merge Join
+         Merge Cond: (t2.c1 = t1.c1)
+         ->  Merge Append
+               Sort Key: t2.c1
+               ->  Index Scan using p2c2_i on p2c2 t2_1
+               ->  Index Scan using p2c2c1_i on p2c2c1 t2_2
+               ->  Index Scan using p2c2c2_i on p2c2c2 t2_3
+         ->  Sort
+               Sort Key: t1.c1
                ->  Append
-                     ->  Seq Scan on p2c2 t2_1
-                     ->  Seq Scan on p2c2c1 t2_2
-                     ->  Seq Scan on p2c2c2 t2_3
-   ->  Hash
-         ->  Append
-               ->  Seq Scan on p2c3 t3_1
-               ->  Seq Scan on p2c3c1 t3_2
-               ->  Seq Scan on p2c3c2 t3_3
-(18 rows)
+                     ->  Seq Scan on p2c1 t1_1
+                     ->  Seq Scan on p2c1c1 t1_2
+                     ->  Seq Scan on p2c1c2 t1_3
+   ->  Materialize
+         ->  Merge Append
+               Sort Key: t3.c1
+               ->  Index Scan using p2c3_i on p2c3 t3_1
+               ->  Index Scan using p2c3c1_i on p2c3c1 t3_2
+               ->  Index Scan using p2c3c2_i on p2c3c2 t3_3
+(21 rows)
 
 ----
 ---- No. L-3-4 conflict leading hint
@@ -4186,6 +4192,7 @@ error hint:
                 QUERY PLAN                
 ------------------------------------------
  Nested Loop
+   Disabled: true
    ->  Merge Join
          Merge Cond: (t1.c1 = t2.c1)
          ->  Index Scan using t1_i1 on t1
@@ -4194,7 +4201,7 @@ error hint:
                ->  Seq Scan on t2
    ->  Index Scan using t3_i1 on t3
          Index Cond: (c1 = t1.c1)
-(9 rows)
+(10 rows)
 
 -- No. L-3-5-4
 /*+Leading(t1 t2 t3)*/
@@ -4262,21 +4269,23 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                   
-------------------------------------------------
+                QUERY PLAN                
+------------------------------------------
  Nested Loop
-   Join Filter: (t1.c1 = t4.c1)
+   Disabled: true
    ->  Nested Loop
+         Disabled: true
          Join Filter: (t1.c1 = t2.c1)
-         ->  Nested Loop
-               ->  Index Scan using t2_i1 on t2
-               ->  Index Scan using t3_i1 on t3
-                     Index Cond: (c1 = t2.c1)
+         ->  Hash Join
+               Hash Cond: (t2.c1 = t3.c1)
+               ->  Seq Scan on t2
+               ->  Hash
+                     ->  Seq Scan on t3
          ->  Index Scan using t1_i1 on t1
                Index Cond: (c1 = t3.c1)
    ->  Index Scan using t4_i1 on t4
-         Index Cond: (c1 = t3.c1)
-(12 rows)
+         Index Cond: (c1 = t1.c1)
+(14 rows)
 
 -- No. L-3-6-3
 /*+Leading((t2 t3 t4))*/
