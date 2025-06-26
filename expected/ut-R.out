@@ -4,6 +4,7 @@ SET pg_hint_plan.debug_print TO on;
 SET client_min_messages TO LOG;
 SET jit = off;
 SET search_path TO public;
+SET enable_self_join_elimination = off;
 SELECT explain_filter('
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 ');
@@ -513,7 +514,7 @@ EXPLAIN SELECT * FROM s1.p1 t1, s1.p1 t2 WHERE t1.c1 = t2.c1;
 ');
                                explain_filter                                
 -----------------------------------------------------------------------------
- Hash Join  (cost=xxx..xxx rows=301 width=xxx)
+ Hash Join  (cost=xxx..xxx rows=302 width=xxx)
    Hash Cond: (t1.c1 = t2.c1)
    ->  Append  (cost=xxx..xxx rows=301 width=xxx)
          ->  Seq Scan on p1 t1_1  (cost=xxx..xxx rows=1 width=xxx)
@@ -4623,7 +4624,7 @@ EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
 ');
                                explain_filter                                
 -----------------------------------------------------------------------------
- Hash Join  (cost=xxx..xxx rows=301 width=xxx)
+ Hash Join  (cost=xxx..xxx rows=305 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
          ->  Seq Scan on p2 p2_1  (cost=xxx..xxx rows=1 width=xxx)
@@ -4684,7 +4685,7 @@ EXPLAIN SELECT * FROM s1.p1, s1.p2 WHERE p1.c1 = p2.c1;
 ');
                                explain_filter                                
 -----------------------------------------------------------------------------
- Hash Join  (cost=xxx..xxx rows=301 width=xxx)
+ Hash Join  (cost=xxx..xxx rows=305 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
          ->  Seq Scan on p2 p2_1  (cost=xxx..xxx rows=1 width=xxx)
@@ -4718,7 +4719,7 @@ error hint:
 
                                explain_filter                                
 -----------------------------------------------------------------------------
- Hash Join  (cost=xxx..xxx rows=301 width=xxx)
+ Hash Join  (cost=xxx..xxx rows=305 width=xxx)
    Hash Cond: (p2.c1 = p1.c1)
    ->  Append  (cost=xxx..xxx rows=304 width=xxx)
          ->  Seq Scan on p2 p2_1  (cost=xxx..xxx rows=1 width=xxx)
