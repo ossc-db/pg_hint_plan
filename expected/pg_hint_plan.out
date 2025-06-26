@@ -8297,18 +8297,6 @@ error hint:
 
 DROP FUNCTION testfunc();
 DROP EXTENSION pg_hint_plan;
-CREATE FUNCTION reset_stats_and_wait() RETURNS void AS $$
-DECLARE
-  rows int;
-BEGIN
-  rows = 1;
-  while rows > 0 LOOP
-   PERFORM pg_stat_reset();
-   PERFORM pg_sleep(0.5);
-   SELECT sum(seq_scan + idx_scan) from pg_stat_user_tables into rows;
-  END LOOP;
-END;
-$$ LANGUAGE plpgsql;
 -- Dynamic query in pl/pgsql
 CREATE OR REPLACE FUNCTION dynsql1(x int) RETURNS int AS $$
 DECLARE c int;
@@ -8318,45 +8306,54 @@ BEGIN
   RETURN c;
 END;
 $$ VOLATILE LANGUAGE plpgsql;
-vacuum analyze t1;
+VACUUM ANALYZE t1;
+-- Check generated statistics in function *without* the hint.
+-- Only a sequential scan should be counted.
+-- Save counters before running the function.
 SET pg_hint_plan.enable_hint = false;
-SELECT pg_sleep(1);
- pg_sleep 
-----------
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
-SELECT reset_stats_and_wait();
- reset_stats_and_wait 
-----------------------
- 
-(1 row)
-
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 't1' \gset t1_before_
 SELECT dynsql1(9000);
  dynsql1 
 ---------
     8999
 (1 row)
 
-SELECT pg_sleep(1);
- pg_sleep 
-----------
+-- Save counters after running the function.
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
-SELECT relname, seq_scan > 0 as seq_scan, idx_scan > 0 as idx_scan FROM pg_stat_user_tables WHERE schemaname = 'public' AND relname = 't1';
- relname | seq_scan | idx_scan 
----------+----------+----------
- t1      | t        | f
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 't1' \gset t1_after_
+-- seqscan should increment, not idxscan.
+SELECT :t1_before_seq_scan < :t1_after_seq_scan AS t1_seq_compare,
+       :t1_before_idx_scan < :t1_after_idx_scan AS t1_idx_compare;
+ t1_seq_compare | t1_idx_compare 
+----------------+----------------
+ t              | f
 (1 row)
 
+-- Check generated statistics in function *with* the hint.
+-- Only an index scan should be counted.
+-- Save counters before running the function.
 SET pg_hint_plan.enable_hint = true;
-SELECT reset_stats_and_wait();
- reset_stats_and_wait 
-----------------------
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 't1' \gset t1_before_
 SELECT dynsql1(9000);
 LOG:  pg_hint_plan:
 used hint:
@@ -8372,16 +8369,21 @@ PL/pgSQL function dynsql1(integer) line 4 at EXECUTE
     8999
 (1 row)
 
-SELECT pg_sleep(1);
- pg_sleep 
-----------
+-- Save counters after running the function.
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
-SELECT relname, seq_scan > 0 as seq_scan, idx_scan > 0 as idx_scan FROM pg_stat_user_tables WHERE schemaname = 'public' AND relname = 't1';
- relname | seq_scan | idx_scan 
----------+----------+----------
- t1      | f        | t
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 't1' \gset t1_after_
+-- idxscan should increment, not seqscan.
+SELECT :t1_before_seq_scan < :t1_after_seq_scan AS t1_seq_compare,
+       :t1_before_idx_scan < :t1_after_idx_scan AS t1_idx_compare;
+ t1_seq_compare | t1_idx_compare 
+----------------+----------------
+ f              | t
 (1 row)
 
 -- Looped dynamic query in pl/pgsql
@@ -8398,40 +8400,58 @@ BEGIN
   END LOOP;
 END;
 $$ VOLATILE LANGUAGE plpgsql;
+-- Check generated statistics in function *without* the hint.
 SET pg_hint_plan.enable_hint = false;
-SELECT reset_stats_and_wait();
- reset_stats_and_wait 
-----------------------
+-- Save counters before running the function.
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c1' \gset c1_before_
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c2' \gset c2_before_
 SELECT dynsql2(9000);
  dynsql2 
 ---------
     9900
 (1 row)
 
-SELECT pg_sleep(1);
- pg_sleep 
-----------
+-- Save counters after running the function.
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
--- one of the index scans happened while planning.
-SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables WHERE schemaname = 'public' AND (relname = 'p1_c1' OR relname = 'p1_c2');
- relname | seq_scan | idx_scan 
----------+----------+----------
- p1_c1   |        1 |        0
- p1_c2   |        1 |        1
-(2 rows)
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c1' \gset c1_after_
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c2' \gset c2_after_
+SELECT :c1_after_seq_scan - :c1_before_seq_scan AS c1_seq_compare,
+       :c1_after_idx_scan - :c1_before_idx_scan AS c1_idx_compare,
+       :c2_after_seq_scan - :c2_before_seq_scan AS c2_seq_compare,
+       :c2_after_idx_scan - :c2_before_idx_scan AS c2_idx_compare;
+ c1_seq_compare | c1_idx_compare | c2_seq_compare | c2_idx_compare 
+----------------+----------------+----------------+----------------
+              1 |              0 |              1 |              1
+(1 row)
 
+-- Check generated statistics in function *with* the hint.
 SET pg_hint_plan.enable_hint = true;
-SELECT reset_stats_and_wait();
- reset_stats_and_wait 
-----------------------
+-- Save counters before running the function.
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c1' \gset c1_before_
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c2' \gset c2_before_
 SELECT dynsql2(9000);
 LOG:  available indexes for IndexScan(p1_c1): p1_c1_pkey
 CONTEXT:  SQL statement "/*+ IndexScan(p1_c1 p1_c1_pkey) */ SELECT sum(val) FROM p1_c1 WHERE id < 9000"
@@ -8468,19 +8488,25 @@ PL/pgSQL function dynsql2(integer) line 8 at FOR over EXECUTE statement
     9900
 (1 row)
 
-SELECT pg_sleep(1);
- pg_sleep 
-----------
+-- Save counters after running the function.
+SELECT pg_stat_force_next_flush();
+ pg_stat_force_next_flush 
+--------------------------
  
 (1 row)
 
--- the index scan happened while planning.
-SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables WHERE schemaname = 'public' AND (relname = 'p1_c1' OR relname = 'p1_c2');
- relname | seq_scan | idx_scan 
----------+----------+----------
- p1_c1   |        0 |        1
- p1_c2   |        0 |        2
-(2 rows)
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c1' \gset c1_after_
+SELECT seq_scan, idx_scan FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND relname = 'p1_c2' \gset c2_after_
+SELECT :c1_after_seq_scan - :c1_before_seq_scan AS c1_seq_compare,
+       :c1_after_idx_scan - :c1_before_idx_scan AS c1_idx_compare,
+       :c2_after_seq_scan - :c2_before_seq_scan AS c2_seq_compare,
+       :c2_after_idx_scan - :c2_before_idx_scan AS c2_idx_compare;
+ c1_seq_compare | c1_idx_compare | c2_seq_compare | c2_idx_compare 
+----------------+----------------+----------------+----------------
+              0 |              1 |              0 |              2
+(1 row)
 
 -- Subqueries on inheritance tables under UNION
 EXPLAIN (COSTS off) SELECT val FROM p1 WHERE val < 1000
@@ -9147,7 +9173,7 @@ CONTEXT:  PL/pgSQL function explain_filter(text) line 5 at FOR over EXECUTE stat
 
 -- Query with join RTE and outer-join relids
 /*+Leading(ft_1 ft_2 t1)*/
-SELECT relname, seq_scan > 0 AS seq_scan, idx_scan > 0 AS idx_scan
+SELECT relname, seq_scan >= 0 AS seq_scan, idx_scan >= 0 AS idx_scan
   FROM pg_stat_user_tables WHERE schemaname = 'public' AND relname = 't1';
 LOG:  pg_hint_plan:
 used hint:
@@ -9158,7 +9184,7 @@ error hint:
 
  relname | seq_scan | idx_scan 
 ---------+----------+----------
- t1      | f        | f
+ t1      | t        | t
 (1 row)
 
 -- hint error level
