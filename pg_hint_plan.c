@@ -4815,11 +4815,8 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 			{
 				Path *path = (Path *) lfirst(lcr);
 
-				if (path->startup_cost < disable_cost)
-				{
-					path->startup_cost += disable_cost;
-					path->total_cost += disable_cost;
-				}
+				if (path->disabled_nodes < 1)
+					path->disabled_nodes++;
 			}
 		}
 
@@ -4865,6 +4862,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 							ppath->parallel_workers	= phint->nworkers;
 							ppath->startup_cost = 0;
 							ppath->total_cost = 0;
+							ppath->disabled_nodes = 0;
 						}
 					}
 
@@ -4873,11 +4871,8 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 					{
 						Path *ppath = (Path *) lfirst(l);
 
-						if (ppath->startup_cost < disable_cost)
-						{
-							ppath->startup_cost += disable_cost;
-							ppath->total_cost += disable_cost;
-						}
+						if (ppath->disabled_nodes < 1)
+							ppath->disabled_nodes++;
 					}
 				}
 			}
@@ -4908,6 +4903,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 
 					path->startup_cost = 0;
 					path->total_cost = 0;
+					path->disabled_nodes = 0;
 				}
 
 				/* enforce number of workers if requested */
