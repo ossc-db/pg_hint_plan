@@ -1128,6 +1128,13 @@ $$ LANGUAGE SQL IMMUTABLE;
 -- on the following hint. pg_hint_plan shows the log for the function
 -- but the resulting explain output doesn't contain the corresponding
 -- plan.
+--
+-- Note that since PostgreSQL 18 (commit 0dca5d68d7be), SQL functions
+-- use the plan cache.  Hence, the IndexScan of recall_planner() can be
+-- reported the first time the function is run, but not afterwards
+-- as no more planning happens.  The output of the plans is unchanged,
+-- with the IndexScan hint still taking effect based on the plan cached
+-- during the first query run.
 /*+HashJoin(t_1 t_2)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1

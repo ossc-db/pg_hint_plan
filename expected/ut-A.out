@@ -4542,6 +4542,13 @@ $$ LANGUAGE SQL IMMUTABLE;
 -- on the following hint. pg_hint_plan shows the log for the function
 -- but the resulting explain output doesn't contain the corresponding
 -- plan.
+--
+-- Note that since PostgreSQL 18 (commit 0dca5d68d7be), SQL functions
+-- use the plan cache.  Hence, the IndexScan of recall_planner() can be
+-- reported the first time the function is run, but not afterwards
+-- as no more planning happens.  The output of the plans is unchanged,
+-- with the IndexScan hint still taking effect based on the plan cached
+-- during the first query run.
 /*+HashJoin(t_1 t_2)*/
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
@@ -4581,13 +4588,6 @@ EXPLAIN (COSTS false)
   ORDER BY st_1.c1;
 LOG:  pg_hint_plan:
 used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
-LOG:  pg_hint_plan:
-used hint:
 HashJoin(st_1 st_2)
 not used hint:
 duplication hint:
@@ -4611,13 +4611,6 @@ EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 st_1
    JOIN s1.t2 st_2 ON (st_1.c1 = st_2.c1)
   ORDER BY st_1.c1;
-LOG:  pg_hint_plan:
-used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4644,13 +4637,6 @@ EXPLAIN (COSTS false)
   ORDER BY t_1.c1;
 LOG:  pg_hint_plan:
 used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
-LOG:  pg_hint_plan:
-used hint:
 not used hint:
 HashJoin(st_1 st_2)
 duplication hint:
@@ -4673,13 +4659,6 @@ error hint:
 EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
   ORDER BY t_1.c1;
-LOG:  pg_hint_plan:
-used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4724,13 +4703,6 @@ EXPLAIN (COSTS false)
  SELECT recall_planner_one_t() FROM s1.t1 t_1
    JOIN s1.t2 t_2 ON (t_1.c1 = t_2.c1)
   ORDER BY t_1.c1;
-LOG:  pg_hint_plan:
-used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
 INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(t_1 t_1)"
 DETAIL:  Relation name "t_1" is duplicated.
 LOG:  pg_hint_plan:
@@ -4759,13 +4731,6 @@ EXPLAIN (COSTS false)
  SELECT recall_planner() FROM s1.t1 t_1
    JOIN s1.t2 t_2 ON (t_1.c1 = t_2.c1)
   ORDER BY t_1.c1;
-LOG:  pg_hint_plan:
-used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
 INFO:  pg_hint_plan: hint syntax error at or near "HashJoin(t_1 t_1)"
 DETAIL:  Relation name "t_1" is duplicated.
 LOG:  pg_hint_plan:
@@ -4793,13 +4758,6 @@ EXPLAIN (COSTS false)
   ORDER BY t_1.c1;
 INFO:  pg_hint_plan: hint syntax error at or near "MergeJoin(t_1 t_2)HashJoin(t_1 t_2)"
 DETAIL:  Conflict join method hint.
-LOG:  pg_hint_plan:
-used hint:
-IndexScan(t_1)
-not used hint:
-duplication hint:
-error hint:
-
 LOG:  pg_hint_plan:
 used hint:
 HashJoin(t_1 t_2)
