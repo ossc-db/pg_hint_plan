@@ -162,6 +162,15 @@ SELECT * FROM settings;
 -- filtering to ensure a stable output.  See the tests calling this
 -- function to see how it can be used.
 --
+-- Note that when combined with pg_hint_plan.debug_print, the first
+-- call of this function will produce extra LOG outputs regarding the
+-- "used hints" and "not used hints" due to the initial planning of
+-- this function, with one extra entry generated for each call of
+-- regexp_replace() done in this function.  This is harmless, even
+-- if it can produce some confusing output.  Any follow-up calls
+-- are done with this function called from the plan cache, causing
+-- the LOG to not show up.
+--
 -- If required, this can be extended with new operation modes.
 CREATE OR REPLACE FUNCTION explain_filter(text) RETURNS SETOF text
 LANGUAGE plpgsql AS
