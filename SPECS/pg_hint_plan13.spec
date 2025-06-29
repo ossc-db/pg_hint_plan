@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 12
 Name:       pg_hint_plan13
-Version:    1.3.10
+Version:    1.3.11
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 13.
 
 %package llvmjit
 Requires: postgresql13-server, postgresql13-llvmjit
-Requires: pg_hint_plan13 = 1.3.10
+Requires: pg_hint_plan13 = 1.3.11
 Summary:  Just-in-time compilation support for pg_hint_plan13
 
 %description llvmjit
@@ -84,6 +84,7 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.3.7--1.3.8.sql
 %{_datadir}/extension/pg_hint_plan--1.3.8--1.3.9.sql
 %{_datadir}/extension/pg_hint_plan--1.3.9--1.3.10.sql
+%{_datadir}/extension/pg_hint_plan--1.3.10--1.3.11.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -95,6 +96,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Mon Jun 30 2025 Michael Paquier
+- Version 1.3.11.
 * Tue Aug 27 2024 Michael Paquier
 - Version 1.3.10.
 * Tue Aug 29 2023 Michael Paquier
