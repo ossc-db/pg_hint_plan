@@ -1,4 +1,4 @@
-/* pg_hint_plan/pg_hint_plan--1.6.1--1.7.0.sql */
+/* pg_hint_plan/pg_hint_plan--1.6.2--1.7.0.sql */
 
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "ALTER EXTENSION pg_hint_plan UPDATE TO '1.7.0'" to load this file. \quit

@@ -16,7 +16,7 @@
 ## Set general information for pg_hint_plan.
 Summary:    Optimizer hint on PostgreSQL 17
 Name:       pg_hint_plan17
-Version:    1.7.0
+Version:    1.7.1
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 17.
 
 %package llvmjit
 Requires: postgresql17-server, postgresql17-llvmjit
-Requires: pg_hint_plan17 = 1.7.0
+Requires: pg_hint_plan17 = 1.7.1
 Summary:  Just-in-time compilation support for pg_hint_plan17
 
 %description llvmjit
@@ -84,16 +84,21 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.3.7--1.3.8.sql
 %{_datadir}/extension/pg_hint_plan--1.3.8--1.3.9.sql
 %{_datadir}/extension/pg_hint_plan--1.3.9--1.3.10.sql
-%{_datadir}/extension/pg_hint_plan--1.3.10--1.4.sql
+%{_datadir}/extension/pg_hint_plan--1.3.10--1.3.11.sql
+%{_datadir}/extension/pg_hint_plan--1.3.11--1.4.sql
 %{_datadir}/extension/pg_hint_plan--1.4--1.4.1.sql
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
 %{_datadir}/extension/pg_hint_plan--1.4.2--1.4.3.sql
-%{_datadir}/extension/pg_hint_plan--1.4.3--1.5.sql
+%{_datadir}/extension/pg_hint_plan--1.4.3--1.4.4.sql
+%{_datadir}/extension/pg_hint_plan--1.4.4--1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.5--1.5.1.sql
 %{_datadir}/extension/pg_hint_plan--1.5.1--1.5.2.sql
-%{_datadir}/extension/pg_hint_plan--1.5.2--1.6.0.sql
+%{_datadir}/extension/pg_hint_plan--1.5.2--1.5.3.sql
+%{_datadir}/extension/pg_hint_plan--1.5.3--1.6.0.sql
 %{_datadir}/extension/pg_hint_plan--1.6.0--1.6.1.sql
-%{_datadir}/extension/pg_hint_plan--1.6.1--1.7.0.sql
+%{_datadir}/extension/pg_hint_plan--1.6.1--1.6.2.sql
+%{_datadir}/extension/pg_hint_plan--1.6.2--1.7.0.sql
+%{_datadir}/extension/pg_hint_plan--1.7.0--1.7.1.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -105,5 +110,7 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Mon Jun 30 2025 Michael Paquier
+- Version 1.7.1
 * Tue Aug 29 2023 Michael Paquier
 - Support PostgreSQL 17.
