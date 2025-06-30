@@ -310,4 +310,15 @@ Objects in extension "pg_hint_plan"
  type hint_plan.hints[]
 (4 rows)
 
+ALTER EXTENSION pg_hint_plan UPDATE TO "1.9.0";
+\dx+ pg_hint_plan
+Objects in extension "pg_hint_plan"
+       Object description        
+---------------------------------
+ sequence hint_plan.hints_id_seq
+ table hint_plan.hints
+ type hint_plan.hints
+ type hint_plan.hints[]
+(4 rows)
+
 DROP EXTENSION pg_hint_plan;

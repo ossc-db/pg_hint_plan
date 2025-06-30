@@ -1,10 +1,10 @@
 # Requirements
 
-pg_hint_plan 1.8 requires PostgreSQL 18.
+pg_hint_plan 1.9 requires PostgreSQL 19.
 
 PostgreSQL versions tested
 
-- Version 18
+- Version 19
 
 OS versions tested
 
