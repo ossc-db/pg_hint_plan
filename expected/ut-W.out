@@ -1224,7 +1224,7 @@ Parallel()
                    QUERY PLAN                   
 ------------------------------------------------
  Gather
-   Workers Planned: 1
+   Workers Planned: 2
    ->  Parallel Append
          ->  Parallel Seq Scan on p1_c2 p1_2
          ->  Parallel Seq Scan on p1_c4 p1_4
