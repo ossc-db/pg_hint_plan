@@ -1297,7 +1297,7 @@ Parallel()
                    QUERY PLAN                   
 ------------------------------------------------
  Gather
-   Workers Planned: 1
+   Workers Planned: 2
    ->  Parallel Append
          ->  Parallel Seq Scan on p1_c2 p1_2
          ->  Parallel Seq Scan on p1_c4 p1_4
@@ -1394,8 +1394,7 @@ error hint:
                     explain_filter                    
 ------------------------------------------------------
  Gather
-   Workers Planned: 1
-   Single Copy: true
+   Workers Planned: 5
    ->  Parallel Append
          ->  Sample Scan on p1_c1_c1 s1
                Sampling: system ('10'::real)
@@ -1421,5 +1420,5 @@ error hint:
                      Filter: ((id % 2) = 0)
                ->  Parallel Seq Scan on p1_c3_c2 p1_9
                      Filter: ((id % 2) = 0)
-(28 rows)
+(27 rows)
 
