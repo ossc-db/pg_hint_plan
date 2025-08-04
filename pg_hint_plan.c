@@ -2080,7 +2080,7 @@ ScanMethodHintParse(ScanMethodHint *hint, const char *str)
 	/* Parse relation name and index name(s) if given hint accepts. */
 	length = list_length(name_list);
 
-	/* at least twp parameters required */
+	/* at least two parameters required */
 	if (length < 1)
 	{
 		hint_ereport(str,
