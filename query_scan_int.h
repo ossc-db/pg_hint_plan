@@ -111,8 +111,8 @@ typedef struct QueryScanStateData
 
 
 extern YY_BUFFER_STATE query_scan_prepare_buffer(QueryScanState state,
-											   const char *txt, int len,
-											   char **txtcopy);
+												 const char *txt, int len,
+												 char **txtcopy);
 extern void query_yyerror(int elevel, const char *txt, const char *message);
 
 extern void query_scan_emit(QueryScanState state, const char *txt, int len);

@@ -127,7 +127,7 @@ enum JOIN_TYPE_BITS
 	ENABLE_NESTLOOP = 0x01,
 	ENABLE_MERGEJOIN = 0x02,
 	ENABLE_HASHJOIN = 0x04,
-	ENABLE_MEMOIZE	= 0x08
+	ENABLE_MEMOIZE = 0x08
 };
 
 #define ENABLE_ALL_SCAN (ENABLE_SEQSCAN | ENABLE_INDEXSCAN | \
@@ -259,25 +259,25 @@ static bool current_hint_retrieved = false;
 /* common data for all hints. */
 struct Hint
 {
-	const char		   *hint_str;		/* must not do pfree */
-	const char		   *keyword;		/* must not do pfree */
-	HintKeyword			hint_keyword;
-	HintType			type;
-	HintStatus			state;
-	HintDeleteFunction	delete_func;
-	HintDescFunction	desc_func;
-	HintCmpFunction		cmp_func;
-	HintParseFunction	parse_func;
+	const char *hint_str;		/* must not do pfree */
+	const char *keyword;		/* must not do pfree */
+	HintKeyword hint_keyword;
+	HintType	type;
+	HintStatus	state;
+	HintDeleteFunction delete_func;
+	HintDescFunction desc_func;
+	HintCmpFunction cmp_func;
+	HintParseFunction parse_func;
 };
 
 /* scan method hints */
 typedef struct ScanMethodHint
 {
-	Hint			base;
-	char		   *relname;
-	List		   *indexnames;
-	bool			regexp;
-	unsigned char	enforce_mask;
+	Hint		base;
+	char	   *relname;
+	List	   *indexnames;
+	bool		regexp;
+	unsigned char enforce_mask;
 } ScanMethodHint;
 
 typedef struct ParentIndexInfo
@@ -295,66 +295,67 @@ typedef struct ParentIndexInfo
 /* join method hints */
 typedef struct JoinMethodHint
 {
-	Hint			base;
-	int				nrels;
-	int				inner_nrels;
-	char		  **relnames;
-	unsigned char	enforce_mask;
-	Relids			joinrelids;
-	Relids			inner_joinrelids;
+	Hint		base;
+	int			nrels;
+	int			inner_nrels;
+	char	  **relnames;
+	unsigned char enforce_mask;
+	Relids		joinrelids;
+	Relids		inner_joinrelids;
 } JoinMethodHint;
 
 /* join order hints */
 typedef struct OuterInnerRels
 {
-	char   *relation;
-	List   *outer_inner_pair;
+	char	   *relation;
+	List	   *outer_inner_pair;
 } OuterInnerRels;
 
 typedef struct LeadingHint
 {
-	Hint			base;
-	List		   *relations;	/* relation names specified in Leading hint */
+	Hint		base;
+	List	   *relations;		/* relation names specified in Leading hint */
 	OuterInnerRels *outer_inner;
 } LeadingHint;
 
 /* change a run-time parameter hints */
 typedef struct SetHint
 {
-	Hint	base;
-	char   *name;				/* name of variable */
-	char   *value;
-	List   *words;
+	Hint		base;
+	char	   *name;			/* name of variable */
+	char	   *value;
+	List	   *words;
 } SetHint;
 
 /* rows hints */
-typedef enum RowsValueType {
-	RVT_ABSOLUTE,		/* Rows(... #1000) */
-	RVT_ADD,			/* Rows(... +1000) */
-	RVT_SUB,			/* Rows(... -1000) */
-	RVT_MULTI,			/* Rows(... *1.2) */
+typedef enum RowsValueType
+{
+	RVT_ABSOLUTE,				/* Rows(... #1000) */
+	RVT_ADD,					/* Rows(... +1000) */
+	RVT_SUB,					/* Rows(... -1000) */
+	RVT_MULTI,					/* Rows(... *1.2) */
 } RowsValueType;
 typedef struct RowsHint
 {
-	Hint			base;
-	int				nrels;
-	int				inner_nrels;
-	char		  **relnames;
-	Relids			joinrelids;
-	Relids			inner_joinrelids;
-	char		   *rows_str;
-	RowsValueType	value_type;
-	double			rows;
+	Hint		base;
+	int			nrels;
+	int			inner_nrels;
+	char	  **relnames;
+	Relids		joinrelids;
+	Relids		inner_joinrelids;
+	char	   *rows_str;
+	RowsValueType value_type;
+	double		rows;
 } RowsHint;
 
 /* parallel hints */
 typedef struct ParallelHint
 {
-	Hint			base;
-	char		   *relname;
-	char		   *nworkers_str;	/* original string of nworkers */
-	int				nworkers;		/* num of workers specified by Worker */
-	bool			force_parallel;	/* force parallel scan */
+	Hint		base;
+	char	   *relname;
+	char	   *nworkers_str;	/* original string of nworkers */
+	int			nworkers;		/* num of workers specified by Worker */
+	bool		force_parallel; /* force parallel scan */
 } ParallelHint;
 
 /*
@@ -362,39 +363,39 @@ typedef struct ParallelHint
  */
 struct HintState
 {
-	char		   *hint_str;			/* original hint string */
+	char	   *hint_str;		/* original hint string */
 
 	/* all hint */
-	int				nall_hints;			/* # of valid all hints */
-	int				max_all_hints;		/* # of slots for all hints */
-	Hint		  **all_hints;			/* parsed all hints */
+	int			nall_hints;		/* # of valid all hints */
+	int			max_all_hints;	/* # of slots for all hints */
+	Hint	  **all_hints;		/* parsed all hints */
 
 	/* # of each hints */
-	int				num_hints[NUM_HINT_TYPE];
+	int			num_hints[NUM_HINT_TYPE];
 
 	/* pointer to each hint type */
-	void			*hints[NUM_HINT_TYPE];
+	void	   *hints[NUM_HINT_TYPE];
 
 	/* Initial values of parameters  */
-	int				init_scan_mask;		/* enable_* mask */
-	int				init_nworkers;		/* max_parallel_workers_per_gather */
-	/* min_parallel_table_scan_size*/
-	int				init_min_para_tablescan_size;
-	/* min_parallel_index_scan_size*/
-	int				init_min_para_indexscan_size;
-	double			init_paratup_cost;	/* parallel_tuple_cost */
-	double			init_parasetup_cost;/* parallel_setup_cost */
+	int			init_scan_mask; /* enable_* mask */
+	int			init_nworkers;	/* max_parallel_workers_per_gather */
+	/* min_parallel_table_scan_size */
+	int			init_min_para_tablescan_size;
+	/* min_parallel_index_scan_size */
+	int			init_min_para_indexscan_size;
+	double		init_paratup_cost;	/* parallel_tuple_cost */
+	double		init_parasetup_cost;	/* parallel_setup_cost */
 
-	PlannerInfo	   *current_root;		/* PlannerInfo for the followings */
-	Index			parent_relid;		/* inherit parent of table relid */
+	PlannerInfo *current_root;	/* PlannerInfo for the followings */
+	Index		parent_relid;	/* inherit parent of table relid */
 	ScanMethodHint *parent_scan_hint;	/* scan hint for the parent */
-	ParallelHint   *parent_parallel_hint; /* parallel hint for the parent */
-	List		   *parent_index_infos; /* list of parent table's index */
+	ParallelHint *parent_parallel_hint; /* parallel hint for the parent */
+	List	   *parent_index_infos; /* list of parent table's index */
 
-	int				init_join_mask;		/* initial value join parameter */
-	List		  **join_hint_level;
-	List		  **memoize_hint_level;
-	GucContext		context;			/* which GUC parameters can we set? */
+	int			init_join_mask; /* initial value join parameter */
+	List	  **join_hint_level;
+	List	  **memoize_hint_level;
+	GucContext	context;		/* which GUC parameters can we set? */
 };
 
 /*
@@ -402,9 +403,9 @@ struct HintState
  */
 typedef struct HintParser
 {
-	char			   *keyword;
-	HintCreateFunction	create_func;
-	HintKeyword			hint_keyword;
+	char	   *keyword;
+	HintCreateFunction create_func;
+	HintKeyword hint_keyword;
 } HintParser;
 
 static bool enable_hint_table_check(bool *newval, void **extra, GucSource source);
@@ -430,7 +431,7 @@ static Hint *ScanMethodHintCreate(const char *hint_str, const char *keyword,
 								  HintKeyword hint_keyword);
 static void ScanMethodHintDelete(ScanMethodHint *hint);
 static void ScanMethodHintDesc(ScanMethodHint *hint, StringInfo buf, bool nolf);
-static int ScanMethodHintCmp(const ScanMethodHint *a, const ScanMethodHint *b);
+static int	ScanMethodHintCmp(const ScanMethodHint *a, const ScanMethodHint *b);
 static const char *ScanMethodHintParse(ScanMethodHint *hint, const char *str);
 
 /* Join method hint callbacks */
@@ -438,7 +439,7 @@ static Hint *JoinMethodHintCreate(const char *hint_str, const char *keyword,
 								  HintKeyword hint_keyword);
 static void JoinMethodHintDelete(JoinMethodHint *hint);
 static void JoinMethodHintDesc(JoinMethodHint *hint, StringInfo buf, bool nolf);
-static int JoinMethodHintCmp(const JoinMethodHint *a, const JoinMethodHint *b);
+static int	JoinMethodHintCmp(const JoinMethodHint *a, const JoinMethodHint *b);
 static const char *JoinMethodHintParse(JoinMethodHint *hint, const char *str);
 
 /* Leading hint callbacks */
@@ -446,7 +447,7 @@ static Hint *LeadingHintCreate(const char *hint_str, const char *keyword,
 							   HintKeyword hint_keyword);
 static void LeadingHintDelete(LeadingHint *hint);
 static void LeadingHintDesc(LeadingHint *hint, StringInfo buf, bool nolf);
-static int LeadingHintCmp(const LeadingHint *a, const LeadingHint *b);
+static int	LeadingHintCmp(const LeadingHint *a, const LeadingHint *b);
 static const char *LeadingHintParse(LeadingHint *hint, const char *str);
 
 /* Set hint callbacks */
@@ -454,7 +455,7 @@ static Hint *SetHintCreate(const char *hint_str, const char *keyword,
 						   HintKeyword hint_keyword);
 static void SetHintDelete(SetHint *hint);
 static void SetHintDesc(SetHint *hint, StringInfo buf, bool nolf);
-static int SetHintCmp(const SetHint *a, const SetHint *b);
+static int	SetHintCmp(const SetHint *a, const SetHint *b);
 static const char *SetHintParse(SetHint *hint, const char *str);
 
 /* Rows hint callbacks */
@@ -462,7 +463,7 @@ static Hint *RowsHintCreate(const char *hint_str, const char *keyword,
 							HintKeyword hint_keyword);
 static void RowsHintDelete(RowsHint *hint);
 static void RowsHintDesc(RowsHint *hint, StringInfo buf, bool nolf);
-static int RowsHintCmp(const RowsHint *a, const RowsHint *b);
+static int	RowsHintCmp(const RowsHint *a, const RowsHint *b);
 static const char *RowsHintParse(RowsHint *hint, const char *str);
 
 /* Parallel hint callbacks */
@@ -470,7 +471,7 @@ static Hint *ParallelHintCreate(const char *hint_str, const char *keyword,
 								HintKeyword hint_keyword);
 static void ParallelHintDelete(ParallelHint *hint);
 static void ParallelHintDesc(ParallelHint *hint, StringInfo buf, bool nolf);
-static int ParallelHintCmp(const ParallelHint *a, const ParallelHint *b);
+static int	ParallelHintCmp(const ParallelHint *a, const ParallelHint *b);
 static const char *ParallelHintParse(ParallelHint *hint, const char *str);
 
 static Hint *MemoizeHintCreate(const char *hint_str, const char *keyword,
@@ -484,9 +485,9 @@ static const char *parse_quoted_value(const char *str, char **word,
 RelOptInfo *pg_hint_plan_standard_join_search(PlannerInfo *root,
 											  int levels_needed,
 											  List *initial_rels);
-void pg_hint_plan_join_search_one_level(PlannerInfo *root, int level);
-void pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
-								   Index rti, RangeTblEntry *rte);
+void		pg_hint_plan_join_search_one_level(PlannerInfo *root, int level);
+void		pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
+										  Index rti, RangeTblEntry *rte);
 static void create_plain_partial_paths(PlannerInfo *root,
 									   RelOptInfo *rel);
 static void make_rels_by_clause_joins(PlannerInfo *root, RelOptInfo *old_rel,
@@ -503,15 +504,15 @@ static void free_child_join_sjinfo(SpecialJoinInfo *sjinfo,
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
-static int set_config_option_noerror(const char *name, const char *value,
-						  GucContext context, GucSource source,
-						  GucAction action, bool changeVal, int elevel);
+static int	set_config_option_noerror(const char *name, const char *value,
+									  GucContext context, GucSource source,
+									  GucAction action, bool changeVal, int elevel);
 static void setup_scan_method_enforcement(ScanMethodHint *scanhint,
 										  HintState *state);
-static int set_config_int32_option(const char *name, int32 value,
+static int	set_config_int32_option(const char *name, int32 value,
 									GucContext context);
-static int set_config_double_option(const char *name, double value,
-									GucContext context);
+static int	set_config_double_option(const char *name, double value,
+									 GucContext context);
 static bool check_index_match(IndexOptInfo *info,
 							  ParentIndexInfo *p_info,
 							  Oid relationObjectId);
@@ -519,20 +520,22 @@ static void set_parent_index_infos(Index parent_relid, ScanMethodHint *pshint,
 								   PlannerInfo *root);
 
 /* GUC variables */
-static bool	pg_hint_plan_enable_hint = true;
-static int debug_level = 0;
+static bool pg_hint_plan_enable_hint = true;
+static int	debug_level = 0;
 static int	pg_hint_plan_parse_message_level = INFO;
 static int	pg_hint_plan_debug_message_level = LOG;
+
 /* Default is off, to keep backward compatibility. */
-static bool	pg_hint_plan_enable_hint_table = false;
+static bool pg_hint_plan_enable_hint_table = false;
 
-static int plpgsql_recurse_level = 0;		/* PLpgSQL recursion level            */
-static int recurse_level = 0;		/* recursion level incl. direct SPI calls */
-static int hint_inhibit_level = 0;			/* Inhibit hinting if this is above 0 */
-											/* (This could not be above 1)        */
-static int max_hint_nworkers = -1;		/* Maximum nworkers of Workers hints */
+static int	plpgsql_recurse_level = 0;	/* PLpgSQL recursion level            */
+static int	recurse_level = 0;	/* recursion level incl. direct SPI calls */
+static int	hint_inhibit_level = 0; /* Inhibit hinting if this is above 0 */
 
-static bool	hint_table_deactivated = false;
+ /* (This could not be above 1)        */
+static int	max_hint_nworkers = -1; /* Maximum nworkers of Workers hints */
+
+static bool hint_table_deactivated = false;
 
 static const struct config_enum_entry parse_messages_level_options[] = {
 	{"debug", DEBUG2, true},
@@ -546,9 +549,9 @@ static const struct config_enum_entry parse_messages_level_options[] = {
 	{"notice", NOTICE, false},
 	{"warning", WARNING, false},
 	{"error", ERROR, false},
+
 	/*
-	 * {"fatal", FATAL, true},
-	 * {"panic", PANIC, true},
+	 * {"fatal", FATAL, true}, {"panic", PANIC, true},
 	 */
 	{NULL, 0, false}
 };
@@ -600,7 +603,7 @@ static const HintParser parsers[] = {
 	{HINT_INDEXSCANREGEXP, ScanMethodHintCreate, HINT_KEYWORD_INDEXSCANREGEXP},
 	{HINT_BITMAPSCAN, ScanMethodHintCreate, HINT_KEYWORD_BITMAPSCAN},
 	{HINT_BITMAPSCANREGEXP, ScanMethodHintCreate,
-	 HINT_KEYWORD_BITMAPSCANREGEXP},
+	HINT_KEYWORD_BITMAPSCANREGEXP},
 	{HINT_TIDSCAN, ScanMethodHintCreate, HINT_KEYWORD_TIDSCAN},
 	{HINT_NOSEQSCAN, ScanMethodHintCreate, HINT_KEYWORD_NOSEQSCAN},
 	{HINT_NOINDEXSCAN, ScanMethodHintCreate, HINT_KEYWORD_NOINDEXSCAN},
@@ -608,7 +611,7 @@ static const HintParser parsers[] = {
 	{HINT_NOTIDSCAN, ScanMethodHintCreate, HINT_KEYWORD_NOTIDSCAN},
 	{HINT_INDEXONLYSCAN, ScanMethodHintCreate, HINT_KEYWORD_INDEXONLYSCAN},
 	{HINT_INDEXONLYSCANREGEXP, ScanMethodHintCreate,
-	 HINT_KEYWORD_INDEXONLYSCANREGEXP},
+	HINT_KEYWORD_INDEXONLYSCANREGEXP},
 	{HINT_NOINDEXONLYSCAN, ScanMethodHintCreate, HINT_KEYWORD_NOINDEXONLYSCAN},
 
 	{HINT_NESTLOOP, JoinMethodHintCreate, HINT_KEYWORD_NESTLOOP},
@@ -631,9 +634,9 @@ static const HintParser parsers[] = {
 static bool
 pg_hint_plan_is_plpgsql_function(Oid funcoid)
 {
-	HeapTuple		procTuple;
-	Form_pg_proc	procStruct;
-	bool			result;
+	HeapTuple	procTuple;
+	Form_pg_proc procStruct;
+	bool		result;
 
 	procTuple = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcoid));
 	if (!HeapTupleIsValid(procTuple))
@@ -659,7 +662,7 @@ static bool
 pg_hint_plan_needs_fmgr_hook(Oid funcoid)
 {
 	if (prev_needs_fmgr_hook &&
-		(*prev_needs_fmgr_hook)(funcoid))
+		(*prev_needs_fmgr_hook) (funcoid))
 		return true;
 
 	return pg_hint_plan_is_plpgsql_function(funcoid);
@@ -679,7 +682,7 @@ pg_hint_plan_fmgr_hook(FmgrHookEventType event,
 			Assert(plpgsql_recurse_level > 0);
 			break;
 		case FHET_END:
-		case FHET_ABORT:	/* may be an exception */
+		case FHET_ABORT:		/* may be an exception */
 			plpgsql_recurse_level--;
 			Assert(plpgsql_recurse_level >= 0);
 			break;
@@ -718,11 +721,11 @@ _PG_init(void)
 {
 	/* Define custom GUC variables. */
 	DefineCustomBoolVariable("pg_hint_plan.enable_hint",
-			 "Force planner to use plans specified in the hint comment preceding to the query.",
+							 "Force planner to use plans specified in the hint comment preceding to the query.",
 							 NULL,
 							 &pg_hint_plan_enable_hint,
 							 true,
-						     PGC_USERSET,
+							 PGC_USERSET,
 							 0,
 							 NULL,
 							 NULL,
@@ -893,7 +896,7 @@ JoinMethodHintDelete(JoinMethodHint *hint)
 
 	if (hint->relnames)
 	{
-		int	i;
+		int			i;
 
 		for (i = 0; i < hint->nrels; i++)
 			pfree(hint->relnames[i]);
@@ -909,7 +912,7 @@ static Hint *
 LeadingHintCreate(const char *hint_str, const char *keyword,
 				  HintKeyword hint_keyword)
 {
-	LeadingHint	   *hint;
+	LeadingHint *hint;
 
 	hint = palloc0(sizeof(LeadingHint));
 	hint->base.hint_str = hint_str;
@@ -917,7 +920,7 @@ LeadingHintCreate(const char *hint_str, const char *keyword,
 	hint->base.hint_keyword = hint_keyword;
 	hint->base.type = HINT_TYPE_LEADING;
 	hint->base.state = HINT_STATE_NOTUSED;
-	hint->base.delete_func = (HintDeleteFunction)LeadingHintDelete;
+	hint->base.delete_func = (HintDeleteFunction) LeadingHintDelete;
 	hint->base.desc_func = (HintDescFunction) LeadingHintDesc;
 	hint->base.cmp_func = (HintCmpFunction) LeadingHintCmp;
 	hint->base.parse_func = (HintParseFunction) LeadingHintParse;
@@ -943,7 +946,7 @@ static Hint *
 SetHintCreate(const char *hint_str, const char *keyword,
 			  HintKeyword hint_keyword)
 {
-	SetHint	   *hint;
+	SetHint    *hint;
 
 	hint = palloc0(sizeof(SetHint));
 	hint->base.hint_str = hint_str;
@@ -981,7 +984,7 @@ static Hint *
 RowsHintCreate(const char *hint_str, const char *keyword,
 			   HintKeyword hint_keyword)
 {
-	RowsHint *hint;
+	RowsHint   *hint;
 
 	hint = palloc0(sizeof(RowsHint));
 	hint->base.hint_str = hint_str;
@@ -1013,7 +1016,7 @@ RowsHintDelete(RowsHint *hint)
 
 	if (hint->relnames)
 	{
-		int	i;
+		int			i;
 
 		for (i = 0; i < hint->nrels; i++)
 			pfree(hint->relnames[i]);
@@ -1027,7 +1030,7 @@ RowsHintDelete(RowsHint *hint)
 
 static Hint *
 ParallelHintCreate(const char *hint_str, const char *keyword,
-				  HintKeyword hint_keyword)
+				   HintKeyword hint_keyword)
 {
 	ParallelHint *hint;
 
@@ -1069,7 +1072,7 @@ MemoizeHintCreate(const char *hint_str, const char *keyword,
 	 * only difference is the hint type.
 	 */
 	JoinMethodHint *hint =
-		(JoinMethodHint *)JoinMethodHintCreate(hint_str, keyword, hint_keyword);
+		(JoinMethodHint *) JoinMethodHintCreate(hint_str, keyword, hint_keyword);
 
 	hint->base.type = HINT_TYPE_MEMOIZE;
 
@@ -1080,7 +1083,7 @@ MemoizeHintCreate(const char *hint_str, const char *keyword,
 static HintState *
 HintStateCreate(void)
 {
-	HintState   *hstate;
+	HintState  *hstate;
 
 	hstate = palloc0(sizeof(HintState));
 	hstate->hint_str = NULL;
@@ -1118,7 +1121,7 @@ HintStateDelete(HintState *hstate)
 	if (hstate->hint_str)
 		pfree(hstate->hint_str);
 
-	for (i = 0; i < hstate->nall_hints ; i++)
+	for (i = 0; i < hstate->nall_hints; i++)
 		hstate->all_hints[i]->delete_func(hstate->all_hints[i]);
 	if (hstate->all_hints)
 		pfree(hstate->all_hints);
@@ -1186,7 +1189,7 @@ ScanMethodHintDesc(ScanMethodHint *hint, StringInfo buf, bool nolf)
 static void
 JoinMethodHintDesc(JoinMethodHint *hint, StringInfo buf, bool nolf)
 {
-	int	i;
+	int			i;
 
 	appendStringInfo(buf, "%s(", hint->base.keyword);
 	if (hint->relnames != NULL)
@@ -1283,7 +1286,7 @@ SetHintDesc(SetHint *hint, StringInfo buf, bool nolf)
 static void
 RowsHintDesc(RowsHint *hint, StringInfo buf, bool nolf)
 {
-	int	i;
+	int			i;
 
 	appendStringInfo(buf, "%s(", hint->base.keyword);
 	if (hint->relnames != NULL)
@@ -1331,7 +1334,8 @@ static void
 desc_hint_in_state(HintState *hstate, StringInfo buf, const char *title,
 				   HintStatus state, bool nolf)
 {
-	int	i, nshown;
+	int			i,
+				nshown;
 
 	appendStringInfo(buf, "%s:", title);
 	if (!nolf)
@@ -1357,7 +1361,7 @@ desc_hint_in_state(HintState *hstate, StringInfo buf, const char *title,
 static void
 HintStateDump(HintState *hstate)
 {
-	StringInfoData	buf;
+	StringInfoData buf;
 
 	if (!hstate)
 	{
@@ -1374,7 +1378,7 @@ HintStateDump(HintState *hstate)
 	desc_hint_in_state(hstate, &buf, "error hint", HINT_STATE_ERROR, false);
 
 	ereport(pg_hint_plan_debug_message_level,
-			(errmsg ("%s", buf.data)));
+			(errmsg("%s", buf.data)));
 
 	pfree(buf.data);
 }
@@ -1382,7 +1386,7 @@ HintStateDump(HintState *hstate)
 static void
 HintStateDump2(HintState *hstate)
 {
-	StringInfoData	buf;
+	StringInfoData buf;
 
 	if (!hstate)
 	{
@@ -1429,14 +1433,15 @@ ScanMethodHintCmp(const ScanMethodHint *a, const ScanMethodHint *b)
 static int
 JoinMethodHintCmp(const JoinMethodHint *a, const JoinMethodHint *b)
 {
-	int	i;
+	int			i;
 
 	if (a->nrels != b->nrels)
 		return a->nrels - b->nrels;
 
 	for (i = 0; i < a->nrels; i++)
 	{
-		int	result;
+		int			result;
+
 		if ((result = RelnameCmp(&a->relnames[i], &b->relnames[i])) != 0)
 			return result;
 	}
@@ -1459,14 +1464,15 @@ SetHintCmp(const SetHint *a, const SetHint *b)
 static int
 RowsHintCmp(const RowsHint *a, const RowsHint *b)
 {
-	int	i;
+	int			i;
 
 	if (a->nrels != b->nrels)
 		return a->nrels - b->nrels;
 
 	for (i = 0; i < a->nrels; i++)
 	{
-		int	result;
+		int			result;
+
 		if ((result = RelnameCmp(&a->relnames[i], &b->relnames[i])) != 0)
 			return result;
 	}
@@ -1504,7 +1510,7 @@ HintCmpWithPos(const void *a, const void *b)
 {
 	const Hint *hinta = *((const Hint **) a);
 	const Hint *hintb = *((const Hint **) b);
-	int		result;
+	int			result;
 
 	result = HintCmp(a, b);
 	if (result == 0)
@@ -1557,8 +1563,8 @@ skip_parenthesis(const char *str, char parenthesis)
 static const char *
 parse_quoted_value(const char *str, char **word, bool truncate)
 {
-	StringInfoData	buf;
-	bool			in_quote;
+	StringInfoData buf;
+	bool		in_quote;
 
 	/* Skip leading spaces. */
 	skip_space(str);
@@ -1641,7 +1647,7 @@ OuterInnerRelsCreate(char *name, List *outer_inner_list)
 static const char *
 parse_parentheses_Leading_in(const char *str, OuterInnerRels **outer_inner)
 {
-	List   *outer_inner_pair = NIL;
+	List	   *outer_inner_pair = NIL;
 
 	if ((str = skip_parenthesis(str, '(')) == NULL)
 		return NULL;
@@ -1649,7 +1655,7 @@ parse_parentheses_Leading_in(const char *str, OuterInnerRels **outer_inner)
 	skip_space(str);
 
 	/* Store words in parentheses into outer_inner_list. */
-	while(*str != ')' && *str != '\0')
+	while (*str != ')' && *str != '\0')
 	{
 		OuterInnerRels *outer_inner_rels;
 
@@ -1661,7 +1667,7 @@ parse_parentheses_Leading_in(const char *str, OuterInnerRels **outer_inner)
 		}
 		else
 		{
-			char   *name;
+			char	   *name;
 
 			if ((str = parse_quoted_value(str, &name, true)) == NULL)
 				break;
@@ -1687,16 +1693,16 @@ parse_parentheses_Leading_in(const char *str, OuterInnerRels **outer_inner)
 
 static const char *
 parse_parentheses_Leading(const char *str, List **name_list,
-	OuterInnerRels **outer_inner)
+						  OuterInnerRels **outer_inner)
 {
-	char   *name;
-	bool	truncate = true;
+	char	   *name;
+	bool		truncate = true;
 
 	if ((str = skip_parenthesis(str, '(')) == NULL)
 		return NULL;
 
 	skip_space(str);
-	if (*str =='(')
+	if (*str == '(')
 	{
 		if ((str = parse_parentheses_Leading_in(str, outer_inner)) == NULL)
 			return NULL;
@@ -1704,7 +1710,7 @@ parse_parentheses_Leading(const char *str, List **name_list,
 	else
 	{
 		/* Store words in parentheses into name_list. */
-		while(*str != ')' && *str != '\0')
+		while (*str != ')' && *str != '\0')
 		{
 			if ((str = parse_quoted_value(str, &name, truncate)) == NULL)
 			{
@@ -1725,8 +1731,8 @@ parse_parentheses_Leading(const char *str, List **name_list,
 static const char *
 parse_parentheses(const char *str, List **name_list, HintKeyword keyword)
 {
-	char   *name;
-	bool	truncate = true;
+	char	   *name;
+	bool		truncate = true;
 
 	if ((str = skip_parenthesis(str, '(')) == NULL)
 		return NULL;
@@ -1734,7 +1740,7 @@ parse_parentheses(const char *str, List **name_list, HintKeyword keyword)
 	skip_space(str);
 
 	/* Store words in parentheses into name_list. */
-	while(*str != ')' && *str != '\0')
+	while (*str != ')' && *str != '\0')
 	{
 		if ((str = parse_quoted_value(str, &name, truncate)) == NULL)
 		{
@@ -1762,8 +1768,8 @@ parse_parentheses(const char *str, List **name_list, HintKeyword keyword)
 static void
 parse_hints(HintState *hstate, Query *parse, const char *str)
 {
-	StringInfoData	buf;
-	char		   *head;
+	StringInfoData buf;
+	char	   *head;
 
 	initStringInfo(&buf);
 	while (*str != '\0')
@@ -1779,8 +1785,8 @@ parse_hints(HintState *hstate, Query *parse, const char *str)
 
 		for (parser = parsers; parser->keyword != NULL; parser++)
 		{
-			char   *keyword = parser->keyword;
-			Hint   *hint;
+			char	   *keyword = parser->keyword;
+			Hint	   *hint;
 
 			if (pg_strcasecmp(buf.data, keyword) != 0)
 				continue;
@@ -1848,27 +1854,26 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 		"    OR application_name = '' ) "
 		" ORDER BY application_name DESC";
 	static SPIPlanPtr plan = NULL;
-	char   *hints = NULL;
-	Oid		argtypes[2] = { INT8OID, TEXTOID };
-	Datum	values[2];
-	char 	nulls[2] = {' ', ' '};
-	text   *app;
+	char	   *hints = NULL;
+	Oid			argtypes[2] = {INT8OID, TEXTOID};
+	Datum		values[2];
+	char		nulls[2] = {' ', ' '};
+	text	   *app;
 
 	/*
-	 * Make sure the extension is installed if trying to use the hint
-	 * table.
+	 * Make sure the extension is installed if trying to use the hint table.
 	 */
 	if (!SearchSysCacheExists1(EXTENSIONNAME, CStringGetDatum("pg_hint_plan")))
 	{
 		ereport(WARNING,
-				(errmsg ("cannot use the hint table"),
+				(errmsg("cannot use the hint table"),
 				 errhint("Run \"CREATE EXTENSION pg_hint_plan\" to create the hint table.")));
 		return NULL;
 	}
 
 	PG_TRY();
 	{
-		bool snapshot_set = false;
+		bool		snapshot_set = false;
 
 		hint_inhibit_level++;
 
@@ -1883,6 +1888,7 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 		if (plan == NULL)
 		{
 			SPIPlanPtr	p;
+
 			p = SPI_prepare(search_query, 2, argtypes);
 			plan = SPI_saveplan(p);
 			SPI_freeplan(p);
@@ -1897,15 +1903,16 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 
 		if (SPI_processed > 0)
 		{
-			char	*buf;
+			char	   *buf;
 
 			hints = SPI_getvalue(SPI_tuptable->vals[0],
 								 SPI_tuptable->tupdesc, 1);
+
 			/*
-			 * Here we use SPI_palloc to ensure that hints string is valid even
-			 * after SPI_finish call.  We can't use simple palloc because it
-			 * allocates memory in SPI's context and that context is deleted in
-			 * SPI_finish.
+			 * Here we use SPI_palloc to ensure that hints string is valid
+			 * even after SPI_finish call.  We can't use simple palloc because
+			 * it allocates memory in SPI's context and that context is
+			 * deleted in SPI_finish.
 			 */
 			buf = SPI_palloc(strlen(hints) + 1);
 			strcpy(buf, hints);
@@ -1937,9 +1944,9 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 static const char *
 get_hints_from_comment(const char *p)
 {
-	QueryScanState	sstate;
-	StringInfo		query_buf;
-	char		   *result = NULL;
+	QueryScanState sstate;
+	StringInfo	query_buf;
+	char	   *result = NULL;
 
 	if (p == NULL)
 		return NULL;
@@ -1953,6 +1960,7 @@ get_hints_from_comment(const char *p)
 	for (;;)
 	{
 		QueryScanResult sr = query_scan(sstate, query_buf);
+
 		if (sr == QUERY_SCAN_EOL)
 			break;
 	}
@@ -1975,8 +1983,8 @@ create_hintstate(Query *parse, const char *hints)
 {
 	const char *p;
 	int			i;
-	HintState   *hstate;
-	Hint **ptr;
+	HintState  *hstate;
+	Hint	  **ptr;
 
 	if (hints == NULL)
 		return NULL;
@@ -2005,19 +2013,21 @@ create_hintstate(Query *parse, const char *hints)
 	/* Count number of hints per hint-type. */
 	for (i = 0; i < hstate->nall_hints; i++)
 	{
-		Hint   *cur_hint = hstate->all_hints[i];
+		Hint	   *cur_hint = hstate->all_hints[i];
+
 		hstate->num_hints[cur_hint->type]++;
 	}
 
 	/*
-	 * If an object (or a set of objects) has multiple hints of same hint-type,
-	 * only the last hint is valid and others are ignored in planning.
-	 * Hints except the last are marked as 'duplicated' to remember the order.
+	 * If an object (or a set of objects) has multiple hints of same
+	 * hint-type, only the last hint is valid and others are ignored in
+	 * planning. Hints except the last are marked as 'duplicated' to remember
+	 * the order.
 	 */
 	for (i = 0; i < hstate->nall_hints - 1; i++)
 	{
-		Hint   *cur_hint = hstate->all_hints[i];
-		Hint   *next_hint = hstate->all_hints[i + 1];
+		Hint	   *cur_hint = hstate->all_hints[i];
+		Hint	   *next_hint = hstate->all_hints[i + 1];
 
 		/*
 		 * Leading hint is marked as 'duplicated' in transform_join_hints.
@@ -2059,10 +2069,10 @@ create_hintstate(Query *parse, const char *hints)
 static const char *
 ScanMethodHintParse(ScanMethodHint *hint, const char *str)
 {
-	const char	   *keyword = hint->base.keyword;
-	HintKeyword		hint_keyword = hint->base.hint_keyword;
-	List		   *name_list = NIL;
-	int				length;
+	const char *keyword = hint->base.keyword;
+	HintKeyword hint_keyword = hint->base.hint_keyword;
+	List	   *name_list = NIL;
+	int			length;
 
 	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
 		return NULL;
@@ -2074,7 +2084,7 @@ ScanMethodHintParse(ScanMethodHint *hint, const char *str)
 	if (length < 1)
 	{
 		hint_ereport(str,
-					 ("%s hint requires a relation.",  hint->base.keyword));
+					 ("%s hint requires a relation.", hint->base.keyword));
 		hint->base.state = HINT_STATE_ERROR;
 		return str;
 	}
@@ -2149,9 +2159,9 @@ ScanMethodHintParse(ScanMethodHint *hint, const char *str)
 static const char *
 JoinMethodHintParse(JoinMethodHint *hint, const char *str)
 {
-	const char	   *keyword = hint->base.keyword;
-	HintKeyword		hint_keyword = hint->base.hint_keyword;
-	List		   *name_list = NIL;
+	const char *keyword = hint->base.keyword;
+	HintKeyword hint_keyword = hint->base.hint_keyword;
+	List	   *name_list = NIL;
 
 	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
 		return NULL;
@@ -2168,7 +2178,7 @@ JoinMethodHintParse(JoinMethodHint *hint, const char *str)
 		 * after.
 		 */
 		hint->relnames = palloc0(sizeof(char *) * hint->nrels);
-		foreach (l, name_list)
+		foreach(l, name_list)
 		{
 			hint->relnames[i] = lfirst(l);
 			i++;
@@ -2226,7 +2236,8 @@ JoinMethodHintParse(JoinMethodHint *hint, const char *str)
 static bool
 OuterInnerPairCheck(OuterInnerRels *outer_inner)
 {
-	ListCell *l;
+	ListCell   *l;
+
 	if (outer_inner->outer_inner_pair == NIL)
 	{
 		if (outer_inner->relation)
@@ -2252,13 +2263,13 @@ OuterInnerPairCheck(OuterInnerRels *outer_inner)
 static List *
 OuterInnerList(OuterInnerRels *outer_inner)
 {
-	List		   *outer_inner_list = NIL;
-	ListCell	   *l;
+	List	   *outer_inner_list = NIL;
+	ListCell   *l;
 	OuterInnerRels *outer_inner_rels;
 
 	foreach(l, outer_inner->outer_inner_pair)
 	{
-		outer_inner_rels = (OuterInnerRels *)(lfirst(l));
+		outer_inner_rels = (OuterInnerRels *) (lfirst(l));
 
 		if (outer_inner_rels->relation != NULL)
 			outer_inner_list = lappend(outer_inner_list,
@@ -2273,7 +2284,7 @@ OuterInnerList(OuterInnerRels *outer_inner)
 static const char *
 LeadingHintParse(LeadingHint *hint, const char *str)
 {
-	List		   *name_list = NIL;
+	List	   *name_list = NIL;
 	OuterInnerRels *outer_inner = NULL;
 
 	if ((str = parse_parentheses_Leading(str, &name_list, &outer_inner)) ==
@@ -2287,7 +2298,7 @@ LeadingHintParse(LeadingHint *hint, const char *str)
 	hint->outer_inner = outer_inner;
 
 	/* A Leading hint requires at least two relations */
-	if ( hint->outer_inner == NULL && list_length(hint->relations) < 2)
+	if (hint->outer_inner == NULL && list_length(hint->relations) < 2)
 	{
 		hint_ereport(hint->base.hint_str,
 					 ("%s hint requires at least two relations.",
@@ -2309,7 +2320,7 @@ LeadingHintParse(LeadingHint *hint, const char *str)
 static const char *
 SetHintParse(SetHint *hint, const char *str)
 {
-	List   *name_list = NIL;
+	List	   *name_list = NIL;
 
 	if ((str = parse_parentheses(str, &name_list, hint->base.hint_keyword))
 		== NULL)
@@ -2337,10 +2348,10 @@ SetHintParse(SetHint *hint, const char *str)
 static const char *
 RowsHintParse(RowsHint *hint, const char *str)
 {
-	HintKeyword		hint_keyword = hint->base.hint_keyword;
-	List		   *name_list = NIL;
-	char		   *rows_str;
-	char		   *end_ptr;
+	HintKeyword hint_keyword = hint->base.hint_keyword;
+	List	   *name_list = NIL;
+	char	   *rows_str;
+	char	   *end_ptr;
 	ListCell   *l;
 	int			i = 0;
 
@@ -2366,7 +2377,7 @@ RowsHintParse(RowsHint *hint, const char *str)
 	 * after.
 	 */
 	hint->relnames = palloc0(sizeof(char *) * hint->nrels);
-	foreach (l, name_list)
+	foreach(l, name_list)
 	{
 		if (hint->nrels <= i)
 			break;
@@ -2376,7 +2387,7 @@ RowsHintParse(RowsHint *hint, const char *str)
 
 	/* Retieve rows estimation */
 	rows_str = list_nth(name_list, hint->nrels);
-	hint->rows_str = rows_str;		/* store as-is for error logging */
+	hint->rows_str = rows_str;	/* store as-is for error logging */
 	if (rows_str[0] == '#')
 	{
 		hint->value_type = RVT_ABSOLUTE;
@@ -2434,12 +2445,12 @@ RowsHintParse(RowsHint *hint, const char *str)
 static const char *
 ParallelHintParse(ParallelHint *hint, const char *str)
 {
-	HintKeyword		hint_keyword = hint->base.hint_keyword;
-	List		   *name_list = NIL;
-	int				length;
-	char   *end_ptr;
-	int		nworkers;
-	bool	force_parallel = false;
+	HintKeyword hint_keyword = hint->base.hint_keyword;
+	List	   *name_list = NIL;
+	int			length;
+	char	   *end_ptr;
+	int			nworkers;
+	bool		force_parallel = false;
 
 	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
 		return NULL;
@@ -2451,7 +2462,7 @@ ParallelHintParse(ParallelHint *hint, const char *str)
 	{
 		hint_ereport(")",
 					 ("wrong number of arguments (%d): %s",
-					  length,  hint->base.keyword));
+					  length, hint->base.keyword));
 		hint->base.state = HINT_STATE_ERROR;
 		return str;
 	}
@@ -2484,14 +2495,15 @@ ParallelHintParse(ParallelHint *hint, const char *str)
 	/* optional third parameter is specified */
 	if (length == 3)
 	{
-		const char *modeparam = (const char *)list_nth(name_list, 2);
+		const char *modeparam = (const char *) list_nth(name_list, 2);
+
 		if (pg_strcasecmp(modeparam, "hard") == 0)
 			force_parallel = true;
 		else if (pg_strcasecmp(modeparam, "soft") != 0)
 		{
 			hint_ereport(modeparam,
 						 ("enforcement must be soft or hard: %s",
-							 hint->base.keyword));
+						  hint->base.keyword));
 			hint->base.state = HINT_STATE_ERROR;
 		}
 	}
@@ -2512,7 +2524,7 @@ ParallelHintParse(ParallelHint *hint, const char *str)
 static int
 get_current_scan_mask(void)
 {
-	int mask = 0;
+	int			mask = 0;
 
 	if (enable_seqscan)
 		mask |= ENABLE_SEQSCAN;
@@ -2531,7 +2543,7 @@ get_current_scan_mask(void)
 static int
 get_current_join_mask(void)
 {
-	int mask = 0;
+	int			mask = 0;
 
 	if (enable_nestloop)
 		mask |= ENABLE_NESTLOOP;
@@ -2554,8 +2566,8 @@ set_config_option_noerror(const char *name, const char *value,
 						  GucContext context, GucSource source,
 						  GucAction action, bool changeVal, int elevel)
 {
-	int				result = 0;
-	MemoryContext	ccxt = CurrentMemoryContext;
+	int			result = 0;
+	MemoryContext ccxt = CurrentMemoryContext;
 
 	PG_TRY();
 	{
@@ -2564,7 +2576,7 @@ set_config_option_noerror(const char *name, const char *value,
 	}
 	PG_CATCH();
 	{
-		ErrorData	   *errdata;
+		ErrorData  *errdata;
 
 		/* Save error info */
 		MemoryContextSwitchTo(ccxt);
@@ -2576,7 +2588,7 @@ set_config_option_noerror(const char *name, const char *value,
 				 errmsg("%s", errdata->message),
 				 errdata->detail ? errdetail("%s", errdata->detail) : 0,
 				 errdata->hint ? errhint("%s", errdata->hint) : 0));
-		msgqno = qno;  /* Don't bother checking debug_level > 1*/
+		msgqno = qno;			/* Don't bother checking debug_level > 1 */
 		FreeErrorData(errdata);
 	}
 	PG_END_TRY();
@@ -2591,12 +2603,12 @@ set_config_option_noerror(const char *name, const char *value,
 static int
 set_config_int32_option(const char *name, int32 value, GucContext context)
 {
-	char buf[16];	/* enough for int32 */
+	char		buf[16];		/* enough for int32 */
 
 	if (snprintf(buf, 16, "%d", value) < 0)
 	{
 		ereport(pg_hint_plan_parse_message_level,
-				(errmsg ("Failed to convert integer to string: %d", value)));
+				(errmsg("Failed to convert integer to string: %d", value)));
 		return false;
 	}
 
@@ -2613,8 +2625,8 @@ set_config_int32_option(const char *name, int32 value, GucContext context)
 static int
 set_config_double_option(const char *name, double value, GucContext context)
 {
-	char *buf = float8out_internal(value);
-	int	  result;
+	char	   *buf = float8out_internal(value);
+	int			result;
 
 	result = set_config_option_noerror(name, buf, context,
 									   PGC_S_SESSION, GUC_ACTION_SAVE, true,
@@ -2627,11 +2639,11 @@ set_config_double_option(const char *name, double value, GucContext context)
 static void
 setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
 {
-	int	i;
+	int			i;
 
 	for (i = 0; i < noptions; i++)
 	{
-		SetHint	   *hint = options[i];
+		SetHint    *hint = options[i];
 		int			result;
 
 		if (!hint_state_enabled(hint))
@@ -2680,9 +2692,9 @@ setup_parallel_plan_enforcement(ParallelHint *hint, HintState *state)
 	else
 	{
 		set_config_double_option("parallel_tuple_cost",
-								state->init_paratup_cost, state->context);
+								 state->init_paratup_cost, state->context);
 		set_config_double_option("parallel_setup_cost",
-								state->init_parasetup_cost, state->context);
+								 state->init_parasetup_cost, state->context);
 		set_config_int32_option("min_parallel_table_scan_size",
 								state->init_min_para_tablescan_size,
 								state->context);
@@ -2705,9 +2717,9 @@ setup_parallel_plan_enforcement(ParallelHint *hint, HintState *state)
 static void
 setup_scan_method_enforcement(ScanMethodHint *scanhint, HintState *state)
 {
-	unsigned char	enforce_mask = state->init_scan_mask;
-	GucContext		context = state->context;
-	unsigned char	mask;
+	unsigned char enforce_mask = state->init_scan_mask;
+	GucContext	context = state->context;
+	unsigned char mask;
 
 	if (scanhint)
 	{
@@ -2734,7 +2746,7 @@ static void
 set_join_config_options(unsigned char enforce_mask, bool set_memoize,
 						GucContext context)
 {
-	unsigned char	mask;
+	unsigned char mask;
 
 	if (enforce_mask == ENABLE_NESTLOOP || enforce_mask == ENABLE_MERGEJOIN ||
 		enforce_mask == ENABLE_HASHJOIN)
@@ -2755,8 +2767,8 @@ set_join_config_options(unsigned char enforce_mask, bool set_memoize,
 	 */
 	if (enforce_mask == ENABLE_HASHJOIN)
 	{
-		char			buf[32];
-		int				new_multipler;
+		char		buf[32];
+		int			new_multipler;
 
 		/* See final_cost_hashjoin(). */
 		new_multipler = MAX_KILOBYTES / work_mem;
@@ -2767,7 +2779,7 @@ set_join_config_options(unsigned char enforce_mask, bool set_memoize,
 
 		if (new_multipler > hash_mem_multiplier)
 		{
-			snprintf(buf, sizeof(buf), UINT64_FORMAT, (uint64)new_multipler);
+			snprintf(buf, sizeof(buf), UINT64_FORMAT, (uint64) new_multipler);
 			set_config_option_noerror("hash_mem_multiplier", buf,
 									  context, PGC_S_SESSION, GUC_ACTION_SAVE,
 									  true, ERROR);
@@ -2794,7 +2806,7 @@ static void
 pop_hint(void)
 {
 	/* Hint stack must not be empty. */
-	if(HintStateStack == NIL)
+	if (HintStateStack == NIL)
 		elog(ERROR, "hint stack is empty");
 
 	/*
@@ -2803,7 +2815,7 @@ pop_hint(void)
 	 */
 	HintStateStack = list_delete_first(HintStateStack);
 	HintStateDelete(current_hint_state);
-	if(HintStateStack == NIL)
+	if (HintStateStack == NIL)
 		current_hint_state = NULL;
 	else
 		current_hint_state = (HintState *) lfirst(list_head(HintStateStack));
@@ -2816,13 +2828,13 @@ static void
 get_current_hint_string(Query *query, const char *query_str,
 						JumbleState *jstate)
 {
-	MemoryContext	oldcontext;
+	MemoryContext oldcontext;
 
 	/* We shouldn't get here for internal queries. */
-	Assert (hint_inhibit_level == 0);
+	Assert(hint_inhibit_level == 0);
 
 	/* We shouldn't get here if hint is disabled. */
-	Assert (pg_hint_plan_enable_hint);
+	Assert(pg_hint_plan_enable_hint);
 
 	/* Do not anything if we have already tried to get hints for this query. */
 	if (current_hint_retrieved)
@@ -2838,7 +2850,7 @@ get_current_hint_string(Query *query, const char *query_str,
 	/* Make sure trashing old hint string */
 	if (current_hint_str)
 	{
-		pfree((void *)current_hint_str);
+		pfree((void *) current_hint_str);
 		current_hint_str = NULL;
 	}
 
@@ -2853,13 +2865,12 @@ get_current_hint_string(Query *query, const char *query_str,
 		if (!IsQueryIdEnabled())
 		{
 			/*
-			 * compute_query_id was turned off while enable_hint_table is
-			 * on. Do not go ahead and complain once until it is turned on
-			 * again.
+			 * compute_query_id was turned off while enable_hint_table is on.
+			 * Do not go ahead and complain once until it is turned on again.
 			 */
 			if (!hint_table_deactivated)
 				ereport(WARNING,
-						(errmsg ("hint table feature is deactivated because queryid is not available"),
+						(errmsg("hint table feature is deactivated because queryid is not available"),
 						 errhint("Set compute_query_id to \"auto\" or \"on\" to use hint table.")));
 
 			hint_table_deactivated = true;
@@ -2868,7 +2879,7 @@ get_current_hint_string(Query *query, const char *query_str,
 
 		if (hint_table_deactivated)
 		{
-			ereport(LOG, (errmsg ("hint table feature is reactivated")));
+			ereport(LOG, (errmsg("hint table feature is reactivated")));
 			hint_table_deactivated = false;
 		}
 
@@ -2980,10 +2991,10 @@ pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query,
 static PlannedStmt *
 pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, ParamListInfo boundParams)
 {
-	int				save_nestlevel;
-	PlannedStmt	   *result;
-	HintState	   *hstate;
-	const char 	   *prev_hint_str = NULL;
+	int			save_nestlevel;
+	PlannedStmt *result;
+	HintState  *hstate;
+	const char *prev_hint_str = NULL;
 
 	/*
 	 * Use standard planner if pg_hint_plan is disabled or current nesting
@@ -2995,10 +3006,10 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 		if (debug_level > 1)
 		{
 			ereport(pg_hint_plan_debug_message_level,
-					(errmsg ("pg_hint_plan%s: planner: enable_hint=%d,"
-							 " hint_inhibit_level=%d",
-							 qnostr, pg_hint_plan_enable_hint,
-							 hint_inhibit_level),
+					(errmsg("pg_hint_plan%s: planner: enable_hint=%d,"
+							" hint_inhibit_level=%d",
+							qnostr, pg_hint_plan_enable_hint,
+							hint_inhibit_level),
 					 errhidestmt(msgqno != qno)));
 			msgqno = qno;
 		}
@@ -3012,7 +3023,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	 */
 	if (plpgsql_recurse_level > 0)
 	{
-		const char	 *tmp_hint_str = current_hint_str;
+		const char *tmp_hint_str = current_hint_str;
 
 		/* don't let get_current_hint_string free this string */
 		current_hint_str = NULL;
@@ -3024,7 +3035,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 		if (current_hint_str == NULL)
 			current_hint_str = tmp_hint_str;
 		else if (tmp_hint_str != NULL)
-			pfree((void *)tmp_hint_str);
+			pfree((void *) tmp_hint_str);
 	}
 	else
 		get_current_hint_string(parse, query_string, NULL);
@@ -3042,7 +3053,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 		/* forget invalid hint string */
 		if (current_hint_str)
 		{
-			pfree((void *)current_hint_str);
+			pfree((void *) current_hint_str);
 			current_hint_str = NULL;
 		}
 
@@ -3050,14 +3061,14 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	}
 
 	/*
-	 * Push new hint struct to the hint stack to disable previous hint context.
-	 * There should be no ERROR-level failures until we begin the
+	 * Push new hint struct to the hint stack to disable previous hint
+	 * context. There should be no ERROR-level failures until we begin the
 	 * PG_TRY/PG_CATCH block below to ensure a consistent stack handling all
 	 * the time.
 	 */
 	push_hint(hstate);
 
-	/*  Set scan enforcement here. */
+	/* Set scan enforcement here. */
 	save_nestlevel = NewGUCNestLevel();
 
 	/*
@@ -3070,17 +3081,17 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	current_hint_str = NULL;
 
 	/*
-	 * Use PG_TRY mechanism to recover GUC parameters and current_hint_state to
-	 * the state when this planner started when error occurred in planner.  We
-	 * do this here to minimize the window where the hints currently pushed on
-	 * the stack could not be popped out of it.
+	 * Use PG_TRY mechanism to recover GUC parameters and current_hint_state
+	 * to the state when this planner started when error occurred in planner.
+	 * We do this here to minimize the window where the hints currently pushed
+	 * on the stack could not be popped out of it.
 	 */
 	PG_TRY();
 	{
 		/* Apply Set hints, then save it as the initial state  */
 		setup_guc_enforcement((SetHint **) get_current_hints(HINT_TYPE_SET),
-							   current_hint_state->num_hints[HINT_TYPE_SET],
-							   current_hint_state->context);
+							  current_hint_state->num_hints[HINT_TYPE_SET],
+							  current_hint_state->context);
 
 		current_hint_state->init_scan_mask = get_current_scan_mask();
 		current_hint_state->init_join_mask = get_current_join_mask();
@@ -3097,7 +3108,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 		 */
 		if (max_hint_nworkers > 0 && max_parallel_workers_per_gather < 1)
 			set_config_int32_option("max_parallel_workers_per_gather",
-								1, current_hint_state->context);
+									1, current_hint_state->context);
 		current_hint_state->init_nworkers = max_parallel_workers_per_gather;
 
 		if (debug_level > 1)
@@ -3170,8 +3181,8 @@ standard_planner_proc:
 	}
 	current_hint_state = NULL;
 	if (prev_planner)
-		result =  (*prev_planner) (parse, query_string,
-								   cursorOptions, boundParams);
+		result = (*prev_planner) (parse, query_string,
+								  cursorOptions, boundParams);
 	else
 		result = standard_planner(parse, query_string,
 								  cursorOptions, boundParams);
@@ -3189,11 +3200,11 @@ standard_planner_proc:
 static ScanMethodHint *
 find_scan_hint(PlannerInfo *root, Index relid)
 {
-	RelOptInfo	   *rel;
-	RangeTblEntry  *rte;
-	ScanMethodHint	*real_name_hint = NULL;
-	ScanMethodHint	*alias_hint = NULL;
-	int				i;
+	RelOptInfo *rel;
+	RangeTblEntry *rte;
+	ScanMethodHint *real_name_hint = NULL;
+	ScanMethodHint *alias_hint = NULL;
+	int			i;
 	ScanMethodHint **hints;
 
 	/* This should not be a join rel */
@@ -3243,14 +3254,14 @@ find_scan_hint(PlannerInfo *root, Index relid)
 		if (!real_name_hint &&
 			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
 		{
-			char *realname = get_rel_name(rte->relid);
+			char	   *realname = get_rel_name(rte->relid);
 
 			if (realname && RelnameCmp(&realname, &hint->relname) == 0)
 				real_name_hint = hint;
 		}
 
 		/* No more match expected, break  */
-		if(alias_hint && real_name_hint)
+		if (alias_hint && real_name_hint)
 			break;
 	}
 
@@ -3264,11 +3275,11 @@ find_scan_hint(PlannerInfo *root, Index relid)
 static ParallelHint *
 find_parallel_hint(PlannerInfo *root, Index relid)
 {
-	RelOptInfo	   *rel;
-	RangeTblEntry  *rte;
-	ParallelHint	*real_name_hint = NULL;
-	ParallelHint	*alias_hint = NULL;
-	int				i;
+	RelOptInfo *rel;
+	RangeTblEntry *rte;
+	ParallelHint *real_name_hint = NULL;
+	ParallelHint *alias_hint = NULL;
+	int			i;
 	ParallelHint **hints;
 
 	/* This should not be a join rel */
@@ -3283,8 +3294,8 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 		return NULL;
 
 	/*
-	 * We have set root->glob->parallelModeOK if needed. What we should do here
-	 * is just following the decision of planner.
+	 * We have set root->glob->parallelModeOK if needed. What we should do
+	 * here is just following the decision of planner.
 	 */
 	if (!rel->consider_parallel)
 		return NULL;
@@ -3314,14 +3325,14 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 		if (!real_name_hint &&
 			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
 		{
-			char *realname = get_rel_name(rte->relid);
+			char	   *realname = get_rel_name(rte->relid);
 
 			if (realname && RelnameCmp(&realname, &hint->relname) == 0)
 				real_name_hint = hint;
 		}
 
 		/* No more match expected, break  */
-		if(alias_hint && real_name_hint)
+		if (alias_hint && real_name_hint)
 			break;
 	}
 
@@ -3373,16 +3384,16 @@ static bool
 restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 				 bool using_parent_hint)
 {
-	ListCell	   *cell;
-	StringInfoData	buf;
-	RangeTblEntry  *rte = root->simple_rte_array[rel->relid];
-	Oid				relationObjectId = rte->relid;
-	List		   *unused_indexes = NIL;
-	bool			restrict_result;
+	ListCell   *cell;
+	StringInfoData buf;
+	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
+	Oid			relationObjectId = rte->relid;
+	List	   *unused_indexes = NIL;
+	bool		restrict_result;
 
 	/*
-	 * We delete all the IndexOptInfo list and prevent you from being usable by
-	 * a scan.
+	 * We delete all the IndexOptInfo list and prevent you from being usable
+	 * by a scan.
 	 */
 	if (hint->enforce_mask == ENABLE_SEQSCAN ||
 		hint->enforce_mask == ENABLE_TIDSCAN)
@@ -3402,24 +3413,24 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 
 	/*
 	 * Leaving only an specified index, we delete it from a IndexOptInfo list
-	 * other than it.  However, if none of the specified indexes are available,
-	 * then we keep all the indexes and skip enforcing the scan method. i.e.,
-	 * we skip the scan hint altogether for the relation.
+	 * other than it.  However, if none of the specified indexes are
+	 * available, then we keep all the indexes and skip enforcing the scan
+	 * method. i.e., we skip the scan hint altogether for the relation.
 	 */
 	if (debug_level > 0)
 		initStringInfo(&buf);
 
-	foreach (cell, rel->indexlist)
+	foreach(cell, rel->indexlist)
 	{
-		IndexOptInfo   *info = (IndexOptInfo *) lfirst(cell);
-		char		   *indexname = get_rel_name(info->indexoid);
-		ListCell	   *l;
-		bool			use_index = false;
+		IndexOptInfo *info = (IndexOptInfo *) lfirst(cell);
+		char	   *indexname = get_rel_name(info->indexoid);
+		ListCell   *l;
+		bool		use_index = false;
 
 		foreach(l, hint->indexnames)
 		{
-			char   *hintname = (char *) lfirst(l);
-			bool	result;
+			char	   *hintname = (char *) lfirst(l);
+			bool		result;
 
 			if (hint->regexp)
 				result = regexpeq(indexname, hintname);
@@ -3448,7 +3459,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 		{
 			foreach(l, current_hint_state->parent_index_infos)
 			{
-				ParentIndexInfo	   *p_info = (ParentIndexInfo *) lfirst(l);
+				ParentIndexInfo *p_info = (ParentIndexInfo *) lfirst(l);
 
 				if (!check_index_match(info, p_info, relationObjectId))
 					continue;
@@ -3482,14 +3493,14 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 	 */
 	if (list_length(unused_indexes) < list_length(rel->indexlist))
 	{
-		foreach (cell, unused_indexes)
+		foreach(cell, unused_indexes)
 		{
 			Oid			final_oid = lfirst_oid(cell);
 			ListCell   *l;
 
-			foreach (l, rel->indexlist)
+			foreach(l, rel->indexlist)
 			{
-				IndexOptInfo	   *info = (IndexOptInfo *) lfirst(l);
+				IndexOptInfo *info = (IndexOptInfo *) lfirst(l);
 
 				if (info->indexoid == final_oid)
 					rel->indexlist = foreach_delete_current(rel->indexlist, l);
@@ -3505,12 +3516,12 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 
 	if (debug_level > 0)
 	{
-		StringInfoData  rel_buf;
-		char *disprelname = "";
+		StringInfoData rel_buf;
+		char	   *disprelname = "";
 
 		/*
-		 * If this hint targetted the parent, use the real name of this
-		 * child. Otherwise use hint specification.
+		 * If this hint targetted the parent, use the real name of this child.
+		 * Otherwise use hint specification.
 		 */
 		if (using_parent_hint)
 			disprelname = get_rel_name(rte->relid);
@@ -3523,9 +3534,9 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 
 		ereport(pg_hint_plan_debug_message_level,
 				(errmsg("available indexes for %s(%s):%s",
-					 hint->base.keyword,
-					 rel_buf.data,
-					 buf.data)));
+						hint->base.keyword,
+						rel_buf.data,
+						buf.data)));
 		pfree(buf.data);
 		pfree(rel_buf.data);
 	}
@@ -3539,11 +3550,11 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 static ParentIndexInfo *
 get_parent_index_info(Oid indexoid, Oid relid)
 {
-	ParentIndexInfo	*p_info = palloc0(sizeof(ParentIndexInfo));
-	Relation	    indexRelation;
-	Form_pg_index	index;
-	char		   *attname;
-	int				i;
+	ParentIndexInfo *p_info = palloc0(sizeof(ParentIndexInfo));
+	Relation	indexRelation;
+	Form_pg_index index;
+	char	   *attname;
+	int			i;
 
 	indexRelation = index_open(indexoid, RowExclusiveLock);
 
@@ -3577,7 +3588,7 @@ get_parent_index_info(Oid indexoid, Oid relid)
 	if (!heap_attisnull(indexRelation->rd_indextuple, Anum_pg_index_indexprs,
 						NULL))
 	{
-		Datum       exprsDatum;
+		Datum		exprsDatum;
 		bool		isnull;
 		Datum		result;
 
@@ -3596,12 +3607,12 @@ get_parent_index_info(Oid indexoid, Oid relid)
 	if (!heap_attisnull(indexRelation->rd_indextuple, Anum_pg_index_indpred,
 						NULL))
 	{
-		Datum       predDatum;
+		Datum		predDatum;
 		bool		isnull;
 		Datum		result;
 
 		predDatum = SysCacheGetAttr(INDEXRELID, indexRelation->rd_indextuple,
-									 Anum_pg_index_indpred, &isnull);
+									Anum_pg_index_indpred, &isnull);
 
 		result = DirectFunctionCall2(pg_get_expr,
 									 predDatum,
@@ -3634,12 +3645,12 @@ static int
 setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 					   ScanMethodHint **rshint, ParallelHint **rphint)
 {
-	Index	new_parent_relid = 0;
+	Index		new_parent_relid = 0;
 	ScanMethodHint *shint = NULL;
-	ParallelHint   *phint = NULL;
-	bool			inhparent = root->simple_rte_array[rel->relid]->inh;
-	Oid		relationObjectId = root->simple_rte_array[rel->relid]->relid;
-	int				ret = 0;
+	ParallelHint *phint = NULL;
+	bool		inhparent = root->simple_rte_array[rel->relid]->inh;
+	Oid			relationObjectId = root->simple_rte_array[rel->relid]->relid;
+	int			ret = 0;
 
 	/* reset returns if requested  */
 	if (rshint != NULL)
@@ -3649,10 +3660,10 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 
 	/*
 	 * We could register the parent relation of the following children here
-	 * when inhparent == true but inheritnce planner doesn't call this function
-	 * for parents. Since we cannot distinguish who called this function we
-	 * cannot do other than always seeking the parent regardless of who called
-	 * this function.
+	 * when inhparent == true but inheritnce planner doesn't call this
+	 * function for parents. Since we cannot distinguish who called this
+	 * function we cannot do other than always seeking the parent regardless
+	 * of who called this function.
 	 */
 	if (inhparent)
 	{
@@ -3670,12 +3681,12 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		if (debug_level > 1)
 			ereport(pg_hint_plan_debug_message_level,
 					(errhidestmt(true),
-					 errmsg ("pg_hint_plan%s: setup_hint_enforcement"
-							 " skipping inh parent: relation=%u(%s), inhparent=%d,"
-							 " current_hint_state=%p, hint_inhibit_level=%d",
-							 qnostr, relationObjectId,
-							 get_rel_name(relationObjectId),
-							 inhparent, current_hint_state, hint_inhibit_level)));
+					 errmsg("pg_hint_plan%s: setup_hint_enforcement"
+							" skipping inh parent: relation=%u(%s), inhparent=%d,"
+							" current_hint_state=%p, hint_inhibit_level=%d",
+							qnostr, relationObjectId,
+							get_rel_name(relationObjectId),
+							inhparent, current_hint_state, hint_inhibit_level)));
 		return 0;
 	}
 
@@ -3710,8 +3721,8 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 			find_parallel_hint(root, current_hint_state->parent_relid);
 
 		/*
-		 * If hint is found for the parent, apply it for this child instead
-		 * of its own.
+		 * If hint is found for the parent, apply it for this child instead of
+		 * its own.
 		 */
 		if (current_hint_state->parent_scan_hint)
 			set_parent_index_infos(new_parent_relid,
@@ -3725,9 +3736,9 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 
 	if (shint)
 	{
-		bool using_parent_hint =
+		bool		using_parent_hint =
 			(shint == current_hint_state->parent_scan_hint);
-		bool restrict_result;
+		bool		restrict_result;
 
 		ret |= HINT_BM_SCAN_METHOD;
 
@@ -3738,32 +3749,32 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		 * Setup scan enforcement environment
 		 *
 		 * This has to be called after restrict_indexes(), that may decide to
-		 * skip the scan method enforcement depending on the index restrictions
-		 * applied.
+		 * skip the scan method enforcement depending on the index
+		 * restrictions applied.
 		 */
 		if (restrict_result)
 			setup_scan_method_enforcement(shint, current_hint_state);
 
 		if (debug_level > 1)
 		{
-			char *additional_message = "";
+			char	   *additional_message = "";
 
 			if (shint == current_hint_state->parent_scan_hint)
 				additional_message = " by parent hint";
 
 			ereport(pg_hint_plan_debug_message_level,
 					(errhidestmt(true),
-					 errmsg ("pg_hint_plan%s: setup_hint_enforcement"
-							 " index deletion%s:"
-							 " relation=%u(%s), inhparent=%d, "
-							 "current_hint_state=%p,"
-							 " hint_inhibit_level=%d, scanmask=0x%x",
-							 qnostr, additional_message,
-							 relationObjectId,
-							 get_rel_name(relationObjectId),
-							 inhparent, current_hint_state,
-							 hint_inhibit_level,
-							 shint->enforce_mask)));
+					 errmsg("pg_hint_plan%s: setup_hint_enforcement"
+							" index deletion%s:"
+							" relation=%u(%s), inhparent=%d, "
+							"current_hint_state=%p,"
+							" hint_inhibit_level=%d, scanmask=0x%x",
+							qnostr, additional_message,
+							relationObjectId,
+							get_rel_name(relationObjectId),
+							inhparent, current_hint_state,
+							hint_inhibit_level,
+							shint->enforce_mask)));
 		}
 	}
 
@@ -3782,23 +3793,25 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 	{
 		if (debug_level > 1)
 			ereport(pg_hint_plan_debug_message_level,
-					(errhidestmt (true),
-					 errmsg ("pg_hint_plan%s: setup_hint_enforcement"
-							 " no hint applied:"
-							 " relation=%u(%s), inhparent=%d, current_hint=%p,"
-							 " hint_inhibit_level=%d, scanmask=0x%x",
-							 qnostr, relationObjectId,
-							 get_rel_name(relationObjectId),
-							 inhparent, current_hint_state, hint_inhibit_level,
-							 current_hint_state->init_scan_mask)));
+					(errhidestmt(true),
+					 errmsg("pg_hint_plan%s: setup_hint_enforcement"
+							" no hint applied:"
+							" relation=%u(%s), inhparent=%d, current_hint=%p,"
+							" hint_inhibit_level=%d, scanmask=0x%x",
+							qnostr, relationObjectId,
+							get_rel_name(relationObjectId),
+							inhparent, current_hint_state, hint_inhibit_level,
+							current_hint_state->init_scan_mask)));
 
-		setup_scan_method_enforcement(NULL,	current_hint_state);
+		setup_scan_method_enforcement(NULL, current_hint_state);
 
 		return ret;
 	}
 
-	if (rshint != NULL) *rshint = shint;
-	if (rphint != NULL) *rphint = phint;
+	if (rshint != NULL)
+		*rshint = shint;
+	if (rphint != NULL)
+		*rphint = phint;
 
 	return ret;
 }
@@ -3811,8 +3824,8 @@ static int
 find_relid_aliasname(PlannerInfo *root, char *aliasname, List *initial_rels,
 					 const char *str)
 {
-	int		i;
-	Index	found = 0;
+	int			i;
+	Index		found = 0;
 
 	for (i = 1; i < root->simple_rel_array_size; i++)
 	{
@@ -3909,21 +3922,21 @@ find_memoize_hint(Relids joinrelids)
 
 static Relids
 OuterInnerJoinCreate(OuterInnerRels *outer_inner, LeadingHint *leading_hint,
-	PlannerInfo *root, List *initial_rels, HintState *hstate, int nbaserel)
+					 PlannerInfo *root, List *initial_rels, HintState *hstate, int nbaserel)
 {
 	OuterInnerRels *outer_rels;
 	OuterInnerRels *inner_rels;
-	Relids			outer_relids;
-	Relids			inner_relids;
-	Relids			join_relids;
+	Relids		outer_relids;
+	Relids		inner_relids;
+	Relids		join_relids;
 	JoinMethodHint *hint;
 
 	if (outer_inner->relation != NULL)
 	{
 		return bms_make_singleton(
-					find_relid_aliasname(root, outer_inner->relation,
-										 initial_rels,
-										 leading_hint->base.hint_str));
+								  find_relid_aliasname(root, outer_inner->relation,
+													   initial_rels,
+													   leading_hint->base.hint_str));
 	}
 
 	outer_rels = linitial(outer_inner->outer_inner_pair);
@@ -3954,8 +3967,8 @@ OuterInnerJoinCreate(OuterInnerRels *outer_inner, LeadingHint *leading_hint,
 		return join_relids;
 
 	/*
-	 * If we don't have join method hint, create new one for the
-	 * join combination with all join methods are enabled.
+	 * If we don't have join method hint, create new one for the join
+	 * combination with all join methods are enabled.
 	 */
 	hint = find_join_hint(join_relids);
 	if (hint == NULL)
@@ -3965,9 +3978,9 @@ OuterInnerJoinCreate(OuterInnerRels *outer_inner, LeadingHint *leading_hint,
 		 * control paths of this query afterward.
 		 */
 		hint = (JoinMethodHint *) JoinMethodHintCreate(
-					leading_hint->base.hint_str,
-					HINT_LEADING,
-					HINT_KEYWORD_LEADING);
+													   leading_hint->base.hint_str,
+													   HINT_LEADING,
+													   HINT_KEYWORD_LEADING);
 		hint->base.state = HINT_STATE_USED;
 		hint->nrels = bms_num_members(join_relids);
 		hint->enforce_mask = ENABLE_ALL_JOIN;
@@ -3989,12 +4002,12 @@ OuterInnerJoinCreate(OuterInnerRels *outer_inner, LeadingHint *leading_hint,
 
 static Relids
 create_bms_of_relids(Hint *base, PlannerInfo *root, List *initial_rels,
-		int nrels, char **relnames)
+					 int nrels, char **relnames)
 {
-	int		relid;
-	Relids	relids = NULL;
-	int		j;
-	char   *relname;
+	int			relid;
+	Relids		relids = NULL;
+	int			j;
+	char	   *relname;
 
 	for (j = 0; j < nrels; j++)
 	{
@@ -4027,6 +4040,7 @@ create_bms_of_relids(Hint *base, PlannerInfo *root, List *initial_rels,
 	}
 	return relids;
 }
+
 /*
  * Transform join method hint into handy form.
  *
@@ -4037,18 +4051,18 @@ create_bms_of_relids(Hint *base, PlannerInfo *root, List *initial_rels,
  */
 static bool
 transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
-		List *initial_rels, JoinMethodHint **join_method_hints)
+					 List *initial_rels, JoinMethodHint **join_method_hints)
 {
-	int				i;
-	int				relid;
-	Relids			joinrelids;
-	int				njoinrels;
-	ListCell	   *l;
-	char		   *relname;
-	LeadingHint	   *lhint = NULL;
-	JoinMethodHint	**join_hints = (JoinMethodHint **) get_current_hints(HINT_TYPE_JOIN_METHOD);
-	RowsHint		**row_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
-	LeadingHint		**leading_hints = (LeadingHint **) get_current_hints(HINT_TYPE_LEADING);
+	int			i;
+	int			relid;
+	Relids		joinrelids;
+	int			njoinrels;
+	ListCell   *l;
+	char	   *relname;
+	LeadingHint *lhint = NULL;
+	JoinMethodHint **join_hints = (JoinMethodHint **) get_current_hints(HINT_TYPE_JOIN_METHOD);
+	RowsHint  **row_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
+	LeadingHint **leading_hints = (LeadingHint **) get_current_hints(HINT_TYPE_LEADING);
 
 	/*
 	 * Create bitmap of relids from alias names for each join method hint.
@@ -4062,7 +4076,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 			continue;
 
 		hint->joinrelids = create_bms_of_relids(&(hint->base), root,
-									 initial_rels, hint->nrels, hint->relnames);
+												initial_rels, hint->nrels, hint->relnames);
 
 		if (hint->joinrelids == NULL || hint->base.state == HINT_STATE_ERROR)
 			continue;
@@ -4080,7 +4094,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 			continue;
 
 		hint->joinrelids = create_bms_of_relids(&(hint->base), root,
-									 initial_rels, hint->nrels, hint->relnames);
+												initial_rels, hint->nrels, hint->relnames);
 
 		if (hint->joinrelids == NULL || hint->base.state == HINT_STATE_ERROR)
 			continue;
@@ -4090,18 +4104,18 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	}
 
 	/*
-	 * Create bitmap of relids from alias names for each rows hint.
-	 * Bitmaps are more handy than strings in join searching.
+	 * Create bitmap of relids from alias names for each rows hint. Bitmaps
+	 * are more handy than strings in join searching.
 	 */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_ROWS]; i++)
 	{
-		RowsHint *hint = row_hints[i];
+		RowsHint   *hint = row_hints[i];
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
 
 		hint->joinrelids = create_bms_of_relids(&(hint->base), root,
-									 initial_rels, hint->nrels, hint->relnames);
+												initial_rels, hint->nrels, hint->relnames);
 	}
 
 	/* Do nothing if no Leading hint was supplied. */
@@ -4110,11 +4124,11 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 
 	/*
 	 * Decide whether to use Leading hint
- 	 */
+	 */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_LEADING]; i++)
 	{
-		LeadingHint	   *leading_hint = leading_hints[i];
-		Relids			relids;
+		LeadingHint *leading_hint = leading_hints[i];
+		Relids		relids;
 
 		if (leading_hint->base.state == HINT_STATE_ERROR)
 			continue;
@@ -4124,7 +4138,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 
 		foreach(l, leading_hint->relations)
 		{
-			relname = (char *)lfirst(l);;
+			relname = (char *) lfirst(l);;
 
 			relid = find_relid_aliasname(root, relname, initial_rels,
 										 leading_hint->base.hint_str);
@@ -4151,7 +4165,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 		if (lhint != NULL)
 		{
 			hint_ereport(lhint->base.hint_str,
-				 ("Conflict %s hint.", HintTypeName[lhint->base.type]));
+						 ("Conflict %s hint.", HintTypeName[lhint->base.type]));
 			lhint->base.state = HINT_STATE_DUPLICATION;
 		}
 		leading_hint->base.state = HINT_STATE_USED;
@@ -4165,10 +4179,9 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	/*
 	 * We need join method hints which fit specified join order in every join
 	 * level.  For example, Leading(A B C) virtually requires following join
-	 * method hints, if no join method hint supplied:
-	 *   - level 1: none
-	 *   - level 2: NestLoop(A B), MergeJoin(A B), HashJoin(A B)
-	 *   - level 3: NestLoop(A B C), MergeJoin(A B C), HashJoin(A B C)
+	 * method hints, if no join method hint supplied: - level 1: none - level
+	 * 2: NestLoop(A B), MergeJoin(A B), HashJoin(A B) - level 3: NestLoop(A B
+	 * C), MergeJoin(A B C), HashJoin(A B C)
 	 *
 	 * If we already have join method hint which fits specified join order in
 	 * that join level, we leave it as-is and don't add new hints.
@@ -4181,12 +4194,12 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 		{
 			JoinMethodHint *hint;
 
-			relname = (char *)lfirst(l);
+			relname = (char *) lfirst(l);
 
 			/*
-			 * Find relid of the relation which has given name.  If we have the
-			 * name given in Leading hint multiple times in the join, nothing to
-			 * do.
+			 * Find relid of the relation which has given name.  If we have
+			 * the name given in Leading hint multiple times in the join,
+			 * nothing to do.
 			 */
 			relid = find_relid_aliasname(root, relname, initial_rels,
 										 hstate->hint_str);
@@ -4200,8 +4213,8 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 				continue;
 
 			/*
-			 * If we don't have join method hint, create new one for the
-			 * join combination with all join methods are enabled.
+			 * If we don't have join method hint, create new one for the join
+			 * combination with all join methods are enabled.
 			 */
 			hint = find_join_hint(joinrelids);
 			if (hint == NULL)
@@ -4211,9 +4224,9 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 				 * to control paths of this query afterward.
 				 */
 				hint = (JoinMethodHint *) JoinMethodHintCreate(
-											lhint->base.hint_str,
-											HINT_LEADING,
-											HINT_KEYWORD_LEADING);
+															   lhint->base.hint_str,
+															   HINT_LEADING,
+															   HINT_KEYWORD_LEADING);
 				hint->base.state = HINT_STATE_USED;
 				hint->nrels = njoinrels;
 				hint->enforce_mask = ENABLE_ALL_JOIN;
@@ -4245,8 +4258,8 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	{
 		joinrelids = OuterInnerJoinCreate(lhint->outer_inner,
 										  lhint,
-                                          root,
-                                          initial_rels,
+										  root,
+										  initial_rels,
 										  hstate,
 										  nbaserel);
 
@@ -4257,19 +4270,19 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 		 * Delete all join hints which have different combination from Leading
 		 * hint.
 		 */
-		for (i = 2;i <= njoinrels; i++)
+		for (i = 2; i <= njoinrels; i++)
 		{
 			if (hstate->join_hint_level[i] != NIL)
 			{
-				foreach (l, hstate->join_hint_level[i])
+				foreach(l, hstate->join_hint_level[i])
 				{
 
-					JoinMethodHint *hint = (JoinMethodHint *)lfirst(l);
+					JoinMethodHint *hint = (JoinMethodHint *) lfirst(l);
 
 					if (hint->inner_nrels == 0 &&
 						!(bms_intersect(hint->joinrelids, joinrelids) == NULL ||
 						  bms_equal(bms_union(hint->joinrelids, joinrelids),
-						  hint->joinrelids)))
+									hint->joinrelids)))
 					{
 						hstate->join_hint_level[i] =
 							foreach_delete_current(hstate->join_hint_level[i], l);
@@ -4299,17 +4312,17 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 static RelOptInfo *
 make_join_rel_wrapper(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 {
-	Relids			joinrelids;
+	Relids		joinrelids;
 	JoinMethodHint *join_hint;
 	JoinMethodHint *memoize_hint;
-	RelOptInfo	   *rel;
-	int				save_nestlevel;
+	RelOptInfo *rel;
+	int			save_nestlevel;
 
 	joinrelids = bms_union(rel1->relids, rel2->relids);
 
 	/*
-	 * joinrelids may include outer-join relids since PostgreSQL 16, so
-	 * filter them out as hints can only handle base relations.
+	 * joinrelids may include outer-join relids since PostgreSQL 16, so filter
+	 * them out as hints can only handle base relations.
 	 */
 	joinrelids = bms_intersect(joinrelids, root->all_baserels);
 
@@ -4334,8 +4347,9 @@ make_join_rel_wrapper(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 
 		if (memoize_hint)
 		{
-			bool memoize =
+			bool		memoize =
 				memoize_hint->base.hint_keyword == HINT_KEYWORD_MEMOIZE;
+
 			set_config_option_noerror("enable_memoize",
 									  memoize ? "true" : "false",
 									  current_hint_state->context,
@@ -4374,16 +4388,16 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 							 SpecialJoinInfo *sjinfo,
 							 List *restrictlist)
 {
-	Relids			joinrelids;
+	Relids		joinrelids;
 	JoinMethodHint *join_hint;
 	JoinMethodHint *memoize_hint;
-	int				save_nestlevel;
+	int			save_nestlevel;
 
 	joinrelids = bms_union(outerrel->relids, innerrel->relids);
 
 	/*
-	 * joinrelids may include outer-join relids since PostgreSQL 16, so
-	 * filter them out as hints can only handle base relations.
+	 * joinrelids may include outer-join relids since PostgreSQL 16, so filter
+	 * them out as hints can only handle base relations.
 	 */
 	joinrelids = bms_intersect(joinrelids, root->all_baserels);
 
@@ -4415,8 +4429,9 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 
 		if (memoize_hint)
 		{
-			bool memoize =
+			bool		memoize =
 				memoize_hint->base.hint_keyword == HINT_KEYWORD_MEMOIZE;
+
 			set_config_option_noerror("enable_memoize",
 									  memoize ? "true" : "false",
 									  current_hint_state->context,
@@ -4454,8 +4469,8 @@ get_num_baserels(List *initial_rels)
 
 		if (rel->reloptkind == RELOPT_BASEREL)
 			nbaserel++;
-		else if (rel->reloptkind ==RELOPT_JOINREL)
-			nbaserel+= bms_num_members(rel->relids);
+		else if (rel->reloptkind == RELOPT_JOINREL)
+			nbaserel += bms_num_members(rel->relids);
 		else
 		{
 			/* other values not expected here */
@@ -4470,11 +4485,11 @@ static RelOptInfo *
 pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 						 List *initial_rels)
 {
-	JoinMethodHint	  **join_method_hints;
-	int					nbaserel;
-	RelOptInfo		   *rel;
-	int					i;
-	bool				leading_hint_enable;
+	JoinMethodHint **join_method_hints;
+	int			nbaserel;
+	RelOptInfo *rel;
+	int			i;
+	bool		leading_hint_enable;
 
 	/*
 	 * Use standard planner (or geqo planner) if pg_hint_plan is disabled, no
@@ -4518,25 +4533,25 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 	if (current_hint_state->num_hints[HINT_TYPE_PARALLEL] > 0)
 	{
 		ListCell   *lc;
-		int 		nworkers = 0;
+		int			nworkers = 0;
 
-		foreach (lc, initial_rels)
+		foreach(lc, initial_rels)
 		{
-			ListCell *lcp;
+			ListCell   *lcp;
 			RelOptInfo *initrel = (RelOptInfo *) lfirst(lc);
 
-			foreach (lcp, initrel->partial_pathlist)
+			foreach(lcp, initrel->partial_pathlist)
 			{
-				Path *path = (Path *) lfirst(lcp);
+				Path	   *path = (Path *) lfirst(lcp);
 
-				if (nworkers < path-> parallel_workers)
-					nworkers = path-> parallel_workers;
+				if (nworkers < path->parallel_workers)
+					nworkers = path->parallel_workers;
 			}
 		}
 
-		foreach (lc, rel->partial_pathlist)
+		foreach(lc, rel->partial_pathlist)
 		{
-			Path *path = (Path *) lfirst(lc);
+			Path	   *path = (Path *) lfirst(lc);
 
 			if (path->parallel_safe && path->parallel_workers < nworkers)
 				path->parallel_workers = nworkers;
@@ -4566,12 +4581,12 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
  * Force number of workers if instructed by hint
  */
 void
-pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
+pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 							  Index rti, RangeTblEntry *rte)
 {
-	ParallelHint   *phint;
-	ListCell	   *l;
-	int				found_hints;
+	ParallelHint *phint;
+	ListCell   *l;
+	int			found_hints;
 
 	/* call the previous hook */
 	if (prev_set_rel_pathlist)
@@ -4590,19 +4605,19 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 	 * also unacceptable. See set_rel_pathlist.
 	 */
 	if ((rel->rtekind != RTE_RELATION &&
-		 rel->rtekind != RTE_SUBQUERY)||
+		 rel->rtekind != RTE_SUBQUERY) ||
 		rte->relkind == RELKIND_FOREIGN_TABLE ||
 		rte->tablesample != NULL)
 		return;
 
 	/*
-	 * Even though UNION ALL node doesn't have particular name so usually it is
-	 * unhintable, turn on parallel when it contains parallel nodes.
+	 * Even though UNION ALL node doesn't have particular name so usually it
+	 * is unhintable, turn on parallel when it contains parallel nodes.
 	 */
 	if (rel->rtekind == RTE_SUBQUERY)
 	{
-		ListCell *lc;
-		bool	inhibit_nonparallel = false;
+		ListCell   *lc;
+		bool		inhibit_nonparallel = false;
 
 		if (rel->partial_pathlist == NIL)
 			return;
@@ -4620,9 +4635,9 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 			apath = (AppendPath *) path;
 			parallel_workers = apath->path.parallel_workers;
 
-			foreach (lcp, apath->subpaths)
+			foreach(lcp, apath->subpaths)
 			{
-				Path *spath = (Path *) lfirst(lcp);
+				Path	   *spath = (Path *) lfirst(lcp);
 
 				if (spath->parallel_aware &&
 					parallel_workers < spath->parallel_workers)
@@ -4636,11 +4651,11 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 
 		if (inhibit_nonparallel)
 		{
-			ListCell *lcr;
+			ListCell   *lcr;
 
 			foreach(lcr, rel->pathlist)
 			{
-				Path *path = (Path *) lfirst(lcr);
+				Path	   *path = (Path *) lfirst(lcr);
 
 				if (path->disabled_nodes < 1)
 					path->disabled_nodes++;
@@ -4680,13 +4695,13 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 				else
 				{
 					/* prioritize partial paths */
-					foreach (l, rel->partial_pathlist)
+					foreach(l, rel->partial_pathlist)
 					{
-						Path *ppath = (Path *) lfirst(l);
+						Path	   *ppath = (Path *) lfirst(l);
 
 						if (ppath->parallel_safe)
 						{
-							ppath->parallel_workers	= phint->nworkers;
+							ppath->parallel_workers = phint->nworkers;
 							ppath->startup_cost = 0;
 							ppath->total_cost = 0;
 							ppath->disabled_nodes = 0;
@@ -4694,9 +4709,9 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 					}
 
 					/* disable non-partial paths */
-					foreach (l, rel->pathlist)
+					foreach(l, rel->pathlist)
 					{
-						Path *ppath = (Path *) lfirst(l);
+						Path	   *ppath = (Path *) lfirst(l);
 
 						if (ppath->disabled_nodes < 1)
 							ppath->disabled_nodes++;
@@ -4719,14 +4734,14 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 			if (phint && phint->nworkers > 0)
 			{
 				/*
-				 * For Parallel Append to be planned properly, we shouldn't set
-				 * the costs of non-partial paths to disable-value.  Lower the
-				 * priority of non-parallel paths by setting partial path costs
-				 * to 0 instead.
+				 * For Parallel Append to be planned properly, we shouldn't
+				 * set the costs of non-partial paths to disable-value.  Lower
+				 * the priority of non-parallel paths by setting partial path
+				 * costs to 0 instead.
 				 */
-				foreach (l, rel->partial_pathlist)
+				foreach(l, rel->partial_pathlist)
 				{
-					Path *path = (Path *) lfirst(l);
+					Path	   *path = (Path *) lfirst(l);
 
 					path->startup_cost = 0;
 					path->total_cost = 0;
@@ -4736,12 +4751,12 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 				/* enforce number of workers if requested */
 				if (phint->force_parallel)
 				{
-					foreach (l, rel->partial_pathlist)
+					foreach(l, rel->partial_pathlist)
 					{
-						Path *ppath = (Path *) lfirst(l);
+						Path	   *ppath = (Path *) lfirst(l);
 
 						if (ppath->parallel_safe)
-							ppath->parallel_workers	= phint->nworkers;
+							ppath->parallel_workers = phint->nworkers;
 					}
 				}
 
@@ -4777,8 +4792,8 @@ check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
 	HeapTuple	ht_idx;
 
 	/*
-	 * We check the 'same' index by comparing uniqueness, access
-	 * method and index key columns.
+	 * We check the 'same' index by comparing uniqueness, access method and
+	 * index key columns.
 	 */
 	if (p_info->indisunique != info->unique ||
 		p_info->method != info->relam ||
@@ -4788,14 +4803,14 @@ check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
 	/* Check if index key columns match */
 	for (i = 0; i < info->ncolumns; i++)
 	{
-		char   *c_attname = NULL;
-		char   *p_attname = NULL;
+		char	   *c_attname = NULL;
+		char	   *p_attname = NULL;
 
 		p_attname = list_nth(p_info->column_names, i);
 
 		/*
-		 * If both of the keys at the same position are expressions,
-		 * ignore them for now and check later.
+		 * If both of the keys at the same position are expressions, ignore
+		 * them for now and check later.
 		 */
 		if (info->indexkeys[i] == 0 && !p_attname)
 			continue;
@@ -4816,18 +4831,17 @@ check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
 		/*
 		 * Compare index ordering if this index is ordered.
 		 *
-		 * We already confirmed that this and the parent indexes
-		 * share the same column set (actually only the length of
-		 * the column set is compared, though) and index access
-		 * method. So if this index is unordered, the parent can be
-		 * assumed to be unordered. Thus no need to check
-		 * the parent's orderedness.
+		 * We already confirmed that this and the parent indexes share the
+		 * same column set (actually only the length of the column set is
+		 * compared, though) and index access method. So if this index is
+		 * unordered, the parent can be assumed to be unordered. Thus no need
+		 * to check the parent's orderedness.
 		 */
 		if (info->sortopfamily != NULL &&
 			(((p_info->indoption[i] & INDOPTION_DESC) != 0)
-				!= info->reverse_sort[i] ||
+			 != info->reverse_sort[i] ||
 			 ((p_info->indoption[i] & INDOPTION_NULLS_FIRST) != 0)
-				!= info->nulls_first[i]))
+			 != info->nulls_first[i]))
 			return false;
 	}
 
@@ -4847,13 +4861,12 @@ check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
 		if (p_info->expression_str &&
 			!heap_attisnull(ht_idx, Anum_pg_index_indexprs, NULL))
 		{
-			Datum	exprsDatum;
-			bool	isnull;
-			Datum	result;
+			Datum		exprsDatum;
+			bool		isnull;
+			Datum		result;
 
 			/*
-			 * Change the expression's parameter of child's
-			 * index to strings
+			 * Change the expression's parameter of child's index to strings
 			 */
 			exprsDatum = SysCacheGetAttr(INDEXRELID, ht_idx,
 										 Anum_pg_index_indexprs,
@@ -4876,9 +4889,9 @@ check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
 		if (p_info->indpred_str &&
 			!heap_attisnull(ht_idx, Anum_pg_index_indpred, NULL))
 		{
-			Datum	predDatum;
-			bool	isnull;
-			Datum	result;
+			Datum		predDatum;
+			bool		isnull;
+			Datum		result;
 
 			predDatum = SysCacheGetAttr(INDEXRELID, ht_idx,
 										Anum_pg_index_indpred,
@@ -4938,19 +4951,19 @@ set_parent_index_infos(Index parent_relid,
 	parentrel_oid = root->simple_rte_array[parent_relid]->relid;
 	parent_rel = table_open(parentrel_oid, NoLock);
 
-	foreach (l, RelationGetIndexList(parent_rel))
+	foreach(l, RelationGetIndexList(parent_rel))
 	{
-		Oid					indexoid = lfirst_oid(l);
-		char			   *indexname = get_rel_name(indexoid);
-		ListCell		   *lc;
-		ParentIndexInfo	   *parent_index_info;
-		bool				found = false;
+		Oid			indexoid = lfirst_oid(l);
+		char	   *indexname = get_rel_name(indexoid);
+		ListCell   *lc;
+		ParentIndexInfo *parent_index_info;
+		bool		found = false;
 
 		/*
 		 * Check if the hint to apply includes an index that this parent
 		 * relation has.
 		 */
-		foreach (lc, pshint->indexnames)
+		foreach(lc, pshint->indexnames)
 		{
 			if (RelnameCmp(&indexname, &lfirst(lc)) == 0)
 			{
@@ -4963,8 +4976,8 @@ set_parent_index_infos(Index parent_relid,
 			continue;
 
 		/*
-		 * Matching index name found, gather its information then
-		 * update the currently-active hint.
+		 * Matching index name found, gather its information then update the
+		 * currently-active hint.
 		 */
 		parent_index_info =
 			get_parent_index_info(indexoid, parentrel_oid);

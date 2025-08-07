@@ -32,17 +32,17 @@ adjust_rows(double rows, RowsHint *hint)
 	else if (hint->value_type == RVT_ADD)
 		result = rows + hint->rows;
 	else if (hint->value_type == RVT_SUB)
-		result =  rows - hint->rows;
+		result = rows - hint->rows;
 	else if (hint->value_type == RVT_MULTI)
 		result = rows * hint->rows;
 	else
-		Assert(false);	/* unrecognized rows value type */
+		Assert(false);			/* unrecognized rows value type */
 
 	hint->base.state = HINT_STATE_USED;
 	if (result < 1.0)
 		ereport(WARNING,
 				(errmsg("Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : %s",
-					hint->base.hint_str)));
+						hint->base.hint_str)));
 	result = clamp_row_est(result);
 	elog(DEBUG1, "adjusted rows %d to %d", (int) rows, (int) result);
 
@@ -129,7 +129,7 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		int			i;
 		RowsHint   *justforme = NULL;
 		RowsHint   *domultiply = NULL;
-		RowsHint   **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
+		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
 
 		/* Search for applicable rows hint for this join node */
 		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)
@@ -163,8 +163,8 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 				 * targets spread over both component rels. This menas that
 				 * this hint has been never applied so far and this joinrel is
 				 * the first (and only) chance to fire in current join tree.
-				 * Only the multiplication hint has the cumulative nature so we
-				 * apply only RVT_MULTI in this way.
+				 * Only the multiplication hint has the cumulative nature so
+				 * we apply only RVT_MULTI in this way.
 				 */
 				domultiply = rows_hint;
 			}
