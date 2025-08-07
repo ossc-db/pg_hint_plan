@@ -516,6 +516,11 @@ static int set_config_int32_option(const char *name, int32 value,
 									GucContext context);
 static int set_config_double_option(const char *name, double value,
 									GucContext context);
+static bool check_index_match(IndexOptInfo *info,
+							  ParentIndexInfo *p_info,
+							  Oid relationObjectId);
+static void set_parent_index_infos(Index parent_relid, ScanMethodHint *pshint,
+								   PlannerInfo *root);
 
 /* GUC variables */
 static bool	pg_hint_plan_enable_hint = true;
@@ -3195,7 +3200,6 @@ standard_planner_proc:
 
 /*
  * Find scan method hint to be applied to the given relation
- *
  */
 static ScanMethodHint *
 find_scan_hint(PlannerInfo *root, Index relid)
@@ -3453,140 +3457,9 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 		{
 			foreach(l, current_hint_state->parent_index_infos)
 			{
-				int					i;
-				HeapTuple			ht_idx;
-				ParentIndexInfo	   *p_info = (ParentIndexInfo *)lfirst(l);
+				ParentIndexInfo	   *p_info = (ParentIndexInfo *) lfirst(l);
 
-				/*
-				 * we check the 'same' index by comparing uniqueness, access
-				 * method and index key columns.
-				 */
-				if (p_info->indisunique != info->unique ||
-					p_info->method != info->relam ||
-					list_length(p_info->column_names) != info->ncolumns)
-					continue;
-
-				/* Check if index key columns match */
-				for (i = 0; i < info->ncolumns; i++)
-				{
-					char       *c_attname = NULL;
-					char       *p_attname = NULL;
-
-					p_attname = list_nth(p_info->column_names, i);
-
-					/*
-					 * if both of the key of the same position are expressions,
-					 * ignore them for now and check later.
-					 */
-					if (info->indexkeys[i] == 0 && !p_attname)
-						continue;
-
-					/* deny if one is expression while another is not */
-					if (info->indexkeys[i] == 0 || !p_attname)
-						break;
-
-					c_attname = get_attname(relationObjectId,
-											info->indexkeys[i], false);
-
-					/* deny if any of column attributes don't match */
-					if (strcmp(p_attname, c_attname) != 0 ||
-						p_info->indcollation[i] != info->indexcollations[i] ||
-						p_info->opclass[i] != info->opcintype[i])
-						break;
-
-					/*
-					 * Compare index ordering if this index is ordered.
-					 *
-					 * We already confirmed that this and the parent indexes
-					 * share the same column set (actually only the length of
-					 * the column set is compard, though.) and index access
-					 * method. So if this index is unordered, the parent can be
-					 * assumed to be be unodered. Thus no need to bother
-					 * checking the parent's orderedness.
-					 */
-					if (info->sortopfamily != NULL &&
-						(((p_info->indoption[i] & INDOPTION_DESC) != 0)
-						 != info->reverse_sort[i] ||
-						 ((p_info->indoption[i] & INDOPTION_NULLS_FIRST) != 0)
-						 != info->nulls_first[i]))
-						break;
-				}
-
-				/* deny this if any difference found */
-				if (i != info->ncolumns)
-					continue;
-
-				/* check on key expressions  */
-				if ((p_info->expression_str && (info->indexprs != NIL)) ||
-					(p_info->indpred_str && (info->indpred != NIL)))
-				{
-					/* fetch the index of this child */
-					ht_idx = SearchSysCache1(INDEXRELID,
-											 ObjectIdGetDatum(info->indexoid));
-
-					/* check expressions if both expressions are available */
-					if (p_info->expression_str &&
-						!heap_attisnull(ht_idx, Anum_pg_index_indexprs, NULL))
-					{
-						Datum       exprsDatum;
-						bool        isnull;
-						Datum       result;
-
-						/*
-						 * to change the expression's parameter of child's
-						 * index to strings
-						 */
-						exprsDatum = SysCacheGetAttr(INDEXRELID, ht_idx,
-													 Anum_pg_index_indexprs,
-													 &isnull);
-
-						result = DirectFunctionCall2(pg_get_expr,
-													 exprsDatum,
-													 ObjectIdGetDatum(
-														 relationObjectId));
-
-						/* deny if expressions don't match */
-						if (strcmp(p_info->expression_str,
-								   text_to_cstring(DatumGetTextP(result))) != 0)
-						{
-							/* Clean up */
-							ReleaseSysCache(ht_idx);
-							continue;
-						}
-					}
-
-					/* compare index predicates  */
-					if (p_info->indpred_str &&
-						!heap_attisnull(ht_idx, Anum_pg_index_indpred, NULL))
-					{
-						Datum       predDatum;
-						bool        isnull;
-						Datum       result;
-
-						predDatum = SysCacheGetAttr(INDEXRELID, ht_idx,
-													 Anum_pg_index_indpred,
-													 &isnull);
-
-						result = DirectFunctionCall2(pg_get_expr,
-													 predDatum,
-													 ObjectIdGetDatum(
-														 relationObjectId));
-
-						if (strcmp(p_info->indpred_str,
-								   text_to_cstring(DatumGetTextP(result))) != 0)
-						{
-							/* Clean up */
-							ReleaseSysCache(ht_idx);
-							continue;
-						}
-					}
-
-					/* Clean up */
-					ReleaseSysCache(ht_idx);
-				}
-				else if (p_info->expression_str || (info->indexprs != NIL))
-					continue;
-				else if	(p_info->indpred_str || (info->indpred != NIL))
+				if (!check_index_match(info, p_info, relationObjectId))
 					continue;
 
 				use_index = true;
@@ -3670,7 +3543,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 }
 
 /*
- * Return information of index definition.
+ * Allocate and return the information of a single index definition.
  */
 static ParentIndexInfo *
 get_parent_index_info(Oid indexoid, Oid relid)
@@ -3708,12 +3581,10 @@ get_parent_index_info(Oid indexoid, Oid relid)
 		p_info->indoption[i] = indexRelation->rd_indoption[i];
 	}
 
-	/*
-	 * to check to match the expression's parameter of index with child indexes
- 	 */
+	/* Store index expressions */
 	p_info->expression_str = NULL;
-	if(!heap_attisnull(indexRelation->rd_indextuple, Anum_pg_index_indexprs,
-					   NULL))
+	if (!heap_attisnull(indexRelation->rd_indextuple, Anum_pg_index_indexprs,
+						NULL))
 	{
 		Datum       exprsDatum;
 		bool		isnull;
@@ -3729,12 +3600,10 @@ get_parent_index_info(Oid indexoid, Oid relid)
 		p_info->expression_str = text_to_cstring(DatumGetTextP(result));
 	}
 
-	/*
-	 * to check to match the predicate's parameter of index with child indexes
- 	 */
+	/* Store index predicates */
 	p_info->indpred_str = NULL;
-	if(!heap_attisnull(indexRelation->rd_indextuple, Anum_pg_index_indpred,
-					   NULL))
+	if (!heap_attisnull(indexRelation->rd_indextuple, Anum_pg_index_indpred,
+						NULL))
 	{
 		Datum       predDatum;
 		bool		isnull;
@@ -3775,7 +3644,6 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 					   ScanMethodHint **rshint, ParallelHint **rphint)
 {
 	Index	new_parent_relid = 0;
-	ListCell *l;
 	ScanMethodHint *shint = NULL;
 	ParallelHint   *phint = NULL;
 	bool			inhparent = root->simple_rte_array[rel->relid]->inh;
@@ -3855,44 +3723,9 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		 * of its own.
 		 */
 		if (current_hint_state->parent_scan_hint)
-		{
-			ScanMethodHint * pshint = current_hint_state->parent_scan_hint;
-
-			/* Apply index mask in the same manner to the parent. */
-			if (pshint->indexnames)
-			{
-				Oid			parentrel_oid;
-				Relation	parent_rel;
-
-				parentrel_oid =
-					root->simple_rte_array[current_hint_state->parent_relid]->relid;
-				parent_rel = table_open(parentrel_oid, NoLock);
-
-				/* Search the parent relation for indexes match the hint spec */
-				foreach(l, RelationGetIndexList(parent_rel))
-				{
-					Oid         indexoid = lfirst_oid(l);
-					char       *indexname = get_rel_name(indexoid);
-					ListCell   *lc;
-					ParentIndexInfo *parent_index_info;
-
-					foreach(lc, pshint->indexnames)
-					{
-						if (RelnameCmp(&indexname, &lfirst(lc)) == 0)
-							break;
-					}
-					if (!lc)
-						continue;
-
-					parent_index_info =
-						get_parent_index_info(indexoid, parentrel_oid);
-					current_hint_state->parent_index_infos =
-						lappend(current_hint_state->parent_index_infos,
-								parent_index_info);
-				}
-				table_close(parent_rel, NoLock);
-			}
-		}
+			set_parent_index_infos(new_parent_relid,
+								   current_hint_state->parent_scan_hint,
+								   current_hint_state->current_root);
 	}
 
 	shint = find_scan_hint(root, rel->relid);
@@ -4930,6 +4763,223 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo * root, RelOptInfo *rel,
 	}
 
 	reset_hint_enforcement();
+}
+
+/*
+ * Compare the index information from a parent table with the index of
+ * a child table.  This routine returns true if the two indexes match,
+ * false otherwise.
+ *
+ * "info" is the index information of the child table, "p_info" is the
+ * index information of the parent table.  "relationObjectId" is the
+ * OID of the child relation used for the match checks, used for the
+ * detailed information lookups based on the contents of IndexOptInfo.
+ */
+static bool
+check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
+				  Oid relationObjectId)
+{
+	int			i = 0;
+	HeapTuple	ht_idx;
+
+	/*
+	 * We check the 'same' index by comparing uniqueness, access
+	 * method and index key columns.
+	 */
+	if (p_info->indisunique != info->unique ||
+		p_info->method != info->relam ||
+		list_length(p_info->column_names) != info->ncolumns)
+		return false;
+
+	/* Check if index key columns match */
+	for (i = 0; i < info->ncolumns; i++)
+	{
+		char   *c_attname = NULL;
+		char   *p_attname = NULL;
+
+		p_attname = list_nth(p_info->column_names, i);
+
+		/*
+		 * If both of the keys at the same position are expressions,
+		 * ignore them for now and check later.
+		 */
+		if (info->indexkeys[i] == 0 && !p_attname)
+			continue;
+
+		/* Deny if one is expression while another is not */
+		if (info->indexkeys[i] == 0 || !p_attname)
+			return false;
+
+		c_attname = get_attname(relationObjectId,
+								info->indexkeys[i], false);
+
+		/* Deny if any of the column attributes don't match */
+		if (strcmp(p_attname, c_attname) != 0 ||
+			p_info->indcollation[i] != info->indexcollations[i] ||
+			p_info->opclass[i] != info->opcintype[i])
+			return false;
+
+		/*
+		 * Compare index ordering if this index is ordered.
+		 *
+		 * We already confirmed that this and the parent indexes
+		 * share the same column set (actually only the length of
+		 * the column set is compared, though) and index access
+		 * method. So if this index is unordered, the parent can be
+		 * assumed to be unordered. Thus no need to check
+		 * the parent's orderedness.
+		 */
+		if (info->sortopfamily != NULL &&
+			(((p_info->indoption[i] & INDOPTION_DESC) != 0)
+				!= info->reverse_sort[i] ||
+			 ((p_info->indoption[i] & INDOPTION_NULLS_FIRST) != 0)
+				!= info->nulls_first[i]))
+			return false;
+	}
+
+	/* Deny if any difference has been found */
+	if (i != info->ncolumns)
+		return false;
+
+	/* Check expressions and predicates */
+	if ((p_info->expression_str && info->indexprs != NIL) ||
+		(p_info->indpred_str && info->indpred != NIL))
+	{
+		/* Fetch the index of this child */
+		ht_idx = SearchSysCache1(INDEXRELID,
+								 ObjectIdGetDatum(info->indexoid));
+
+		/* Check expressions if both expressions are available */
+		if (p_info->expression_str &&
+			!heap_attisnull(ht_idx, Anum_pg_index_indexprs, NULL))
+		{
+			Datum	exprsDatum;
+			bool	isnull;
+			Datum	result;
+
+			/*
+			 * Change the expression's parameter of child's
+			 * index to strings
+			 */
+			exprsDatum = SysCacheGetAttr(INDEXRELID, ht_idx,
+										 Anum_pg_index_indexprs,
+										 &isnull);
+
+			result = DirectFunctionCall2(pg_get_expr,
+										 exprsDatum,
+										 ObjectIdGetDatum(relationObjectId));
+
+			/* Deny if expressions do not match */
+			if (strcmp(p_info->expression_str,
+					   text_to_cstring(DatumGetTextP(result))) != 0)
+			{
+				ReleaseSysCache(ht_idx);
+				return false;
+			}
+		}
+
+		/* Compare index predicates */
+		if (p_info->indpred_str &&
+			!heap_attisnull(ht_idx, Anum_pg_index_indpred, NULL))
+		{
+			Datum	predDatum;
+			bool	isnull;
+			Datum	result;
+
+			predDatum = SysCacheGetAttr(INDEXRELID, ht_idx,
+										Anum_pg_index_indpred,
+										&isnull);
+
+			result = DirectFunctionCall2(pg_get_expr,
+										 predDatum,
+										 ObjectIdGetDatum(relationObjectId));
+
+			if (strcmp(p_info->indpred_str,
+					   text_to_cstring(DatumGetTextP(result))) != 0)
+			{
+				ReleaseSysCache(ht_idx);
+				return false;
+			}
+		}
+
+		/* Clean up */
+		ReleaseSysCache(ht_idx);
+	}
+	else if (p_info->expression_str || info->indexprs != NIL)
+		return false;
+	else if (p_info->indpred_str || info->indpred != NIL)
+		return false;
+
+	return true;
+}
+
+/*
+ * Apply a scan hint to a new parent relation, defined by the index
+ * given by the caller in parent_relid.
+ *
+ * This routine checks if indexes in the parent relation have names that
+ * match with the index names specified in the scan hint.  If a match is
+ * found, the scan hint is applied to the new parent, by adding it to the
+ * currently-active hint.
+ */
+static void
+set_parent_index_infos(Index parent_relid,
+					   ScanMethodHint *pshint,
+					   PlannerInfo *root)
+{
+	Oid			parentrel_oid;
+	Relation	parent_rel;
+	ListCell   *l;
+
+	/* No scan hint to apply?  Leave. */
+	if (pshint == NULL)
+		return;
+
+	Assert(root && parent_relid > 0);
+
+	/* No indexes specified in the scan hint?  Leave. */
+	if (!pshint->indexnames)
+		return;
+
+	parentrel_oid = root->simple_rte_array[parent_relid]->relid;
+	parent_rel = table_open(parentrel_oid, NoLock);
+
+	foreach (l, RelationGetIndexList(parent_rel))
+	{
+		Oid					indexoid = lfirst_oid(l);
+		char			   *indexname = get_rel_name(indexoid);
+		ListCell		   *lc;
+		ParentIndexInfo	   *parent_index_info;
+		bool				found = false;
+
+		/*
+		 * Check if the hint to apply includes an index that this parent
+		 * relation has.
+		 */
+		foreach (lc, pshint->indexnames)
+		{
+			if (RelnameCmp(&indexname, &lfirst(lc)) == 0)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			continue;
+
+		/*
+		 * Matching index name found, gather its information then
+		 * update the currently-active hint.
+		 */
+		parent_index_info =
+			get_parent_index_info(indexoid, parentrel_oid);
+		current_hint_state->parent_index_infos =
+			lappend(current_hint_state->parent_index_infos,
+					parent_index_info);
+	}
+
+	table_close(parent_rel, NoLock);
 }
 
 /* include core static functions */
