@@ -194,7 +194,7 @@ typedef const char *(*HintParseFunction) (Hint *hint, const char *str);
 /* hint types */
 typedef enum HintType
 {
-	HINT_TYPE_SCAN_METHOD,
+	HINT_TYPE_SCAN_METHOD = 0,
 	HINT_TYPE_JOIN_METHOD,
 	HINT_TYPE_LEADING,
 	HINT_TYPE_SET,
@@ -236,6 +236,8 @@ typedef enum HintStatus
 
 #define hint_state_enabled(hint) ((hint)->base.state == HINT_STATE_NOTUSED || \
 								  (hint)->base.state == HINT_STATE_USED)
+
+#define get_current_hints(type) ((Hint **) (current_hint_state)->hints[type])
 
 /* These variables are used only when debug_level > 1*/
 static unsigned int qno = 0;
@@ -370,8 +372,8 @@ struct HintState
 	/* # of each hints */
 	int				num_hints[NUM_HINT_TYPE];
 
-	/* for scan method hints */
-	ScanMethodHint **scan_hints;		/* parsed scan hints */
+	/* pointer to each hint type */
+	void			*hints[NUM_HINT_TYPE];
 
 	/* Initial values of parameters  */
 	int				init_scan_mask;		/* enable_* mask */
@@ -389,16 +391,10 @@ struct HintState
 	ParallelHint   *parent_parallel_hint; /* parallel hint for the parent */
 	List		   *parent_index_infos; /* list of parent table's index */
 
-	JoinMethodHint **join_hints;		/* parsed join hints */
 	int				init_join_mask;		/* initial value join parameter */
 	List		  **join_hint_level;
 	List		  **memoize_hint_level;
-	LeadingHint	  **leading_hint;		/* parsed Leading hints */
-	SetHint		  **set_hints;			/* parsed Set hints */
 	GucContext		context;			/* which GUC parameters can we set? */
-	RowsHint	  **rows_hints;			/* parsed Rows hints */
-	ParallelHint  **parallel_hints;		/* parsed Parallel hints */
-	JoinMethodHint **memoize_hints;		/* parsed Memoize hints */
 };
 
 /*
@@ -1092,7 +1088,6 @@ HintStateCreate(void)
 	hstate->max_all_hints = 0;
 	hstate->all_hints = NULL;
 	memset(hstate->num_hints, 0, sizeof(hstate->num_hints));
-	hstate->scan_hints = NULL;
 	hstate->init_scan_mask = 0;
 	hstate->init_nworkers = 0;
 	hstate->init_min_para_tablescan_size = 0;
@@ -1104,15 +1099,10 @@ HintStateCreate(void)
 	hstate->parent_scan_hint = NULL;
 	hstate->parent_parallel_hint = NULL;
 	hstate->parent_index_infos = NIL;
-	hstate->join_hints = NULL;
 	hstate->init_join_mask = 0;
 	hstate->join_hint_level = NULL;
 	hstate->memoize_hint_level = NULL;
-	hstate->leading_hint = NULL;
 	hstate->context = superuser() ? PGC_SUSET : PGC_USERSET;
-	hstate->set_hints = NULL;
-	hstate->rows_hints = NULL;
-	hstate->parallel_hints = NULL;
 
 	return hstate;
 }
@@ -1986,6 +1976,7 @@ create_hintstate(Query *parse, const char *hints)
 	const char *p;
 	int			i;
 	HintState   *hstate;
+	Hint **ptr;
 
 	if (hints == NULL)
 		return NULL;
@@ -2051,19 +2042,13 @@ create_hintstate(Query *parse, const char *hints)
 	 * Make sure that per-type array pointers point proper position in the
 	 * array which consists of all hints.
 	 */
-	hstate->scan_hints = (ScanMethodHint **) hstate->all_hints;
-	hstate->join_hints = (JoinMethodHint **) (hstate->scan_hints +
-		hstate->num_hints[HINT_TYPE_SCAN_METHOD]);
-	hstate->leading_hint = (LeadingHint **) (hstate->join_hints +
-		hstate->num_hints[HINT_TYPE_JOIN_METHOD]);
-	hstate->set_hints = (SetHint **) (hstate->leading_hint +
-		hstate->num_hints[HINT_TYPE_LEADING]);
-	hstate->rows_hints = (RowsHint **) (hstate->set_hints +
-		hstate->num_hints[HINT_TYPE_SET]);
-	hstate->parallel_hints = (ParallelHint **) (hstate->rows_hints +
-		hstate->num_hints[HINT_TYPE_ROWS]);
-	hstate->memoize_hints = (JoinMethodHint **) (hstate->parallel_hints +
-		hstate->num_hints[HINT_TYPE_PARALLEL]);
+	ptr = hstate->all_hints;
+
+	for (i = 0; i < NUM_HINT_TYPE; i++)
+	{
+		hstate->hints[i] = ptr;
+		ptr += hstate->num_hints[i];
+	}
 
 	return hstate;
 }
@@ -3093,7 +3078,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 	PG_TRY();
 	{
 		/* Apply Set hints, then save it as the initial state  */
-		setup_guc_enforcement(current_hint_state->set_hints,
+		setup_guc_enforcement((SetHint **) get_current_hints(HINT_TYPE_SET),
 							   current_hint_state->num_hints[HINT_TYPE_SET],
 							   current_hint_state->context);
 
@@ -3209,6 +3194,7 @@ find_scan_hint(PlannerInfo *root, Index relid)
 	ScanMethodHint	*real_name_hint = NULL;
 	ScanMethodHint	*alias_hint = NULL;
 	int				i;
+	ScanMethodHint **hints;
 
 	/* This should not be a join rel */
 	Assert(relid > 0);
@@ -3238,10 +3224,12 @@ find_scan_hint(PlannerInfo *root, Index relid)
 		rte->relkind == RELKIND_FOREIGN_TABLE)
 		return NULL;
 
+	hints = (ScanMethodHint **) get_current_hints(HINT_TYPE_SCAN_METHOD);
+
 	/* Find scan method hint, which matches given names, from the list. */
 	for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_SCAN_METHOD]; i++)
 	{
-		ScanMethodHint *hint = current_hint_state->scan_hints[i];
+		ScanMethodHint *hint = hints[i];
 
 		/* We ignore disabled hints. */
 		if (!hint_state_enabled(hint))
@@ -3281,6 +3269,7 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 	ParallelHint	*real_name_hint = NULL;
 	ParallelHint	*alias_hint = NULL;
 	int				i;
+	ParallelHint **hints;
 
 	/* This should not be a join rel */
 	Assert(relid > 0);
@@ -3306,10 +3295,12 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 	rte = root->simple_rte_array[relid];
 	Assert(rte);
 
+	hints = (ParallelHint **) get_current_hints(HINT_TYPE_PARALLEL);
+
 	/* Find parallel method hint, which matches given names, from the list. */
 	for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_PARALLEL]; i++)
 	{
-		ParallelHint *hint = current_hint_state->parallel_hints[i];
+		ParallelHint *hint = hints[i];
 
 		/* We ignore disabled hints. */
 		if (!hint_state_enabled(hint))
@@ -4055,6 +4046,9 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	ListCell	   *l;
 	char		   *relname;
 	LeadingHint	   *lhint = NULL;
+	JoinMethodHint	**join_hints = (JoinMethodHint **) get_current_hints(HINT_TYPE_JOIN_METHOD);
+	RowsHint		**row_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
+	LeadingHint		**leading_hints = (LeadingHint **) get_current_hints(HINT_TYPE_LEADING);
 
 	/*
 	 * Create bitmap of relids from alias names for each join method hint.
@@ -4062,7 +4056,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	 */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_JOIN_METHOD]; i++)
 	{
-		JoinMethodHint *hint = hstate->join_hints[i];
+		JoinMethodHint *hint = join_hints[i];
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
@@ -4080,7 +4074,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	/* ditto for memoize hints */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_MEMOIZE]; i++)
 	{
-		JoinMethodHint *hint = hstate->join_hints[i];
+		JoinMethodHint *hint = join_hints[i];
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
@@ -4101,7 +4095,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	 */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_ROWS]; i++)
 	{
-		RowsHint *hint = hstate->rows_hints[i];
+		RowsHint *hint = row_hints[i];
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
@@ -4119,7 +4113,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
  	 */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_LEADING]; i++)
 	{
-		LeadingHint	   *leading_hint = (LeadingHint *)hstate->leading_hint[i];
+		LeadingHint	   *leading_hint = leading_hints[i];
 		Relids			relids;
 
 		if (leading_hint->base.state == HINT_STATE_ERROR)
