@@ -3195,6 +3195,55 @@ standard_planner_proc:
 }
 
 /*
+ * Helper macro used by the find_*_hint routines checking for a match
+ * for a relation name stored in a hint and a RTE.
+ */
+#define FIND_MATCHING_HINT(MethodHint, hint_type)					\
+do {																\
+	int		i;														\
+	MethodHint	   *real_name_hint = NULL;							\
+	MethodHint	   *alias_hint = NULL;								\
+	MethodHint	  **hints;											\
+																	\
+	hints = (MethodHint **) get_current_hints(hint_type);			\
+																	\
+	/* Find method hint, matching with from the list. */			\
+	for (i = 0; i < current_hint_state->num_hints[hint_type]; i++)	\
+	{																\
+		MethodHint *hint = hints[i];								\
+																	\
+		/* Ignore disabled hints */									\
+		if (!hint_state_enabled(hint))								\
+			continue;												\
+																	\
+		if (!alias_hint &&											\
+			RelnameCmp(&rte->eref->aliasname, &hint->relname) == 0)	\
+			alias_hint = hint;										\
+																	\
+		/* check the real name for appendrel children */			\
+		if (!real_name_hint &&										\
+			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)		\
+		{															\
+			char	   *realname = get_rel_name(rte->relid);		\
+																	\
+			if (realname &&											\
+				RelnameCmp(&realname, &hint->relname) == 0)			\
+				real_name_hint = hint;								\
+		}															\
+																	\
+		/* No more match expected, break  */						\
+		if (alias_hint && real_name_hint)							\
+			break;													\
+	}																\
+																	\
+	/* real name match precedes alias match */						\
+	if (real_name_hint)												\
+		return real_name_hint;										\
+																	\
+	return alias_hint;												\
+} while(0)
+
+/*
  * Find scan method hint to be applied to the given relation
  */
 static ScanMethodHint *
@@ -3202,10 +3251,6 @@ find_scan_hint(PlannerInfo *root, Index relid)
 {
 	RelOptInfo *rel;
 	RangeTblEntry *rte;
-	ScanMethodHint *real_name_hint = NULL;
-	ScanMethodHint *alias_hint = NULL;
-	int			i;
-	ScanMethodHint **hints;
 
 	/* This should not be a join rel */
 	Assert(relid > 0);
@@ -3235,41 +3280,8 @@ find_scan_hint(PlannerInfo *root, Index relid)
 		rte->relkind == RELKIND_FOREIGN_TABLE)
 		return NULL;
 
-	hints = (ScanMethodHint **) get_current_hints(HINT_TYPE_SCAN_METHOD);
-
-	/* Find scan method hint, which matches given names, from the list. */
-	for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_SCAN_METHOD]; i++)
-	{
-		ScanMethodHint *hint = hints[i];
-
-		/* We ignore disabled hints. */
-		if (!hint_state_enabled(hint))
-			continue;
-
-		if (!alias_hint &&
-			RelnameCmp(&rte->eref->aliasname, &hint->relname) == 0)
-			alias_hint = hint;
-
-		/* check the real name for appendrel children */
-		if (!real_name_hint &&
-			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
-		{
-			char	   *realname = get_rel_name(rte->relid);
-
-			if (realname && RelnameCmp(&realname, &hint->relname) == 0)
-				real_name_hint = hint;
-		}
-
-		/* No more match expected, break  */
-		if (alias_hint && real_name_hint)
-			break;
-	}
-
-	/* real name match precedes alias match */
-	if (real_name_hint)
-		return real_name_hint;
-
-	return alias_hint;
+	/* Loop through the scan hints */
+	FIND_MATCHING_HINT(ScanMethodHint, HINT_TYPE_SCAN_METHOD);
 }
 
 static ParallelHint *
@@ -3277,10 +3289,6 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 {
 	RelOptInfo *rel;
 	RangeTblEntry *rte;
-	ParallelHint *real_name_hint = NULL;
-	ParallelHint *alias_hint = NULL;
-	int			i;
-	ParallelHint **hints;
 
 	/* This should not be a join rel */
 	Assert(relid > 0);
@@ -3306,41 +3314,8 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 	rte = root->simple_rte_array[relid];
 	Assert(rte);
 
-	hints = (ParallelHint **) get_current_hints(HINT_TYPE_PARALLEL);
-
-	/* Find parallel method hint, which matches given names, from the list. */
-	for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_PARALLEL]; i++)
-	{
-		ParallelHint *hint = hints[i];
-
-		/* We ignore disabled hints. */
-		if (!hint_state_enabled(hint))
-			continue;
-
-		if (!alias_hint &&
-			RelnameCmp(&rte->eref->aliasname, &hint->relname) == 0)
-			alias_hint = hint;
-
-		/* check the real name for appendrel children */
-		if (!real_name_hint &&
-			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
-		{
-			char	   *realname = get_rel_name(rte->relid);
-
-			if (realname && RelnameCmp(&realname, &hint->relname) == 0)
-				real_name_hint = hint;
-		}
-
-		/* No more match expected, break  */
-		if (alias_hint && real_name_hint)
-			break;
-	}
-
-	/* real name match precedes alias match */
-	if (real_name_hint)
-		return real_name_hint;
-
-	return alias_hint;
+	/* Loop through the parallel hints */
+	FIND_MATCHING_HINT(ParallelHint, HINT_TYPE_PARALLEL);
 }
 
 /*
