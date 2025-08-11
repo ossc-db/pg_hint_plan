@@ -203,3 +203,29 @@ will not work as one could expect:
 -   Hints to change `enable_hint`, `enable_hint_table` are ignored even though
     they are reported as "used hints" in debug logs.
 -   Setting `debug_print` and `message_level` in the middle of query processing.
+
+## Using `DisableIndex` hint
+
+A `DisableIndex` hint excludes the specified indexes from being considered
+during query planning. It takes precedence over other hints. A disabled
+index will not be used, even if explicitly requested by `IndexScan`.
+
+```sql
+=# /*+DisableIndex(t t_c1) IndexScan(t t_c1) */
+   EXPLAIN SELECT * FROM t WHERE c1 = 1;
+LOG:  indexes disabled for DisableIndex(t): t_c1
+LOG:  available indexes for IndexScan(t):
+LOG:  pg_hint_plan:
+used hint:
+DisableIndex(t t_c1)
+not used hint:
+IndexScan(t t_c1)
+duplication hint:
+error hint:
+
+                           QUERY PLAN
+-----------------------------------------------------------------
+ Index Scan using t_pkey on t  (cost=0.15..8.17 rows=1 width=12)
+   Index Cond: (c1 = 1)
+(2 rows)
+```

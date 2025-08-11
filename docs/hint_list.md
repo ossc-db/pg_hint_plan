@@ -16,6 +16,7 @@ The available hints are listed below.
 | | `NoIndexScan(table)`| Forces to *not* do index scan and index-only scan on the table. |
 | | `NoIndexOnlyScan(table)`| Forces to *not* do index only scan on the table. |
 | | `NoBitmapScan(table)` | Forces to *not* do bitmap scan on the table. |
+| Disable indexes | `DisableIndex(table index...)` | Disables the specified indexes during query planning, taking precedence over any other hints. |
 | Join method| `NestLoop(table table[ table...])` | Forces nested loop for the joins on the tables specified. |
 | | `HashJoin(table table[ table...])`| Forces hash join for the joins on the tables specified. |
 | | `MergeJoin(table table[ table...])` | Forces merge join for the joins on the tables specified. |

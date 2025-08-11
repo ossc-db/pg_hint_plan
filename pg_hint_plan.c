@@ -98,6 +98,7 @@ PG_MODULE_MAGIC;
 #define HINT_ROWS				"Rows"
 #define HINT_MEMOIZE			"Memoize"
 #define HINT_NOMEMOIZE			"NoMemoize"
+#define HINT_DISABLEINDEX		"DisableIndex"
 
 #define HINT_ARRAY_DEFAULT_INITSIZE 8
 
@@ -168,6 +169,8 @@ typedef enum HintKeyword
 	HINT_KEYWORD_MEMOIZE,
 	HINT_KEYWORD_NOMEMOIZE,
 
+	HINT_KEYWORD_DISABLEINDEX,
+
 	HINT_KEYWORD_UNRECOGNIZED
 } HintKeyword;
 
@@ -201,6 +204,7 @@ typedef enum HintType
 	HINT_TYPE_ROWS,
 	HINT_TYPE_PARALLEL,
 	HINT_TYPE_MEMOIZE,
+	HINT_TYPE_DISABLEINDEX,
 
 	NUM_HINT_TYPE
 } HintType;
@@ -218,7 +222,8 @@ static const char *HintTypeName[] = {
 	"set",
 	"rows",
 	"parallel",
-	"memoize"
+	"memoize",
+	"disableindex"
 };
 
 StaticAssertDecl(sizeof(HintTypeName) / sizeof(char *) == NUM_HINT_TYPE,
@@ -358,6 +363,14 @@ typedef struct ParallelHint
 	bool		force_parallel; /* force parallel scan */
 } ParallelHint;
 
+/* disable index hints */
+typedef struct DisableIndexHint
+{
+	Hint		base;
+	char	   *relname;
+	List	   *indexnames;
+} DisableIndexHint;
+
 /*
  * Describes a context of hint processing.
  */
@@ -390,6 +403,8 @@ struct HintState
 	Index		parent_relid;	/* inherit parent of table relid */
 	ScanMethodHint *parent_scan_hint;	/* scan hint for the parent */
 	ParallelHint *parent_parallel_hint; /* parallel hint for the parent */
+	DisableIndexHint *parent_disableindex_hint; /* disable index hint for the
+												 * parent */
 	List	   *parent_index_infos; /* list of parent table's index */
 
 	int			init_join_mask; /* initial value join parameter */
@@ -474,6 +489,14 @@ static void ParallelHintDesc(ParallelHint *hint, StringInfo buf, bool nolf);
 static int	ParallelHintCmp(const ParallelHint *a, const ParallelHint *b);
 static const char *ParallelHintParse(ParallelHint *hint, const char *str);
 
+/* DisableIndex hint callbacks */
+static Hint *DisableIndexHintCreate(const char *hint_str, const char *keyword,
+									HintKeyword hint_keyword);
+static void DisableIndexHintDelete(DisableIndexHint *hint);
+static void DisableIndexHintDesc(DisableIndexHint *hint, StringInfo buf, bool nolf);
+static int	DisableIndexHintCmp(const DisableIndexHint *a, const DisableIndexHint *b);
+static const char *DisableIndexHintParse(DisableIndexHint *hint, const char *str);
+
 static Hint *MemoizeHintCreate(const char *hint_str, const char *keyword,
 							   HintKeyword hint_keyword);
 
@@ -488,6 +511,8 @@ RelOptInfo *pg_hint_plan_standard_join_search(PlannerInfo *root,
 void		pg_hint_plan_join_search_one_level(PlannerInfo *root, int level);
 void		pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 										  Index rti, RangeTblEntry *rte);
+static void pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
+												bool inhparent, RelOptInfo *rel);
 static void create_plain_partial_paths(PlannerInfo *root,
 									   RelOptInfo *rel);
 static void make_rels_by_clause_joins(PlannerInfo *root, RelOptInfo *old_rel,
@@ -577,6 +602,7 @@ static post_parse_analyze_hook_type prev_post_parse_analyze_hook = NULL;
 static planner_hook_type prev_planner = NULL;
 static join_search_hook_type prev_join_search = NULL;
 static set_rel_pathlist_hook_type prev_set_rel_pathlist = NULL;
+static get_relation_info_hook_type prev_get_relation_info_hook = NULL;
 static needs_fmgr_hook_type prev_needs_fmgr_hook = NULL;
 static fmgr_hook_type prev_fmgr_hook = NULL;
 static ExecutorEnd_hook_type prev_ExecutorEnd = NULL;
@@ -627,6 +653,8 @@ static const HintParser parsers[] = {
 	{HINT_PARALLEL, ParallelHintCreate, HINT_KEYWORD_PARALLEL},
 	{HINT_MEMOIZE, MemoizeHintCreate, HINT_KEYWORD_MEMOIZE},
 	{HINT_NOMEMOIZE, MemoizeHintCreate, HINT_KEYWORD_NOMEMOIZE},
+
+	{HINT_DISABLEINDEX, DisableIndexHintCreate, HINT_KEYWORD_DISABLEINDEX},
 
 	{NULL, NULL, HINT_KEYWORD_UNRECOGNIZED}
 };
@@ -795,6 +823,8 @@ _PG_init(void)
 	needs_fmgr_hook = pg_hint_plan_needs_fmgr_hook;
 	prev_ExecutorEnd = ExecutorEnd_hook;
 	ExecutorEnd_hook = pg_hint_ExecutorEnd;
+	prev_get_relation_info_hook = get_relation_info_hook;
+	get_relation_info_hook = pg_hint_plan_get_relation_info_hook;
 }
 
 static bool
@@ -1062,6 +1092,59 @@ ParallelHintDelete(ParallelHint *hint)
 	pfree(hint);
 }
 
+static Hint *
+DisableIndexHintCreate(const char *hint_str, const char *keyword,
+					   HintKeyword hint_keyword)
+{
+	DisableIndexHint *hint;
+
+	hint = palloc0(sizeof(DisableIndexHint));
+	hint->base.hint_str = hint_str;
+	hint->base.keyword = keyword;
+	hint->base.hint_keyword = hint_keyword;
+	hint->base.type = HINT_TYPE_DISABLEINDEX;
+	hint->base.state = HINT_STATE_NOTUSED;
+	hint->base.delete_func = (HintDeleteFunction) DisableIndexHintDelete;
+	hint->base.desc_func = (HintDescFunction) DisableIndexHintDesc;
+	hint->base.cmp_func = (HintCmpFunction) DisableIndexHintCmp;
+	hint->base.parse_func = (HintParseFunction) DisableIndexHintParse;
+	hint->relname = NULL;
+	hint->indexnames = NULL;
+
+	return (Hint *) hint;
+}
+
+static void
+DisableIndexHintDelete(DisableIndexHint *hint)
+{
+	if (!hint)
+		return;
+
+	if (hint->relname)
+		pfree(hint->relname);
+	list_free_deep(hint->indexnames);
+	pfree(hint);
+}
+
+static void
+DisableIndexHintDesc(DisableIndexHint *hint, StringInfo buf, bool nolf)
+{
+	ListCell   *l;
+
+	appendStringInfo(buf, "%s(", hint->base.keyword);
+	if (hint->relname != NULL)
+	{
+		quote_value(buf, hint->relname);
+		foreach(l, hint->indexnames)
+		{
+			appendStringInfoCharMacro(buf, ' ');
+			quote_value(buf, (char *) lfirst(l));
+		}
+	}
+	appendStringInfoString(buf, ")");
+	if (!nolf)
+		appendStringInfoChar(buf, '\n');
+}
 
 static Hint *
 MemoizeHintCreate(const char *hint_str, const char *keyword,
@@ -1101,6 +1184,7 @@ HintStateCreate(void)
 	hstate->parent_relid = 0;
 	hstate->parent_scan_hint = NULL;
 	hstate->parent_parallel_hint = NULL;
+	hstate->parent_disableindex_hint = NULL;
 	hstate->parent_index_infos = NIL;
 	hstate->init_join_mask = 0;
 	hstate->join_hint_level = NULL;
@@ -1482,6 +1566,12 @@ RowsHintCmp(const RowsHint *a, const RowsHint *b)
 
 static int
 ParallelHintCmp(const ParallelHint *a, const ParallelHint *b)
+{
+	return RelnameCmp(&a->relname, &b->relname);
+}
+
+static int
+DisableIndexHintCmp(const DisableIndexHint *a, const DisableIndexHint *b)
 {
 	return RelnameCmp(&a->relname, &b->relname);
 }
@@ -2229,6 +2319,35 @@ JoinMethodHintParse(JoinMethodHint *hint, const char *str)
 			return NULL;
 			break;
 	}
+
+	return str;
+}
+
+static const char *
+DisableIndexHintParse(DisableIndexHint *hint, const char *str)
+{
+	HintKeyword hint_keyword = hint->base.hint_keyword;
+	List	   *name_list = NIL;
+	int			length;
+
+	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
+		return NULL;
+
+	/* Parse relation name and index name(s) if given hint accepts. */
+	length = list_length(name_list);
+
+	/* requires a relation and at least one index */
+	if (length < 2)
+	{
+		hint_ereport(str,
+					 ("%s hint requires a relation and at least one index.",
+					  hint->base.keyword));
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
+	}
+
+	hint->relname = linitial(name_list);
+	hint->indexnames = list_delete_first(name_list);
 
 	return str;
 }
@@ -3331,6 +3450,25 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 
 	/* Loop through the parallel hints */
 	FIND_MATCHING_HINT(ParallelHint, HINT_TYPE_PARALLEL);
+
+	return match_hint;
+}
+
+/*
+ * Find disable index hint to be applied to the given relation
+ */
+static DisableIndexHint *
+find_disableindex_hint(PlannerInfo *root, Index relid)
+{
+	RelOptInfo *rel;
+	RangeTblEntry *rte;
+	DisableIndexHint *match_hint;
+
+	/* Check if relation can be applied to this hint type. */
+	CHECK_RELATION_FOR_HINT();
+
+	/* Find disable index hint, which matches given names, from the list. */
+	FIND_MATCHING_HINT(DisableIndexHint, HINT_TYPE_DISABLEINDEX);
 
 	return match_hint;
 }
@@ -4975,6 +5113,159 @@ set_parent_index_infos(Index parent_relid,
 	}
 
 	table_close(parent_rel, NoLock);
+}
+
+/*
+ * relation_info_hook, to control the list of indexes disabled for a given
+ * relation with the DisableIndex hints.
+ */
+void
+pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
+									bool inhparent, RelOptInfo *rel)
+{
+	ListCell   *cell;
+	StringInfoData buf;
+	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
+	DisableIndexHint *match_hint = NULL;
+
+	/* call the previous hook */
+	if (prev_get_relation_info_hook)
+		prev_get_relation_info_hook(root, relationObjectId, inhparent, rel);
+
+	if (!current_hint_state || inhparent)
+		return;
+
+	/* Loop through the disable index hints */
+	FIND_MATCHING_HINT(DisableIndexHint, HINT_TYPE_DISABLEINDEX);
+
+	/* no hint found, nothing to do */
+	if (!match_hint)
+		return;
+
+	if (debug_level > 0)
+		initStringInfo(&buf);
+
+	foreach(cell, rel->indexlist)
+	{
+		IndexOptInfo *info = (IndexOptInfo *) lfirst(cell);
+		char	   *indexname = get_rel_name(info->indexoid);
+		ListCell   *l;
+		bool		result = false;
+
+		foreach(l, match_hint->indexnames)
+		{
+			char	   *hintname = (char *) lfirst(l);
+
+			result = RelnameCmp(&indexname, &hintname) == 0;
+
+			if (result)
+			{
+				rel->indexlist = foreach_delete_current(rel->indexlist, cell);
+				match_hint->base.state = HINT_STATE_USED;
+
+				if (debug_level > 0)
+				{
+					appendStringInfoCharMacro(&buf, ' ');
+					quote_value(&buf, indexname);
+				}
+				break;
+			}
+		}
+
+		/* We have found a matching index, continue to the next one. */
+		if (result)
+			continue;
+
+		/*
+		 * If the disable index hint is not set for the parent yet, set it.
+		 */
+		if (!current_hint_state->parent_disableindex_hint)
+		{
+			Index		new_parent_relid = 0;
+
+			if (bms_num_members(rel->top_parent_relids) == 1)
+			{
+				new_parent_relid = bms_next_member(rel->top_parent_relids, -1);
+				current_hint_state->current_root = root;
+				Assert(new_parent_relid > 0);
+
+				if (new_parent_relid > 0)
+				{
+					current_hint_state->parent_relid = new_parent_relid;
+
+					/* Find hints for the parent */
+					current_hint_state->parent_disableindex_hint =
+						find_disableindex_hint(root, current_hint_state->parent_relid);
+
+					/*
+					 * If hint is found on the parent, apply it for its child
+					 * instead of its own.
+					 */
+					if (current_hint_state->parent_disableindex_hint)
+						set_parent_index_infos(new_parent_relid,
+											   current_hint_state->parent_disableindex_hint->indexnames,
+											   current_hint_state->current_root);
+				}
+			}
+		}
+
+		/*
+		 * Now let's search for child indexes that match the parent.
+		 */
+		if (current_hint_state->parent_disableindex_hint)
+		{
+			foreach(l, current_hint_state->parent_index_infos)
+			{
+				ParentIndexInfo *p_info = (ParentIndexInfo *) lfirst(l);
+
+				if (!check_index_match(info, p_info, relationObjectId))
+					continue;
+
+				rel->indexlist = foreach_delete_current(rel->indexlist, cell);
+
+				match_hint->base.state = HINT_STATE_USED;
+
+				/* to log the candidate of index */
+				if (debug_level > 0)
+				{
+					appendStringInfoCharMacro(&buf, ' ');
+					quote_value(&buf, indexname);
+				}
+
+				break;
+			}
+		}
+
+		pfree(indexname);
+	}
+
+	if (debug_level > 0)
+	{
+		StringInfoData rel_buf;
+		char	   *disprelname = "";
+
+		/*
+		 * If this hint targetted the parent, use the real name of this child.
+		 * Otherwise use the hint specification.
+		 */
+		if (current_hint_state->parent_disableindex_hint)
+			disprelname = get_rel_name(rte->relid);
+		else
+			disprelname = match_hint->relname;
+
+		initStringInfo(&rel_buf);
+		quote_value(&rel_buf, disprelname);
+
+		ereport(pg_hint_plan_debug_message_level,
+				(errmsg("indexes disabled for %s(%s):%s",
+						match_hint->base.keyword,
+						rel_buf.data,
+						buf.data)));
+	}
+
+	/* reset the parent's defaults in current_hint_state */
+	current_hint_state->parent_relid = 0;
+	current_hint_state->parent_disableindex_hint = NULL;
 }
 
 /* include core static functions */
