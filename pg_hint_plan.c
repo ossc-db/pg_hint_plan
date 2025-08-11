@@ -3197,6 +3197,9 @@ standard_planner_proc:
 /*
  * Helper macro used by the find_*_hint routines checking for a match
  * for a relation name stored in a hint and a RTE.
+ *
+ * The result is allocated in match_hint, that should be declared in
+ * the user of this macro with a type matching "MethodHint".
  */
 #define FIND_MATCHING_HINT(MethodHint, hint_type)					\
 do {																\
@@ -3237,10 +3240,7 @@ do {																\
 	}																\
 																	\
 	/* real name match precedes alias match */						\
-	if (real_name_hint)												\
-		return real_name_hint;										\
-																	\
-	return alias_hint;												\
+	match_hint = real_name_hint ? real_name_hint : alias_hint;		\
 } while(0)
 
 /*
@@ -3287,12 +3287,15 @@ find_scan_hint(PlannerInfo *root, Index relid)
 {
 	RelOptInfo *rel;
 	RangeTblEntry *rte;
+	ScanMethodHint *match_hint;
 
 	/* Check if relation can be applied to this hint type. */
 	CHECK_RELATION_FOR_HINT();
 
 	/* Loop through the scan hints */
 	FIND_MATCHING_HINT(ScanMethodHint, HINT_TYPE_SCAN_METHOD);
+
+	return match_hint;
 }
 
 static ParallelHint *
@@ -3300,6 +3303,7 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 {
 	RelOptInfo *rel;
 	RangeTblEntry *rte;
+	ParallelHint *match_hint;
 
 	/* This should not be a join rel */
 	Assert(relid > 0);
@@ -3327,6 +3331,8 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 
 	/* Loop through the parallel hints */
 	FIND_MATCHING_HINT(ParallelHint, HINT_TYPE_PARALLEL);
+
+	return match_hint;
 }
 
 /*
