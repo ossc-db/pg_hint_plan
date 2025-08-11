@@ -516,7 +516,7 @@ static int	set_config_double_option(const char *name, double value,
 static bool check_index_match(IndexOptInfo *info,
 							  ParentIndexInfo *p_info,
 							  Oid relationObjectId);
-static void set_parent_index_infos(Index parent_relid, ScanMethodHint *pshint,
+static void set_parent_index_infos(Index parent_relid, List *indexnames,
 								   PlannerInfo *root);
 
 /* GUC variables */
@@ -3712,7 +3712,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		 */
 		if (current_hint_state->parent_scan_hint)
 			set_parent_index_infos(new_parent_relid,
-								   current_hint_state->parent_scan_hint,
+								   current_hint_state->parent_scan_hint->indexnames,
 								   current_hint_state->current_root);
 	}
 
@@ -4907,31 +4907,27 @@ check_index_match(IndexOptInfo *info, ParentIndexInfo *p_info,
 }
 
 /*
- * Apply a scan hint to a new parent relation, defined by the index
- * given by the caller in parent_relid.
+ * Apply a hint to a new parent relation, defined by the index given by
+ * the caller in parent_relid.
  *
  * This routine checks if indexes in the parent relation have names that
- * match with the index names specified in the scan hint.  If a match is
- * found, the scan hint is applied to the new parent, by adding it to the
- * currently-active hint.
+ * match with the index names specified by the caller.  The list of indexes
+ * come from a hint.  If a match is found, the hint is applied to the new
+ * parent, by adding it to the currently-active hint.
  */
 static void
 set_parent_index_infos(Index parent_relid,
-					   ScanMethodHint *pshint,
+					   List *indexnames,
 					   PlannerInfo *root)
 {
 	Oid			parentrel_oid;
 	Relation	parent_rel;
 	ListCell   *l;
 
-	/* No scan hint to apply?  Leave. */
-	if (pshint == NULL)
-		return;
-
 	Assert(root && parent_relid > 0);
 
-	/* No indexes specified in the scan hint?  Leave. */
-	if (!pshint->indexnames)
+	/* No indexes specified in the hint?  Leave. */
+	if (indexnames == NIL)
 		return;
 
 	parentrel_oid = root->simple_rte_array[parent_relid]->relid;
@@ -4949,7 +4945,7 @@ set_parent_index_infos(Index parent_relid,
 		 * Check if the hint to apply includes an index that this parent
 		 * relation has.
 		 */
-		foreach(lc, pshint->indexnames)
+		foreach(lc, indexnames)
 		{
 			if (RelnameCmp(&indexname, &lfirst(lc)) == 0)
 			{
