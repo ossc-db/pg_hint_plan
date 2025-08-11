@@ -3244,6 +3244,42 @@ do {																\
 } while(0)
 
 /*
+ * Helper macro for find_*_hint routines that must check if it is a base
+ * or an append relation before trying to find a hint matching it.
+ */
+#define CHECK_RELATION_FOR_HINT()												\
+do {																			\
+	/* This should not be a relation used in a join. */							\
+	Assert(relid > 0);															\
+	rel = root->simple_rel_array[relid];										\
+																				\
+	/*																			\
+	 * This function is called for any RelOptInfo or its inheritance parent if	\
+	 * it has any.  If we are called from inheritance planner, the RelOptInfo	\
+	 * for the parent of target child relation is not set in the planner info.	\
+	 *																			\
+	 * Otherwise we should check that the reloptinfo is a base relation or		\
+	 * an inheritance children.													\
+	 */																			\
+	if (rel &&																	\
+		rel->reloptkind != RELOPT_BASEREL &&									\
+		rel->reloptkind != RELOPT_OTHER_MEMBER_REL)								\
+		return NULL;															\
+																				\
+	/*																			\
+	 * This is a base relation or an appendrel child, so we can refer to		\
+	 * RangeTblEntry.															\
+	 */																			\
+	rte = root->simple_rte_array[relid];										\
+	Assert(rte);																\
+																				\
+	/* We do not allow hints on non RTE relations and foreign tables. */		\
+	if (rte->rtekind != RTE_RELATION ||											\
+		rte->relkind == RELKIND_FOREIGN_TABLE)									\
+		return NULL;															\
+} while(0)
+
+/*
  * Find scan method hint to be applied to the given relation
  */
 static ScanMethodHint *
@@ -3252,33 +3288,8 @@ find_scan_hint(PlannerInfo *root, Index relid)
 	RelOptInfo *rel;
 	RangeTblEntry *rte;
 
-	/* This should not be a join rel */
-	Assert(relid > 0);
-	rel = root->simple_rel_array[relid];
-
-	/*
-	 * This function is called for any RelOptInfo or its inheritance parent if
-	 * any. If we are called from inheritance planner, the RelOptInfo for the
-	 * parent of target child relation is not set in the planner info.
-	 *
-	 * Otherwise we should check that the reloptinfo is base relation or
-	 * inheritance children.
-	 */
-	if (rel &&
-		rel->reloptkind != RELOPT_BASEREL &&
-		rel->reloptkind != RELOPT_OTHER_MEMBER_REL)
-		return NULL;
-
-	/*
-	 * This is baserel or appendrel children. We can refer to RangeTblEntry.
-	 */
-	rte = root->simple_rte_array[relid];
-	Assert(rte);
-
-	/* We don't hint on other than relation and foreign tables */
-	if (rte->rtekind != RTE_RELATION ||
-		rte->relkind == RELKIND_FOREIGN_TABLE)
-		return NULL;
+	/* Check if relation can be applied to this hint type. */
+	CHECK_RELATION_FOR_HINT();
 
 	/* Loop through the scan hints */
 	FIND_MATCHING_HINT(ScanMethodHint, HINT_TYPE_SCAN_METHOD);
