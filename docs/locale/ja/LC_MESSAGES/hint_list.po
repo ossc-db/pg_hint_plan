@@ -1,5 +1,5 @@
 # LANGUAGE message translation file for pg_hint_plan hint list.
-# Copyright (C) 2012-2024, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+# Copyright (C) 2012-2025, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 # This file is distributed under the same license as the pg_hint_plan
 # package.
 # Julien Rouhaud <rjuju123@gmail.com>, 2023.
@@ -272,8 +272,8 @@ msgstr "`Set(GUCパラメータ 値)`"
 msgid "Sets GUC parameter to the value defined while planner is running."
 msgstr "プランナが実行中の間、GUCパラメータの値を設定します。"
 
-#~ msgid "copyright (c) 2012-2024, nippon telegraph and telephone corporation"
-#~ msgstr "copyright (c) 2012-2024, nippon telegraph and telephone corporation"
+#~ msgid "copyright (c) 2012-2025, nippon telegraph and telephone corporation"
+#~ msgstr "copyright (c) 2012-2025, nippon telegraph and telephone corporation"
 
 #~ msgid "Forces not to do index only scan on the table. Available for PostgreSQL 9.2 and later."
 #~ msgstr "指定されたテーブルにインデックスオンリースキャンを行わないように強制します。PostgreSQL 9.2以降で利用可能です。"
