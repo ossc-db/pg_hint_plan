@@ -1,4 +1,5 @@
 Datum
+DisableIndexHint
 FmgrInfo
 Hint
 HintKeyword
