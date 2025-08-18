@@ -214,17 +214,17 @@ adjust_rows(double rows, RowsHint *hint)
 	else if (hint->value_type == RVT_ADD)
 		result = rows + hint->rows;
 	else if (hint->value_type == RVT_SUB)
-		result =  rows - hint->rows;
+		result = rows - hint->rows;
 	else if (hint->value_type == RVT_MULTI)
 		result = rows * hint->rows;
 	else
-		Assert(false);	/* unrecognized rows value type */
+		Assert(false);			/* unrecognized rows value type */
 
 	hint->base.state = HINT_STATE_USED;
 	if (result < 1.0)
 		ereport(WARNING,
 				(errmsg("Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : %s",
-					hint->base.hint_str)));
+						hint->base.hint_str)));
 	result = clamp_row_est(result);
 	elog(DEBUG1, "adjusted rows %d to %d", (int) rows, (int) result);
 
@@ -240,11 +240,11 @@ sub patch_make_join_rel
 
 	print $out <<"EOS";
 diff --git b/make_join_rel.c a/make_join_rel.c
-index 0e7b99f..287e7f1 100644
+index 6e601a6c86e6..23f06be4e6d4 100644
 --- b/make_join_rel.c
 +++ a/make_join_rel.c
-@@ -126,6 +126,84 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
- 	joinrel = build_join_rel(root, joinrelids, rel1, rel2, sjinfo,
+@@ -123,6 +123,85 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
+ 							 sjinfo, pushed_down_joins,
  							 &restrictlist);
 
 +	/* !!! START: HERE IS THE PART WHICH IS ADDED FOR PG_HINT_PLAN !!! */
@@ -253,11 +253,12 @@ index 0e7b99f..287e7f1 100644
 +		int			i;
 +		RowsHint   *justforme = NULL;
 +		RowsHint   *domultiply = NULL;
++		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
 +
 +		/* Search for applicable rows hint for this join node */
 +		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)
 +		{
-+			rows_hint = current_hint_state->rows_hints[i];
++			rows_hint = rows_hints[i];
 +
 +			/*
 +			 * Skip this rows_hint if it is invalid from the first or it
@@ -286,8 +287,8 @@ index 0e7b99f..287e7f1 100644
 +				 * targets spread over both component rels. This menas that
 +				 * this hint has been never applied so far and this joinrel is
 +				 * the first (and only) chance to fire in current join tree.
-+				 * Only the multiplication hint has the cumulative nature so we
-+				 * apply only RVT_MULTI in this way.
++				 * Only the multiplication hint has the cumulative nature so
++				 * we apply only RVT_MULTI in this way.
 +				 */
 +				domultiply = rows_hint;
 +			}
