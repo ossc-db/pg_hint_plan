@@ -618,8 +618,7 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 		}
 		else if (sjinfo->jointype == JOIN_SEMI &&
 				 bms_equal(sjinfo->syn_righthand, rel2->relids) &&
-				 create_unique_path(root, rel2, rel2->cheapest_total_path,
-									sjinfo) != NULL)
+				 create_unique_paths(root, rel2, sjinfo) != NULL)
 		{
 			/*----------
 			 * For a semijoin, we can join the RHS to anything else by
@@ -651,8 +650,7 @@ join_is_legal(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 		}
 		else if (sjinfo->jointype == JOIN_SEMI &&
 				 bms_equal(sjinfo->syn_righthand, rel1->relids) &&
-				 create_unique_path(root, rel1, rel1->cheapest_total_path,
-									sjinfo) != NULL)
+				 create_unique_paths(root, rel1, sjinfo) != NULL)
 		{
 			/* Reversed semijoin case */
 			if (match_sjinfo)
