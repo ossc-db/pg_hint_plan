@@ -1966,6 +1966,13 @@ get_hints_from_comment(const char *p)
 		QueryScanResult sr = query_scan(sstate, query_buf);
 		if (sr == QUERY_SCAN_EOL)
 			break;
+
+		/*
+		 * Make sure we can break out of loop if stuck.  This should not be
+		 * necessary in practice, but it gives an escape should the query
+		 * parser include a bug.
+		 */
+		CHECK_FOR_INTERRUPTS();
 	}
 
 	query_scan_finish(sstate);
