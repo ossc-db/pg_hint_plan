@@ -832,55 +832,6 @@ other			.
 
 
 {identifier}	{
-					/*
-					 * We need to track if we are inside a BEGIN .. END block
-					 * in a function definition, so that semicolons contained
-					 * therein don't terminate the whole statement.  Short of
-					 * writing a full parser here, the following heuristic
-					 * should work.  First, we track whether the beginning of
-					 * the statement matches CREATE [OR REPLACE]
-					 * {FUNCTION|PROCEDURE}
-					 */
-
-					if (cur_state->identifier_count == 0)
-						memset(cur_state->identifiers, 0, sizeof(cur_state->identifiers));
-
-					if (pg_strcasecmp(yytext, "create") == 0 ||
-						pg_strcasecmp(yytext, "function") == 0 ||
-						pg_strcasecmp(yytext, "procedure") == 0 ||
-						pg_strcasecmp(yytext, "or") == 0 ||
-						pg_strcasecmp(yytext, "replace") == 0)
-					{
-						if (cur_state->identifier_count < sizeof(cur_state->identifiers))
-							cur_state->identifiers[cur_state->identifier_count] = pg_tolower((unsigned char) yytext[0]);
-					}
-
-					cur_state->identifier_count++;
-
-					if (cur_state->identifiers[0] == 'c' &&
-						(cur_state->identifiers[1] == 'f' || cur_state->identifiers[1] == 'p' ||
-						 (cur_state->identifiers[1] == 'o' && cur_state->identifiers[2] == 'r' &&
-						  (cur_state->identifiers[3] == 'f' || cur_state->identifiers[3] == 'p'))) &&
-						cur_state->paren_depth == 0)
-					{
-						if (pg_strcasecmp(yytext, "begin") == 0)
-							cur_state->begin_depth++;
-						else if (pg_strcasecmp(yytext, "case") == 0)
-						{
-							/*
-							 * CASE also ends with END.  We only need to track
-							 * this if we are already inside a BEGIN.
-							 */
-							if (cur_state->begin_depth >= 1)
-								cur_state->begin_depth++;
-						}
-						else if (pg_strcasecmp(yytext, "end") == 0)
-						{
-							if (cur_state->begin_depth > 0)
-								cur_state->begin_depth--;
-						}
-					}
-
 					/* ignore */
 				}
 
@@ -913,14 +864,11 @@ query_scan_create(void)
 	/* Set up various fields */
 	state->start_state = INITIAL;
 	state->elevel = INFO;
-	state->paren_depth = 0;
 	state->xcdepth = 0;			/* not really necessary */
 	state->xhintnum = 0;
 	if (state->dolqstart)
 		pfree(state->dolqstart);
 	state->dolqstart = NULL;
-	state->identifier_count = 0;
-	state->begin_depth = 0;
 
 	return state;
 }
@@ -1013,19 +961,8 @@ query_scan(QueryScanState state,
 			{
 				case INITIAL:
 				case xqs:		/* we treat this like INITIAL */
-					if (state->paren_depth > 0)
-					{
-						result = QUERY_SCAN_INCOMPLETE;
-					}
-					else if (state->begin_depth > 0)
-					{
-						result = QUERY_SCAN_INCOMPLETE;
-					}
-					else
-					{
-						/* the resulting query may be empty if there are no hints */
-						result = QUERY_SCAN_EOL;
-					}
+					/* the resulting query may be empty if there are no hints */
+					result = QUERY_SCAN_EOL;
 					break;
 				case xb:
 				case xc:
