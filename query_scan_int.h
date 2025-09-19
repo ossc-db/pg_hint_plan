@@ -95,18 +95,9 @@ typedef struct QueryScanStateData
 	 */
 	int			start_state;	/* yylex's starting/finishing state */
 	int			state_before_str_stop;	/* start cond. before end quote */
-	int			paren_depth;	/* depth of nesting in parentheses */
 	int			xcdepth;		/* depth of nesting in slash-star comments */
 	char	   *dolqstart;		/* current $foo$ quote start string */
 	int			xhintnum;		/* number of query hints found */
-
-	/*
-	 * State to track boundaries of BEGIN ... END blocks in function
-	 * definitions, so that semicolons do not send query too early.
-	 */
-	int			identifier_count;	/* identifiers since start of statement */
-	char		identifiers[4]; /* records the first few identifiers */
-	int			begin_depth;	/* depth of begin/end pairs */
 } QueryScanStateData;
 
 
