@@ -103,7 +103,6 @@ typedef int YYSTYPE;
  *  <xq> standard quoted strings
  *  <xqs> quote stop (detect continued strings)
  *  <xe> extended quoted strings (support backslash escape sequences)
- *  <xdolq> $foo$ quoted strings
  *  <xui> quoted identifier with Unicode escapes
  *  <xus> quoted string with Unicode escapes
  *
@@ -121,7 +120,6 @@ typedef int YYSTYPE;
 %x xq
 %x xqs
 %x xe
-%x xdolq
 %x xui
 %x xus
 
@@ -900,7 +898,6 @@ query_scan(QueryScanState state,
 				case xhint:
 				case xe:
 				case xq:
-				case xdolq:
 				case xui:
 				case xus:
 					result = QUERY_SCAN_INCOMPLETE;
