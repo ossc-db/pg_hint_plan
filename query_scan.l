@@ -826,23 +826,18 @@ query_scan_create(void)
  * a pointer to the storage at *line --- this string must not be altered
  * or freed until after query_scan_finish is called.
  *
- * encoding is the libpq identifier for the character encoding in use,
- * and std_strings says whether standard_conforming_strings is on.
+ * std_strings says whether standard_conforming_strings is on.
  */
 void
 query_scan_setup(QueryScanState state,
 				const char *line, int line_len,
-				int encoding, bool std_strings, int elevel)
+				bool std_strings, int elevel)
 {
 	/* Mustn't be scanning already */
 	Assert(state->scanbufhandle == NULL);
 
 	/* elevel for reports */
 	state->elevel = elevel;
-
-	/* Do we need to hack the character set encoding? */
-	state->encoding = encoding;
-	state->safe_encoding = pg_valid_server_encoding_id(encoding);
 
 	/* Save standard-strings flag as well */
 	state->std_strings = std_strings;
@@ -851,10 +846,6 @@ query_scan_setup(QueryScanState state,
 	state->scanbufhandle = query_scan_prepare_buffer(state, line, line_len,
 												   &state->scanbuf);
 	state->scanline = line;
-
-	/* Set lookaside data in case we have to map unsafe encoding */
-	state->curline = state->scanbuf;
-	state->refline = state->scanline;
 }
 
 /*
@@ -958,8 +949,7 @@ query_scan_finish(QueryScanState state)
 
 /*
  * Set up a flex input buffer to scan the given data.  We always make a
- * copy of the data.  If working in an unsafe encoding, the copy has
- * multibyte sequences replaced by FFs to avoid fooling the lexer rules.
+ * copy of the data.
  *
  * NOTE SIDE EFFECT: the new buffer is made the active flex input buffer.
  */
@@ -974,25 +964,8 @@ query_scan_prepare_buffer(QueryScanState state, const char *txt, int len,
 	*txtcopy = newtxt;
 	newtxt[len] = newtxt[len + 1] = YY_END_OF_BUFFER_CHAR;
 
-	if (state->safe_encoding)
-		memcpy(newtxt, txt, len);
-	else
-	{
-		/* Gotta do it the hard way */
-		int			i = 0;
-
-		while (i < len)
-		{
-			int			thislen = pg_encoding_mblen(state->encoding,
-									    txt + i);
-
-			/* first byte should always be okay... */
-			newtxt[i] = txt[i];
-			i++;
-			while (--thislen > 0 && i < len)
-				newtxt[i++] = (char) 0xFF;
-		}
-	}
+	/* Copy the text */
+	memcpy(newtxt, txt, len);
 
 	return yy_scan_buffer(newtxt, len + 2, state->scanner);
 }
@@ -1018,23 +991,6 @@ query_scan_emit(QueryScanState state, const char *txt, int len)
 {
 	StringInfo output_buf = state->output_buf;
 
-	if (state->safe_encoding)
-		appendBinaryStringInfo(output_buf, txt, len);
-	else
-	{
-		/* Gotta do it the hard way */
-		const char *reference = state->refline;
-		int			i;
-
-		reference += (txt - state->curline);
-
-		for (i = 0; i < len; i++)
-		{
-			char		ch = txt[i];
-
-			if (ch == (char) 0xFF)
-				ch = reference[i];
-			appendStringInfoChar(output_buf, ch);
-		}
-	}
+	/* Simply copy the data to the output */
+	appendBinaryStringInfo(output_buf, txt, len);
 }
