@@ -27,7 +27,8 @@ my %defs =
    'make_join_rel.c'
    => {protos => [],
 	   funcs => ['make_join_rel',
-				 'populate_joinrel_with_paths'],
+			     'make_grouped_join_rel',
+			     'populate_joinrel_with_paths'],
 	   head => make_join_rel_head()});
 
 open (my $in, '-|', "objdump -W `which postgres`") || die "failed to objdump";

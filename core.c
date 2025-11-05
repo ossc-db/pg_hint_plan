@@ -166,10 +166,18 @@ standard_join_search(PlannerInfo *root, int levels_needed, List *initial_rels)
 		 *
 		 * After that, we're done creating paths for the joinrel, so run
 		 * set_cheapest().
+		 *
+		 * In addition, we also run generate_grouped_paths() for the grouped
+		 * relation of each just-processed joinrel, and run set_cheapest() for
+		 * the grouped relation afterwards.
 		 */
 		foreach(lc, root->join_rel_level[lev])
 		{
+			bool		is_top_rel;
+
 			rel = (RelOptInfo *) lfirst(lc);
+
+			is_top_rel = bms_equal(rel->relids, root->all_query_rels);
 
 			/* Create paths for partitionwise joins. */
 			generate_partitionwise_join_paths(root, rel);
@@ -180,11 +188,27 @@ standard_join_search(PlannerInfo *root, int levels_needed, List *initial_rels)
 			 * once we know the final targetlist (see grouping_planner's and
 			 * its call to apply_scanjoin_target_to_paths).
 			 */
-			if (!bms_equal(rel->relids, root->all_query_rels))
+			if (!is_top_rel)
 				generate_useful_gather_paths(root, rel, false);
 
 			/* Find and save the cheapest paths for this rel */
 			set_cheapest(rel);
+
+			/*
+			 * Except for the topmost scan/join rel, consider generating
+			 * partial aggregation paths for the grouped relation on top of
+			 * the paths of this rel.  After that, we're done creating paths
+			 * for the grouped relation, so run set_cheapest().
+			 */
+			if (rel->grouped_rel != NULL && !is_top_rel)
+			{
+				RelOptInfo *grouped_rel = rel->grouped_rel;
+
+				Assert(IS_GROUPED_REL(grouped_rel));
+
+				generate_grouped_paths(root, grouped_rel, rel);
+				set_cheapest(grouped_rel);
+			}
 
 #ifdef OPTIMIZER_DEBUG
 			pprint(rel);
@@ -1378,6 +1402,11 @@ try_partitionwise_join(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2,
 		Assert(bms_equal(child_joinrel->relids,
 						 adjust_child_relids(joinrel->relids,
 											 nappinfos, appinfos)));
+
+		/* Build a grouped join relation for 'child_joinrel' if possible */
+		make_grouped_join_rel(root, child_rel1, child_rel2,
+							  child_joinrel, child_sjinfo,
+							  child_restrictlist);
 
 		/* And make paths for the child join */
 		populate_joinrel_with_paths(root, child_rel1, child_rel2,

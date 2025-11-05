@@ -5276,6 +5276,9 @@ pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 }
 
 /* include core static functions */
+static void make_grouped_join_rel(PlannerInfo *root, RelOptInfo *rel1,
+								  RelOptInfo *rel2, RelOptInfo *joinrel,
+								  SpecialJoinInfo *sjinfo, List *restrictlist);
 static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
 										RelOptInfo *rel2, RelOptInfo *joinrel,
 										SpecialJoinInfo *sjinfo, List *restrictlist);
