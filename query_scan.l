@@ -103,6 +103,7 @@ typedef int YYSTYPE;
  *  <xq> standard quoted strings
  *  <xqs> quote stop (detect continued strings)
  *  <xe> extended quoted strings (support backslash escape sequences)
+ *  <xdolq> $foo$ quoted strings
  *  <xui> quoted identifier with Unicode escapes
  *  <xus> quoted string with Unicode escapes
  *
@@ -120,6 +121,7 @@ typedef int YYSTYPE;
 %x xq
 %x xqs
 %x xe
+%x xdolq
 %x xui
 %x xus
 
@@ -208,6 +210,21 @@ xeunicodefail	[\\](u[0-9A-Fa-f]{0,3}|U[0-9A-Fa-f]{0,7})
 xqstart			{quote}
 xqdouble		{quote}{quote}
 xqinside		[^']+
+
+/* $foo$ style quotes ("dollar quoting")
+ * The quoted string starts with $foo$ where "foo" is an optional string
+ * in the form of an identifier, except that it may not contain "$",
+ * and extends to the first occurrence of an identical string.
+ * There is *no* processing of the quoted text.
+ *
+ * {dolqfailed} is an error rule to avoid scanner backup when {dolqdelim}
+ * fails to match its trailing "$".
+ */
+dolq_start		[A-Za-z\200-\377_]
+dolq_cont		[A-Za-z\200-\377_0-9]
+dolqdelim		\$({dolq_start}{dolq_cont}*)?\$
+dolqfailed		\${dolq_start}{dolq_cont}*
+dolqinside		[^$]+
 
 /* Double quote
  * Allows embedded spaces and other special characters into identifiers.
@@ -590,6 +607,45 @@ other			.
 					/* ignore */
 				}
 
+{dolqdelim}		{
+					cur_state->dolqstart = pstrdup(yytext);
+					BEGIN(xdolq);
+					/* ignore */
+				}
+{dolqfailed}	{
+					/* throw back all but the initial "$" */
+					yyless(1);
+					/* ignore */
+				}
+<xdolq>{dolqdelim} {
+					if (strcmp(yytext, cur_state->dolqstart) == 0)
+					{
+						pfree(cur_state->dolqstart);
+						cur_state->dolqstart = NULL;
+						BEGIN(INITIAL);
+					}
+					else
+					{
+						/*
+						 * When we fail to match $...$ to dolqstart, transfer
+						 * the $... part to the output, but put back the final
+						 * $ for rescanning.  Consider $delim$...$junk$delim$
+						 */
+						yyless(yyleng - 1);
+					}
+					/* ignore */
+				}
+<xdolq>{dolqinside} {
+					/* ignore */
+				}
+<xdolq>{dolqfailed} {
+					/* ignore */
+				}
+<xdolq>.		{
+					/* This is only needed for $ inside the quoted text */
+					/* ignore */
+				}
+
 {xdstart}		{
 					BEGIN(xd);
 					/* ignore */
@@ -810,6 +866,9 @@ query_scan_create(void)
 	state->elevel = INFO;
 	state->xcdepth = 0;			/* not really necessary */
 	state->xhintnum = 0;
+	if (state->dolqstart)
+		pfree(state->dolqstart);
+	state->dolqstart = NULL;
 
 	return state;
 }
@@ -903,6 +962,7 @@ query_scan(QueryScanState state,
 				case xhint:
 				case xe:
 				case xq:
+				case xdolq:
 				case xui:
 				case xus:
 					result = QUERY_SCAN_INCOMPLETE;
