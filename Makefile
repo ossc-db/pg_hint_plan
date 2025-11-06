@@ -14,7 +14,7 @@ HINTPLANVER = 1.9.0
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
 	ut-fdw ut-W ut-T ut-fini plpgsql hint_table disable_index \
-	oldextversions
+	query_parser oldextversions
 REGRESS_OPTS = --encoding=UTF8
 
 EXTENSION = pg_hint_plan
