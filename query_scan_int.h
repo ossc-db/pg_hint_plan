@@ -77,6 +77,7 @@ typedef struct QueryScanStateData
 	int			start_state;	/* yylex's starting/finishing state */
 	int			state_before_str_stop;	/* start cond. before end quote */
 	int			xcdepth;		/* depth of nesting in slash-star comments */
+	char	   *dolqstart;		/* current $foo$ quote start string */
 	int			xhintnum;		/* number of query hints found */
 } QueryScanStateData;
 
