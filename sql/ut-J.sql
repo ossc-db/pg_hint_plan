@@ -824,3 +824,25 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.val = t2.val and t2.id =
 EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.val = t2.val and t2.id = t3.id;  -- doesn't work
 /*+ nomemoize(t1 t2 t3)*/
 EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.val = t2.val and t2.id = t3.id;
+
+----
+---- No. J-4-1 outer join support
+----
+
+-- No. J-4-1-1 nested outer join as inner side of join
+EXPLAIN (COSTS false) SELECT * FROM s1.t1 JOIN (s1.t2 LEFT JOIN s1.t3 ON t2.c1 = t3.c1) ON t1.c1 = t2.c1;
+
+/*+Leading((t1 (t2 t3))) NestLoop(t1 t2 t3)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t1 JOIN (s1.t2 LEFT JOIN s1.t3 ON t2.c1 = t3.c1) ON t1.c1 = t2.c1;
+
+-- No. J-4-1-2 SEMI join
+EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+
+/*+HashJoin(t1 t2)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+
+-- No. J-4-1-3 ANTI join
+EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE NOT EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+
+/*+NestLoop(t1 t2)*/
+EXPLAIN (COSTS false) SELECT * FROM s1.t1 WHERE NOT EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);

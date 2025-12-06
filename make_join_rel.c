@@ -130,6 +130,13 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		RowsHint   *justforme = NULL;
 		RowsHint   *domultiply = NULL;
 		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
+		Relids		hint_joinrelids;
+
+		/*
+		 * joinrelids may include outer-join relids since PostgreSQL 16,
+		 * so filter them out as hints can only handle base relations.
+		 */
+		hint_joinrelids = bms_intersect(joinrelids, root->all_baserels);
 
 		/* Search for applicable rows hint for this join node */
 		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)
@@ -144,7 +151,7 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 				rows_hint->base.state == HINT_STATE_ERROR)
 				continue;
 
-			if (bms_equal(joinrelids, rows_hint->joinrelids))
+			if (bms_equal(hint_joinrelids, rows_hint->joinrelids))
 			{
 				/*
 				 * This joinrel is just the target of this rows_hint, so tweak
@@ -154,7 +161,7 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 			}
 			else if (!(bms_is_subset(rows_hint->joinrelids, rel1->relids) ||
 					   bms_is_subset(rows_hint->joinrelids, rel2->relids)) &&
-					 bms_is_subset(rows_hint->joinrelids, joinrelids) &&
+					 bms_is_subset(rows_hint->joinrelids, hint_joinrelids) &&
 					 rows_hint->value_type == RVT_MULTI)
 			{
 				/*
@@ -169,6 +176,8 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 				domultiply = rows_hint;
 			}
 		}
+
+		bms_free(hint_joinrelids);
 
 		if (justforme)
 		{

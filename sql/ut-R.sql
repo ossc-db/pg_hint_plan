@@ -1245,3 +1245,89 @@ SELECT explain_filter('
 /*+Rows(t1 t2 +1)*/
 EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 ');
+
+SET client_min_messages TO LOG;
+
+----
+---- No. R-4-1 outer join support
+----
+
+-- No. R-4-1-1 LEFT JOIN
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1 LEFT JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+SELECT explain_filter('
+/*+Rows(t1 t2 #1)*/
+EXPLAIN SELECT * FROM s1.t1 LEFT JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+-- No. R-4-1-2 RIGHT JOIN
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1 RIGHT JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+SELECT explain_filter('
+/*+Rows(t1 t2 #1)*/
+EXPLAIN SELECT * FROM s1.t1 RIGHT JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+-- No. R-4-1-3 FULL JOIN
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1 FULL JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+SELECT explain_filter('
+/*+Rows(t1 t2 #1)*/
+EXPLAIN SELECT * FROM s1.t1 FULL JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+-- No. R-4-1-4 nested outer joins
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1 LEFT JOIN s1.t2 ON t1.c1 = t2.c1 LEFT JOIN s1.t3 ON t2.c1 = t3.c1;
+');
+
+SELECT explain_filter('
+/*+Rows(t2 t3 #1)*/
+EXPLAIN SELECT * FROM s1.t1 LEFT JOIN s1.t2 ON t1.c1 = t2.c1 LEFT JOIN s1.t3 ON t2.c1 = t3.c1;
+');
+
+----
+---- No. R-4-2 SEMI/ANTI join support
+----
+
+-- No. R-4-2-1 SEMI join
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1 WHERE EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+');
+
+SELECT explain_filter('
+/*+Rows(t1 t2 #1)*/
+EXPLAIN SELECT * FROM s1.t1 WHERE EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+');
+
+-- No. R-4-2-2 ANTI join
+SELECT explain_filter('
+EXPLAIN SELECT * FROM s1.t1 WHERE NOT EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+');
+
+SELECT explain_filter('
+/*+Rows(t1 t2 #1)*/
+EXPLAIN SELECT * FROM s1.t1 WHERE NOT EXISTS (SELECT 1 FROM s1.t2 WHERE t1.c1 = t2.c1);
+');
+
+----
+---- No. R-4-3 negative tests
+----
+
+-- No. R-4-3-1 hint references non-existent table
+SELECT explain_filter('
+/*+Rows(t1 t99 #1)*/
+EXPLAIN SELECT * FROM s1.t1 LEFT JOIN s1.t2 ON t1.c1 = t2.c1;
+');
+
+-- No. R-4-3-2 hint references tables not in join
+SELECT explain_filter('
+/*+Rows(t1 t3 #1)*/
+EXPLAIN SELECT * FROM s1.t1 LEFT JOIN s1.t2 ON t1.c1 = t2.c1;
+');
