@@ -130,6 +130,13 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
 		RowsHint   *justforme = NULL;
 		RowsHint   *domultiply = NULL;
 		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
+		bool		arrayrows_applied;
+
+		arrayrows_applied = apply_arrayrows_hints_to_restrictinfos(root, restrictlist,
+																sjinfo->jointype, sjinfo);
+		if (arrayrows_applied)
+			set_joinrel_size_estimates(root, joinrel, rel1, rel2, sjinfo,
+									   restrictlist);
 
 		/* Search for applicable rows hint for this join node */
 		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)

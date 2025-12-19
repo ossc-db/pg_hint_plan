@@ -15,6 +15,7 @@
 #include "access/relation.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_index.h"
+#include "catalog/pg_operator.h"
 #include "catalog/pg_proc.h"
 #include "commands/prepare.h"
 #include "commands/proclang.h"
@@ -45,6 +46,7 @@
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/rel.h"
+#include "utils/selfuncs.h"
 #include "utils/snapmgr.h"
 #include "utils/syscache.h"
 
@@ -96,6 +98,7 @@ PG_MODULE_MAGIC;
 #define HINT_LEADING			"Leading"
 #define HINT_SET				"Set"
 #define HINT_ROWS				"Rows"
+#define HINT_ARRAYROWS			"ArrayRows"
 #define HINT_MEMOIZE			"Memoize"
 #define HINT_NOMEMOIZE			"NoMemoize"
 #define HINT_DISABLEINDEX		"DisableIndex"
@@ -165,6 +168,7 @@ typedef enum HintKeyword
 	HINT_KEYWORD_LEADING,
 	HINT_KEYWORD_SET,
 	HINT_KEYWORD_ROWS,
+	HINT_KEYWORD_ARRAYROWS,
 	HINT_KEYWORD_PARALLEL,
 	HINT_KEYWORD_MEMOIZE,
 	HINT_KEYWORD_NOMEMOIZE,
@@ -202,6 +206,7 @@ typedef enum HintType
 	HINT_TYPE_LEADING,
 	HINT_TYPE_SET,
 	HINT_TYPE_ROWS,
+	HINT_TYPE_ARRAYROWS,
 	HINT_TYPE_PARALLEL,
 	HINT_TYPE_MEMOIZE,
 	HINT_TYPE_DISABLEINDEX,
@@ -221,6 +226,7 @@ static const char *HintTypeName[] = {
 	"leading",
 	"set",
 	"rows",
+	"arrayrows",
 	"parallel",
 	"memoize",
 	"disableindex"
@@ -353,6 +359,63 @@ typedef struct RowsHint
 	double		rows;
 } RowsHint;
 
+/* array rows hints */
+typedef enum ArrayRowsValueType
+{
+	ARVT_ABSOLUTE,				/* ArrayRows(... #1000) */
+	ARVT_ADD,					/* ArrayRows(... +1000) */
+	ARVT_SUB,					/* ArrayRows(... -1000) */
+	ARVT_MULTI					/* ArrayRows(... *10) */
+} ArrayRowsValueType;
+
+typedef enum ArrayRowsQualType
+{
+	ARQT_NONE,					/* ArrayRows(rel #0.01) */
+	ARQT_ARRAYOP,				/* ArrayRows(rel && #0.01) */
+	ARQT_SAOP_ANYALL,			/* ArrayRows(rel ANY #0.01) */
+	ARQT_SAOP_CMP_ANYALL		/* ArrayRows(rel = ANY #0.01) */
+} ArrayRowsQualType;
+
+typedef enum ArrayRowsArrayOp
+{
+	ARAO_OVERLAP,				/* && */
+	ARAO_CONTAINS,				/* @> */
+	ARAO_CONTAINED				/* <@ */
+} ArrayRowsArrayOp;
+
+typedef enum ArrayRowsCmpOp
+{
+	ARCO_EQ,					/* = */
+	ARCO_NE,					/* <> */
+	ARCO_LT,					/* < */
+	ARCO_LE,					/* <= */
+	ARCO_GT,					/* > */
+	ARCO_GE						/* >= */
+} ArrayRowsCmpOp;
+
+typedef enum ArrayRowsQuantifier
+{
+	ARQ_ANY,
+	ARQ_ALL
+} ArrayRowsQuantifier;
+
+typedef struct ArrayRowsHint
+{
+	Hint		base;
+	int			nrels;
+	char	  **relnames;
+	Relids		relids;
+
+	ArrayRowsQualType qual_type;
+	ArrayRowsArrayOp array_op;			/* valid when qual_type == ARQT_ARRAYOP */
+	ArrayRowsQuantifier quantifier;		/* valid when qual_type is SAOP */
+	ArrayRowsCmpOp cmp_op;				/* valid when qual_type == ARQT_SAOP_CMP_ANYALL */
+
+	char	   *value_str;		/* original string of the correction term */
+	ArrayRowsValueType value_type;
+	double		value;
+} ArrayRowsHint;
+
 /* parallel hints */
 typedef struct ParallelHint
 {
@@ -481,6 +544,14 @@ static void RowsHintDelete(RowsHint *hint);
 static void RowsHintDesc(RowsHint *hint, StringInfo buf, bool nolf);
 static int	RowsHintCmp(const RowsHint *a, const RowsHint *b);
 static const char *RowsHintParse(RowsHint *hint, const char *str);
+
+/* ArrayRows hint callbacks */
+static Hint *ArrayRowsHintCreate(const char *hint_str, const char *keyword,
+								HintKeyword hint_keyword);
+static void ArrayRowsHintDelete(ArrayRowsHint *hint);
+static void ArrayRowsHintDesc(ArrayRowsHint *hint, StringInfo buf, bool nolf);
+static int	ArrayRowsHintCmp(const ArrayRowsHint *a, const ArrayRowsHint *b);
+static const char *ArrayRowsHintParse(ArrayRowsHint *hint, const char *str);
 
 /* Parallel hint callbacks */
 static Hint *ParallelHintCreate(const char *hint_str, const char *keyword,
@@ -651,6 +722,7 @@ static const HintParser parsers[] = {
 	{HINT_LEADING, LeadingHintCreate, HINT_KEYWORD_LEADING},
 	{HINT_SET, SetHintCreate, HINT_KEYWORD_SET},
 	{HINT_ROWS, RowsHintCreate, HINT_KEYWORD_ROWS},
+	{HINT_ARRAYROWS, ArrayRowsHintCreate, HINT_KEYWORD_ARRAYROWS},
 	{HINT_PARALLEL, ParallelHintCreate, HINT_KEYWORD_PARALLEL},
 	{HINT_MEMOIZE, MemoizeHintCreate, HINT_KEYWORD_MEMOIZE},
 	{HINT_NOMEMOIZE, MemoizeHintCreate, HINT_KEYWORD_NOMEMOIZE},
@@ -1060,6 +1132,55 @@ RowsHintDelete(RowsHint *hint)
 }
 
 static Hint *
+ArrayRowsHintCreate(const char *hint_str, const char *keyword,
+				   HintKeyword hint_keyword)
+{
+	ArrayRowsHint *hint;
+
+	hint = palloc0(sizeof(ArrayRowsHint));
+	hint->base.hint_str = hint_str;
+	hint->base.keyword = keyword;
+	hint->base.hint_keyword = hint_keyword;
+	hint->base.type = HINT_TYPE_ARRAYROWS;
+	hint->base.state = HINT_STATE_NOTUSED;
+	hint->base.delete_func = (HintDeleteFunction) ArrayRowsHintDelete;
+	hint->base.desc_func = (HintDescFunction) ArrayRowsHintDesc;
+	hint->base.cmp_func = (HintCmpFunction) ArrayRowsHintCmp;
+	hint->base.parse_func = (HintParseFunction) ArrayRowsHintParse;
+	hint->nrels = 0;
+	hint->relnames = NULL;
+	hint->relids = NULL;
+	hint->qual_type = ARQT_NONE;
+	hint->array_op = ARAO_OVERLAP;
+	hint->quantifier = ARQ_ANY;
+	hint->cmp_op = ARCO_EQ;
+	hint->value_str = NULL;
+	hint->value_type = ARVT_ABSOLUTE;
+	hint->value = 0.0;
+
+	return (Hint *) hint;
+}
+
+static void
+ArrayRowsHintDelete(ArrayRowsHint *hint)
+{
+	if (!hint)
+		return;
+
+	if (hint->relnames)
+	{
+		int			i;
+
+		for (i = 0; i < hint->nrels; i++)
+			pfree(hint->relnames[i]);
+		pfree(hint->relnames);
+	}
+
+	bms_free(hint->relids);
+	pfree(hint);
+}
+
+static Hint *
 ParallelHintCreate(const char *hint_str, const char *keyword,
 				   HintKeyword hint_keyword)
 {
@@ -1390,6 +1511,99 @@ RowsHintDesc(RowsHint *hint, StringInfo buf, bool nolf)
 		appendStringInfoChar(buf, '\n');
 }
 
+static const char *
+array_rows_array_op_to_string(ArrayRowsArrayOp op)
+{
+	switch (op)
+	{
+		case ARAO_OVERLAP:
+			return "&&";
+		case ARAO_CONTAINS:
+			return "@>";
+		case ARAO_CONTAINED:
+			return "<@";
+	}
+
+	return "";
+}
+
+static const char *
+array_rows_cmp_op_to_string(ArrayRowsCmpOp op)
+{
+	switch (op)
+	{
+		case ARCO_EQ:
+			return "=";
+		case ARCO_NE:
+			return "<>";
+		case ARCO_LT:
+			return "<";
+		case ARCO_LE:
+			return "<=";
+		case ARCO_GT:
+			return ">";
+		case ARCO_GE:
+			return ">=";
+	}
+
+	return "";
+}
+
+static const char *
+array_rows_quantifier_to_string(ArrayRowsQuantifier quantifier)
+{
+	switch (quantifier)
+	{
+		case ARQ_ANY:
+			return "ANY";
+		case ARQ_ALL:
+			return "ALL";
+	}
+
+	return "";
+}
+
+static void
+ArrayRowsHintDesc(ArrayRowsHint *hint, StringInfo buf, bool nolf)
+{
+	int			i;
+
+	appendStringInfo(buf, "%s(", hint->base.keyword);
+	if (hint->relnames != NULL)
+	{
+		quote_value(buf, hint->relnames[0]);
+		for (i = 1; i < hint->nrels; i++)
+		{
+			appendStringInfoCharMacro(buf, ' ');
+			quote_value(buf, hint->relnames[i]);
+		}
+	}
+
+	switch (hint->qual_type)
+	{
+		case ARQT_NONE:
+			break;
+		case ARQT_ARRAYOP:
+			appendStringInfo(buf, " %s", array_rows_array_op_to_string(hint->array_op));
+			break;
+		case ARQT_SAOP_ANYALL:
+			appendStringInfo(buf, " %s",
+							 array_rows_quantifier_to_string(hint->quantifier));
+			break;
+		case ARQT_SAOP_CMP_ANYALL:
+			appendStringInfo(buf, " %s %s",
+							 array_rows_cmp_op_to_string(hint->cmp_op),
+							 array_rows_quantifier_to_string(hint->quantifier));
+			break;
+	}
+
+	if (hint->value_str != NULL)
+		appendStringInfo(buf, " %s", hint->value_str);
+	appendStringInfoString(buf, ")");
+	if (!nolf)
+		appendStringInfoChar(buf, '\n');
+}
+
 static void
 ParallelHintDesc(ParallelHint *hint, StringInfo buf, bool nolf)
 {
@@ -1561,6 +1775,39 @@ RowsHintCmp(const RowsHint *a, const RowsHint *b)
 		if ((result = RelnameCmp(&a->relnames[i], &b->relnames[i])) != 0)
 			return result;
 	}
+
+	return 0;
+}
+
+static int
+ArrayRowsHintCmp(const ArrayRowsHint *a, const ArrayRowsHint *b)
+{
+	int			i;
+
+	if (a->nrels != b->nrels)
+		return a->nrels - b->nrels;
+
+	for (i = 0; i < a->nrels; i++)
+	{
+		int			result;
+
+		if ((result = RelnameCmp(&a->relnames[i], &b->relnames[i])) != 0)
+			return result;
+	}
+
+	if (a->qual_type != b->qual_type)
+		return (int) a->qual_type - (int) b->qual_type;
+
+	if (a->qual_type == ARQT_ARRAYOP && a->array_op != b->array_op)
+		return (int) a->array_op - (int) b->array_op;
+
+	if ((a->qual_type == ARQT_SAOP_ANYALL ||
+		 a->qual_type == ARQT_SAOP_CMP_ANYALL) &&
+		a->quantifier != b->quantifier)
+		return (int) a->quantifier - (int) b->quantifier;
+
+	if (a->qual_type == ARQT_SAOP_CMP_ANYALL && a->cmp_op != b->cmp_op)
+		return (int) a->cmp_op - (int) b->cmp_op;
 
 	return 0;
 }
@@ -2472,15 +2719,90 @@ SetHintParse(SetHint *hint, const char *str)
 	return str;
 }
 
+static bool
+parse_correction_value(const char *value_str, const char *keyword,
+					   const char *missing_prefix_msg,
+					   bool missing_prefix_use_keyword,
+					   const char *invalid_number_msg,
+					   bool invalid_number_use_keyword,
+					   bool invalid_number_on_num_str,
+					   char *prefix, double *value)
+{
+	const char *num_str;
+	char	   *end_ptr;
+
+	if (value_str == NULL || value_str[0] == '\0')
+		goto prefix_error;
+
+	switch (value_str[0])
+	{
+		case '#':
+		case '+':
+		case '-':
+		case '*':
+			*prefix = value_str[0];
+			num_str = value_str + 1;
+			break;
+		default:
+			goto prefix_error;
+	}
+
+	*value = strtod(num_str, &end_ptr);
+	if (*end_ptr)
+	{
+		const char *err_str = invalid_number_on_num_str ? num_str : value_str;
+		char	   *detail_buf = NULL;
+		const char *detail_msg;
+
+		if (invalid_number_use_keyword)
+		{
+			detail_buf = psprintf(invalid_number_msg, keyword);
+			detail_msg = detail_buf;
+		}
+		else
+		{
+			detail_msg = invalid_number_msg;
+		}
+
+		hint_ereport(err_str, ("%s", detail_msg));
+		if (detail_buf)
+			pfree(detail_buf);
+		return false;
+	}
+
+	return true;
+
+prefix_error:
+	{
+		char	   *detail_buf = NULL;
+		const char *detail_msg;
+
+		if (missing_prefix_use_keyword)
+		{
+			detail_buf = psprintf(missing_prefix_msg, keyword);
+			detail_msg = detail_buf;
+		}
+		else
+		{
+			detail_msg = missing_prefix_msg;
+		}
+
+		hint_ereport(value_str ? value_str : "", ("%s", detail_msg));
+		if (detail_buf)
+			pfree(detail_buf);
+	}
+	return false;
+}
+
 static const char *
 RowsHintParse(RowsHint *hint, const char *str)
 {
 	HintKeyword hint_keyword = hint->base.hint_keyword;
 	List	   *name_list = NIL;
 	char	   *rows_str;
-	char	   *end_ptr;
 	ListCell   *l;
 	int			i = 0;
+	char		prefix;
 
 	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
 		return NULL;
@@ -2515,40 +2837,31 @@ RowsHintParse(RowsHint *hint, const char *str)
 	/* Retieve rows estimation */
 	rows_str = list_nth(name_list, hint->nrels);
 	hint->rows_str = rows_str;	/* store as-is for error logging */
-	if (rows_str[0] == '#')
+	if (!parse_correction_value(rows_str, hint->base.keyword,
+								"Unrecognized rows value type notation.", false,
+								"%s hint requires valid number as rows estimation.",
+								true, true, &prefix, &hint->rows))
 	{
-		hint->value_type = RVT_ABSOLUTE;
-		rows_str++;
-	}
-	else if (rows_str[0] == '+')
-	{
-		hint->value_type = RVT_ADD;
-		rows_str++;
-	}
-	else if (rows_str[0] == '-')
-	{
-		hint->value_type = RVT_SUB;
-		rows_str++;
-	}
-	else if (rows_str[0] == '*')
-	{
-		hint->value_type = RVT_MULTI;
-		rows_str++;
-	}
-	else
-	{
-		hint_ereport(rows_str, ("Unrecognized rows value type notation."));
 		hint->base.state = HINT_STATE_ERROR;
 		return str;
 	}
-	hint->rows = strtod(rows_str, &end_ptr);
-	if (*end_ptr)
+	switch (prefix)
 	{
-		hint_ereport(rows_str,
-					 ("%s hint requires valid number as rows estimation.",
-					  hint->base.keyword));
-		hint->base.state = HINT_STATE_ERROR;
-		return str;
+		case '#':
+			hint->value_type = RVT_ABSOLUTE;
+			break;
+		case '+':
+			hint->value_type = RVT_ADD;
+			break;
+		case '-':
+			hint->value_type = RVT_SUB;
+			break;
+		case '*':
+			hint->value_type = RVT_MULTI;
+			break;
+		default:
+			Assert(false);
+			break;
 	}
 
 	/* A join hint requires at least two relations */
@@ -2560,6 +2873,241 @@ RowsHintParse(RowsHint *hint, const char *str)
 		hint->base.state = HINT_STATE_ERROR;
 		return str;
 	}
+
+	list_free(name_list);
+
+	/* Sort relnames in alphabetical order. */
+	qsort(hint->relnames, hint->nrels, sizeof(char *), RelnameCmp);
+
+	return str;
+}
+
+static bool
+array_rows_try_parse_array_op(const char *str, ArrayRowsArrayOp *op)
+{
+	if (strcmp(str, "&&") == 0)
+	{
+		*op = ARAO_OVERLAP;
+		return true;
+	}
+
+	if (strcmp(str, "@>") == 0)
+	{
+		*op = ARAO_CONTAINS;
+		return true;
+	}
+
+	if (strcmp(str, "<@") == 0)
+	{
+		*op = ARAO_CONTAINED;
+		return true;
+	}
+
+	return false;
+}
+
+static bool
+array_rows_try_parse_quantifier(const char *str, ArrayRowsQuantifier *quantifier)
+{
+	if (pg_strcasecmp(str, "ANY") == 0)
+	{
+		*quantifier = ARQ_ANY;
+		return true;
+	}
+
+	if (pg_strcasecmp(str, "ALL") == 0)
+	{
+		*quantifier = ARQ_ALL;
+		return true;
+	}
+
+	return false;
+}
+
+static bool
+array_rows_try_parse_cmp_op(const char *str, ArrayRowsCmpOp *op)
+{
+	if (strcmp(str, "=") == 0)
+	{
+		*op = ARCO_EQ;
+		return true;
+	}
+
+	if (strcmp(str, "<>") == 0 || strcmp(str, "!=") == 0)
+	{
+		*op = ARCO_NE;
+		return true;
+	}
+
+	if (strcmp(str, "<") == 0)
+	{
+		*op = ARCO_LT;
+		return true;
+	}
+
+	if (strcmp(str, "<=") == 0)
+	{
+		*op = ARCO_LE;
+		return true;
+	}
+
+	if (strcmp(str, ">") == 0)
+	{
+		*op = ARCO_GT;
+		return true;
+	}
+
+	if (strcmp(str, ">=") == 0)
+	{
+		*op = ARCO_GE;
+		return true;
+	}
+
+	return false;
+}
+
+static const char *
+ArrayRowsHintParse(ArrayRowsHint *hint, const char *str)
+{
+	HintKeyword hint_keyword = hint->base.hint_keyword;
+	List	   *name_list = NIL;
+	char	   *value_str;
+	int			i = 0;
+	int			ntokens;
+	int			qual_tokens = 0;
+	ArrayRowsArrayOp array_op;
+	ArrayRowsQuantifier quantifier;
+	ArrayRowsCmpOp cmp_op;
+	char		prefix;
+
+	if ((str = parse_parentheses(str, &name_list, hint_keyword)) == NULL)
+		return NULL;
+
+	ntokens = list_length(name_list);
+	if (ntokens < 2)
+	{
+		hint_ereport(str,
+					 ("%s hint needs at least one relation followed by one correction term.",
+					  hint->base.keyword));
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
+	}
+
+	/* Last element must be the correction term. */
+	value_str = list_nth(name_list, ntokens - 1);
+	hint->value_str = value_str;	/* store as-is for desc and logging */
+
+	if (!parse_correction_value(value_str, hint->base.keyword,
+								"%s hint requires #<rows>, +<rows>, -<rows> or *<scale> as the correction term.",
+								true,
+								"%s hint requires a valid number as the correction term.",
+								true, false, &prefix, &hint->value))
+	{
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
+	}
+	switch (prefix)
+	{
+		case '#':
+			hint->value_type = ARVT_ABSOLUTE;
+			break;
+		case '+':
+			hint->value_type = ARVT_ADD;
+			break;
+		case '-':
+			hint->value_type = ARVT_SUB;
+			break;
+		case '*':
+			hint->value_type = ARVT_MULTI;
+			break;
+		default:
+			Assert(false);
+			break;
+	}
+
+	if (hint->value_type == ARVT_ABSOLUTE)
+	{
+		if (hint->value < 0.0)
+		{
+			hint_ereport(value_str,
+						 ("%s hint requires a non-negative row estimate.",
+						  hint->base.keyword));
+			hint->base.state = HINT_STATE_ERROR;
+			return str;
+		}
+	}
+	else if (hint->value_type == ARVT_ADD || hint->value_type == ARVT_SUB)
+	{
+		if (hint->value < 0.0)
+		{
+			hint_ereport(value_str,
+						 ("%s hint requires a non-negative row adjustment.",
+						  hint->base.keyword));
+			hint->base.state = HINT_STATE_ERROR;
+			return str;
+		}
+	}
+	else
+	{
+		if (hint->value < 0.0)
+		{
+			hint_ereport(value_str,
+						 ("%s hint requires a non-negative scale factor.",
+						  hint->base.keyword));
+			hint->base.state = HINT_STATE_ERROR;
+			return str;
+		}
+	}
+
+	/*
+	 * Optional qualifier parsing.  Qualifiers are always at the end, right
+	 * before the correction term.
+	 */
+	hint->qual_type = ARQT_NONE;
+	if (ntokens >= 3 &&
+		array_rows_try_parse_array_op(list_nth(name_list, ntokens - 2), &array_op))
+	{
+		hint->qual_type = ARQT_ARRAYOP;
+		hint->array_op = array_op;
+		qual_tokens = 1;
+	}
+	else if (ntokens >= 3 &&
+			 array_rows_try_parse_quantifier(list_nth(name_list, ntokens - 2),
+											&quantifier))
+	{
+		hint->qual_type = ARQT_SAOP_ANYALL;
+		hint->quantifier = quantifier;
+		qual_tokens = 1;
+
+		if (ntokens >= 4 &&
+			array_rows_try_parse_cmp_op(list_nth(name_list, ntokens - 3), &cmp_op))
+		{
+			hint->qual_type = ARQT_SAOP_CMP_ANYALL;
+			hint->cmp_op = cmp_op;
+			qual_tokens = 2;
+		}
+	}
+
+	hint->nrels = ntokens - 1 - qual_tokens;
+	if (hint->nrels < 1)
+	{
+		hint_ereport(str,
+					 ("%s hint requires at least one relation.",
+					  hint->base.keyword));
+		hint->base.state = HINT_STATE_ERROR;
+		return str;
+	}
+
+	/*
+	 * Transform relation names from list to array to sort them with qsort.
+	 */
+	hint->relnames = palloc0(sizeof(char *) * hint->nrels);
+	for (i = 0; i < hint->nrels; i++)
+		hint->relnames[i] = list_nth(name_list, i);
+
+	/* Free unused qualifier tokens to avoid leaking query-lifetime memory. */
+	for (i = ntokens - 1 - qual_tokens; i < ntokens - 1; i++)
+		pfree(list_nth(name_list, i));
 
 	list_free(name_list);
 
@@ -2642,6 +3190,489 @@ ParallelHintParse(ParallelHint *hint, const char *str)
 		max_hint_nworkers = nworkers;
 
 	return str;
+}
+
+/*
+ * ArrayRows (array predicate row corrections)
+ *
+ * Matching is done against RestrictInfo clauses that are either:
+ * - array operators (&&/@>/<@), or
+ * - ScalarArrayOpExpr (<cmp> ANY/ALL (array)).
+ *
+ * More specific qualifiers (e.g. "= ANY") take precedence over less specific
+ * ones ("ANY", "&&", or none).
+ */
+typedef struct ArrayRowsClauseKey
+{
+	bool		is_arrayop;
+	bool		is_saop;
+	ArrayRowsArrayOp array_op;
+	ArrayRowsQuantifier quantifier;
+	ArrayRowsCmpOp cmp_op;
+} ArrayRowsClauseKey;
+
+static bool
+arrayrows_clause_key(Node *clause, ArrayRowsClauseKey *key)
+{
+	ScalarArrayOpExpr *saop;
+	OpExpr	   *op;
+	char	   *opname;
+
+	memset(key, 0, sizeof(*key));
+
+	if (clause == NULL)
+		return false;
+
+	if (IsA(clause, OpExpr))
+	{
+		op = (OpExpr *) clause;
+
+		if (op->opno == OID_ARRAY_OVERLAP_OP)
+		{
+			key->is_arrayop = true;
+			key->array_op = ARAO_OVERLAP;
+			return true;
+		}
+
+		if (op->opno == OID_ARRAY_CONTAINS_OP)
+		{
+			key->is_arrayop = true;
+			key->array_op = ARAO_CONTAINS;
+			return true;
+		}
+
+		if (op->opno == OID_ARRAY_CONTAINED_OP)
+		{
+			key->is_arrayop = true;
+			key->array_op = ARAO_CONTAINED;
+			return true;
+		}
+
+		return false;
+	}
+
+	if (!IsA(clause, ScalarArrayOpExpr))
+		return false;
+
+	saop = (ScalarArrayOpExpr *) clause;
+	key->is_saop = true;
+	key->quantifier = saop->useOr ? ARQ_ANY : ARQ_ALL;
+
+	opname = get_opname(saop->opno);
+	if (opname == NULL)
+		return false;
+
+	if (!array_rows_try_parse_cmp_op(opname, &key->cmp_op))
+	{
+		pfree(opname);
+		return false;
+	}
+
+	pfree(opname);
+	return true;
+}
+
+static bool
+arrayrows_relname_matches_relid(PlannerInfo *root, const char *hint_relname,
+							   Index relid)
+{
+	RelOptInfo *rel;
+	RangeTblEntry *rte;
+
+	if (root == NULL || hint_relname == NULL || relid <= 0 ||
+		relid >= root->simple_rel_array_size)
+		return false;
+
+	rte = root->simple_rte_array[relid];
+	if (rte == NULL)
+		return false;
+
+	if (RelnameCmp(&hint_relname, &rte->eref->aliasname) == 0)
+		return true;
+
+	rel = root->simple_rel_array[relid];
+	if (rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)
+	{
+		char	   *realname = get_rel_name(rte->relid);
+		bool		match;
+
+		match = (realname && RelnameCmp(&hint_relname, &realname) == 0);
+		if (realname)
+			pfree(realname);
+
+		if (match)
+			return true;
+	}
+
+	if (rel)
+	{
+		Index		parent_relid;
+		RangeTblEntry *parent_rte;
+
+		parent_relid = 0;
+		if (rel->top_parent &&
+			bms_num_members(rel->top_parent->relids) == 1)
+			parent_relid = bms_next_member(rel->top_parent->relids, -1);
+		else if (bms_num_members(rel->top_parent_relids) == 1)
+			parent_relid = bms_next_member(rel->top_parent_relids, -1);
+
+		if (parent_relid > 0 &&
+			parent_relid < root->simple_rel_array_size)
+		{
+			parent_rte = root->simple_rte_array[parent_relid];
+			if (parent_rte &&
+				RelnameCmp(&hint_relname, &parent_rte->eref->aliasname) == 0)
+				return true;
+		}
+
+	}
+
+	return false;
+}
+
+static ArrayRowsHint *
+find_arrayrows_hint(PlannerInfo *root, Relids clause_relids,
+				   const ArrayRowsClauseKey *key)
+{
+	ArrayRowsHint **hints;
+	ArrayRowsHint *best_hint = NULL;
+	int			best_rank = 0;
+	int			i;
+	int			clause_nrels;
+	Index		single_relid = 0;
+
+	if (root == NULL || clause_relids == NULL || key == NULL ||
+		current_hint_state == NULL)
+		return NULL;
+
+	hints = (ArrayRowsHint **) get_current_hints(HINT_TYPE_ARRAYROWS);
+	if (current_hint_state->num_hints[HINT_TYPE_ARRAYROWS] == 0)
+		return NULL;
+
+	clause_nrels = bms_num_members(clause_relids);
+	if (clause_nrels <= 0)
+		return NULL;
+
+	if (clause_nrels == 1)
+		single_relid = bms_next_member(clause_relids, -1);
+
+	for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ARRAYROWS]; i++)
+	{
+		ArrayRowsHint *hint = hints[i];
+		int			rank = 0;
+
+		if (!hint_state_enabled(hint) || hint->base.state == HINT_STATE_ERROR)
+			continue;
+
+		if (hint->nrels != clause_nrels)
+			continue;
+
+		if (clause_nrels == 1)
+		{
+			if (!arrayrows_relname_matches_relid(root, hint->relnames[0],
+												single_relid))
+				continue;
+		}
+		else
+		{
+			if (hint->relids == NULL || !bms_equal(hint->relids, clause_relids))
+				continue;
+		}
+
+		switch (hint->qual_type)
+		{
+			case ARQT_NONE:
+				if (!(key->is_arrayop || key->is_saop))
+					continue;
+				rank = 1;
+				break;
+			case ARQT_ARRAYOP:
+				if (!key->is_arrayop || hint->array_op != key->array_op)
+					continue;
+				rank = 2;
+				break;
+			case ARQT_SAOP_ANYALL:
+				if (!key->is_saop || hint->quantifier != key->quantifier)
+					continue;
+				rank = 2;
+				break;
+			case ARQT_SAOP_CMP_ANYALL:
+				if (!key->is_saop || hint->quantifier != key->quantifier ||
+					hint->cmp_op != key->cmp_op)
+					continue;
+				rank = 3;
+				break;
+		}
+
+		if (rank > best_rank)
+		{
+			best_hint = hint;
+			best_rank = rank;
+		}
+	}
+
+	return best_hint;
+}
+
+typedef struct ArrayRowsGroup
+{
+	ArrayRowsHint *hint;
+	Relids		relids;
+	List	   *rinfos;			/* List<RestrictInfo *> */
+} ArrayRowsGroup;
+
+static double
+arrayrows_base_rows(PlannerInfo *root, Relids relids)
+{
+	int			relid;
+
+	if (root == NULL || relids == NULL)
+		return 0.0;
+
+	relid = bms_next_member(relids, -1);
+	if (relid < 0)
+		return 0.0;
+
+	/*
+	 * For a baserel clause, interpret #<rows> relative to the base relation's
+	 * total rowcount (tuples), so that each predicate can be tuned
+	 * independently in a conjunction.
+	 */
+	if (bms_next_member(relids, relid) < 0)
+	{
+		RelOptInfo *rel = root->simple_rel_array[relid];
+
+		if (rel == NULL)
+			return 0.0;
+
+		return Max(rel->tuples, 0.0);
+	}
+
+	/*
+	 * For multi-relation clauses, interpret #<rows> relative to the filtered
+	 * inputs' cross-product size.
+	 */
+	{
+		double		rows = 1.0;
+
+		for (relid = bms_next_member(relids, -1);
+			 relid >= 0;
+			 relid = bms_next_member(relids, relid))
+		{
+			RelOptInfo *rel = root->simple_rel_array[relid];
+			double		rel_rows;
+
+			if (rel == NULL)
+				continue;
+
+			rel_rows = Max(rel->rows, 0.0);
+			rows *= rel_rows;
+			if (rows == 0.0)
+				break;
+		}
+
+		return rows;
+	}
+}
+
+static ArrayRowsGroup *
+arrayrows_find_or_create_group(List **groups, ArrayRowsHint *hint, Relids relids)
+{
+	ListCell   *lc;
+	ArrayRowsGroup *group;
+
+	foreach(lc, *groups)
+	{
+		group = (ArrayRowsGroup *) lfirst(lc);
+		if (group->hint == hint && bms_equal(group->relids, relids))
+			return group;
+	}
+
+	group = palloc0(sizeof(*group));
+	group->hint = hint;
+	group->relids = bms_copy(relids);
+	group->rinfos = NIL;
+	*groups = lappend(*groups, group);
+	return group;
+}
+
+static void
+arrayrows_apply_group(PlannerInfo *root, ArrayRowsGroup *group,
+					 JoinType jointype, SpecialJoinInfo *sjinfo)
+{
+	ArrayRowsHint *hint = group->hint;
+	int			nclauses;
+	ListCell   *lc;
+	Selectivity *base_sels;
+	int			idx = 0;
+	double		product = 1.0;
+	double		multiplier;
+	double		target = 0.0;
+
+	nclauses = list_length(group->rinfos);
+	if (nclauses <= 0)
+		return;
+
+	base_sels = palloc(sizeof(Selectivity) * nclauses);
+
+	/*
+	 * Compute baseline selectivity product using the raw clause Nodes, to
+	 * avoid compounding changes when this routine is invoked multiple times.
+	 */
+	foreach(lc, group->rinfos)
+	{
+		RestrictInfo *rinfo = (RestrictInfo *) lfirst(lc);
+		Selectivity selec;
+
+		selec = clause_selectivity_ext(root, (Node *) rinfo->clause, 0,
+									   jointype, sjinfo,
+									   true);
+		CLAMP_PROBABILITY(selec);
+		base_sels[idx++] = selec;
+		product *= selec;
+		CLAMP_PROBABILITY(product);
+	}
+
+	{
+		double		base_rows;
+		double		base_result;
+		double		target_rows;
+
+		base_rows = arrayrows_base_rows(root, group->relids);
+		base_result = base_rows * product;
+
+		switch (hint->value_type)
+		{
+			case ARVT_ABSOLUTE:
+				target_rows = hint->value;
+				break;
+			case ARVT_ADD:
+				target_rows = base_result + hint->value;
+				break;
+			case ARVT_SUB:
+				target_rows = base_result - hint->value;
+				break;
+			case ARVT_MULTI:
+				target_rows = base_result * hint->value;
+				break;
+			default:
+				Assert(false);
+				target_rows = 0.0;
+				break;
+		}
+
+		if (target_rows < 1.0)
+			ereport(WARNING,
+					(errmsg("Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : %s",
+							hint->base.hint_str)));
+		target_rows = clamp_row_est(target_rows);
+
+		if (base_rows > 0.0)
+			target = target_rows / base_rows;
+		else
+			target = 0.0;
+
+		CLAMP_PROBABILITY(target);
+		if (product > 0.0)
+			multiplier = pow(target / product, 1.0 / nclauses);
+		else
+			multiplier = pow(target, 1.0 / nclauses);
+	}
+
+	idx = 0;
+	foreach(lc, group->rinfos)
+	{
+		RestrictInfo *rinfo = (RestrictInfo *) lfirst(lc);
+		Selectivity base_selec = base_sels[idx++];
+		Selectivity selec;
+
+		if (product > 0.0)
+			selec = base_selec * multiplier;
+		else
+			selec = multiplier;
+
+		CLAMP_PROBABILITY(selec);
+		rinfo->norm_selec = selec;
+		rinfo->outer_selec = selec;
+	}
+
+	pfree(base_sels);
+	hint->base.state = HINT_STATE_USED;
+}
+
+static bool
+apply_arrayrows_hints_to_restrictinfos(PlannerInfo *root, List *restrictinfos,
+									  JoinType jointype, SpecialJoinInfo *sjinfo)
+{
+	List	   *groups = NIL;
+	ListCell   *lc;
+	bool		applied = false;
+
+	if (current_hint_state == NULL ||
+		current_hint_state->num_hints[HINT_TYPE_ARRAYROWS] == 0)
+		return false;
+
+	foreach(lc, restrictinfos)
+	{
+		RestrictInfo *rinfo = (RestrictInfo *) lfirst(lc);
+		ArrayRowsHint *hint;
+		ArrayRowsClauseKey key;
+		Relids		clause_relids;
+		Relids		owned_relids = NULL;
+		ArrayRowsGroup *group;
+
+		if (!IsA(rinfo, RestrictInfo))
+			continue;
+
+		if (!arrayrows_clause_key((Node *) rinfo->clause, &key))
+			continue;
+
+		/*
+		 * Clause relids may include outer-join relids.  Ignore those, but keep
+		 * any "other" relids (appendrel children) so that hints can apply to
+		 * partition/inheritance members.
+		 */
+		clause_relids = rinfo->clause_relids;
+		if (root->outer_join_rels != NULL &&
+			bms_overlap(clause_relids, root->outer_join_rels))
+		{
+			owned_relids = bms_copy(clause_relids);
+			owned_relids = bms_del_members(owned_relids, root->outer_join_rels);
+			clause_relids = owned_relids;
+		}
+
+		if (clause_relids == NULL)
+			goto next_rinfo;
+
+		hint = find_arrayrows_hint(root, clause_relids, &key);
+		if (hint != NULL)
+		{
+			group = arrayrows_find_or_create_group(&groups, hint, clause_relids);
+			group->rinfos = lappend(group->rinfos, rinfo);
+		}
+
+next_rinfo:
+		bms_free(owned_relids);
+	}
+
+	foreach(lc, groups)
+	{
+		ArrayRowsGroup *group = (ArrayRowsGroup *) lfirst(lc);
+
+		arrayrows_apply_group(root, group, jointype, sjinfo);
+		applied = true;
+	}
+
+	foreach(lc, groups)
+	{
+		ArrayRowsGroup *group = (ArrayRowsGroup *) lfirst(lc);
+
+		list_free(group->rinfos);
+		bms_free(group->relids);
+		pfree(group);
+	}
+	list_free(groups);
+	return applied;
 }
 
 /*
@@ -4201,6 +5232,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	LeadingHint *lhint = NULL;
 	JoinMethodHint **join_hints = (JoinMethodHint **) get_current_hints(HINT_TYPE_JOIN_METHOD);
 	RowsHint  **row_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
+	ArrayRowsHint **arrayrows_hints = (ArrayRowsHint **) get_current_hints(HINT_TYPE_ARRAYROWS);
 	LeadingHint **leading_hints = (LeadingHint **) get_current_hints(HINT_TYPE_LEADING);
 
 	/*
@@ -4255,6 +5287,33 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 
 		hint->joinrelids = create_bms_of_relids(&(hint->base), root,
 												initial_rels, hint->nrels, hint->relnames);
+	}
+
+	/*
+	 * Create bitmap of relids from alias names for each ArrayRows hint.  We do
+	 * this here for join clauses; baserel clauses can be resolved lazily in
+	 * the set_rel_pathlist hook as base rels are planned before join_search.
+	 */
+	for (i = 0; i < hstate->num_hints[HINT_TYPE_ARRAYROWS]; i++)
+	{
+		ArrayRowsHint *hint = arrayrows_hints[i];
+
+		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
+			continue;
+
+		/*
+		 * Single-relation ArrayRows hints must remain name-based, as inherited
+		 * children can have planner-internal aliases (e.g. "foo_1") and are
+		 * meant to inherit the parent hint.
+		 */
+		if (hint->nrels <= 1)
+			continue;
+
+		if (hint->relids != NULL)
+			continue;
+
+		hint->relids = create_bms_of_relids(&(hint->base), root,
+											initial_rels, hint->nrels, hint->relnames);
 	}
 
 	/* Do nothing if no Leading hint was supplied. */
@@ -4726,6 +5785,7 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 	ParallelHint *phint;
 	ListCell   *l;
 	int			found_hints;
+	bool		arrayrows_applied = false;
 
 	/* call the previous hook */
 	if (prev_set_rel_pathlist)
@@ -4808,12 +5868,26 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 	if (rel->lateral_relids)
 		return;
 
-	/* Return if this relation gets no enforcement */
-	if ((found_hints = setup_hint_enforcement(root, rel, NULL, &phint)) == 0)
+	/* Setup scan/parallel enforcement for this baserel. */
+	found_hints = setup_hint_enforcement(root, rel, NULL, &phint);
+
+	/*
+	 * Apply ArrayRows hints to baserestrictinfo.  This must happen in the
+	 * baserel phase (here) because baserels are planned before join_search,
+	 * so join_search transformations are too late.
+	 */
+	if (!root->simple_rte_array[rel->relid]->inh)
+		arrayrows_applied =
+			apply_arrayrows_hints_to_restrictinfos(root, rel->baserestrictinfo,
+												  JOIN_INNER, NULL);
+
+	/* Return if this relation gets no enforcement and no ArrayRows adjustment. */
+	if (found_hints == 0 && !arrayrows_applied)
 		return;
 
 	/* Here, we regenerate paths with the current hint restriction */
-	if (found_hints & HINT_BM_SCAN_METHOD || found_hints & HINT_BM_PARALLEL)
+	if ((found_hints & HINT_BM_SCAN_METHOD || found_hints & HINT_BM_PARALLEL) ||
+		arrayrows_applied)
 	{
 		/*
 		 * When hint is specified on non-parent relations, discard existing
@@ -4865,6 +5939,9 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 			rel->pathlist = NIL;
 			list_free_deep(rel->partial_pathlist);
 			rel->partial_pathlist = NIL;
+
+			if (arrayrows_applied)
+				set_baserel_size_estimates(root, rel);
 
 			/* Regenerate paths with the current enforcement */
 			set_plain_rel_pathlist(root, rel, rte);
