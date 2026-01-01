@@ -3248,6 +3248,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3257,6 +3258,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3278,7 +3280,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
@@ -3311,6 +3313,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3320,6 +3323,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3341,7 +3345,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3393,6 +3397,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3402,6 +3407,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3423,7 +3429,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
@@ -3456,6 +3462,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3465,6 +3472,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3486,7 +3494,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 EXPLAIN (COSTS false) EXECUTE p1;
              QUERY PLAN             
@@ -3527,6 +3535,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3536,6 +3545,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3557,7 +3567,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
@@ -3621,6 +3631,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3630,6 +3641,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3651,7 +3663,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 -- No. A-12-1-4
 -- No. A-12-2-4
@@ -3681,6 +3693,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3690,6 +3703,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3711,7 +3725,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
@@ -3753,6 +3767,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3762,6 +3777,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3783,7 +3799,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 DEALLOCATE p1;
 SET pg_hint_plan.parse_messages TO LOG;
@@ -3840,6 +3856,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3849,6 +3866,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3870,7 +3888,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3919,6 +3937,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -3928,6 +3947,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -3949,7 +3969,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
@@ -4000,6 +4020,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -4009,6 +4030,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4030,7 +4052,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 BEGIN;
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
@@ -4082,6 +4104,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -4091,6 +4114,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4112,7 +4136,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
@@ -4164,6 +4188,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -4173,6 +4198,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4194,7 +4220,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -4247,6 +4273,7 @@ SELECT name, setting FROM settings;
  jit_above_cost                 | 100000
  jit_inline_above_cost          | 500000
  jit_optimize_above_cost        | 500000
+ min_eager_agg_group_size       | 8
  min_parallel_index_scan_size   | 64
  min_parallel_table_scan_size   | 1024
  parallel_setup_cost            | 1000
@@ -4256,6 +4283,7 @@ SELECT name, setting FROM settings;
  enable_async_append            | on
  enable_bitmapscan              | on
  enable_distinct_reordering     | on
+ enable_eager_aggregate         | on
  enable_gathermerge             | on
  enable_group_by_reordering     | on
  enable_hashagg                 | on
@@ -4277,7 +4305,7 @@ SELECT name, setting FROM settings;
  enable_seqscan                 | on
  enable_sort                    | on
  enable_tidscan                 | on
-(53 rows)
+(55 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
