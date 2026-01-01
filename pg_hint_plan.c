@@ -4199,6 +4199,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	char	   *relname;
 	LeadingHint *lhint = NULL;
 	JoinMethodHint **join_hints = (JoinMethodHint **) get_current_hints(HINT_TYPE_JOIN_METHOD);
+	JoinMethodHint **memoize_hints = (JoinMethodHint **) get_current_hints(HINT_TYPE_MEMOIZE);
 	RowsHint  **row_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
 	LeadingHint **leading_hints = (LeadingHint **) get_current_hints(HINT_TYPE_LEADING);
 
@@ -4226,7 +4227,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	/* ditto for memoize hints */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_MEMOIZE]; i++)
 	{
-		JoinMethodHint *hint = join_hints[i];
+		JoinMethodHint *hint = memoize_hints[i];
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
