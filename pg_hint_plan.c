@@ -3523,7 +3523,6 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 				 bool using_parent_hint)
 {
 	ListCell   *cell;
-	StringInfoData buf;
 	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
 	Oid			relationObjectId = rte->relid;
 	List	   *unused_indexes = NIL;
@@ -3555,9 +3554,6 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 	 * available, then we keep all the indexes and skip enforcing the scan
 	 * method. i.e., we skip the scan hint altogether for the relation.
 	 */
-	if (debug_level > 0)
-		initStringInfo(&buf);
-
 	foreach(cell, rel->indexlist)
 	{
 		IndexOptInfo *info = (IndexOptInfo *) lfirst(cell);
@@ -3578,11 +3574,6 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 			if (result)
 			{
 				use_index = true;
-				if (debug_level > 0)
-				{
-					appendStringInfoCharMacro(&buf, ' ');
-					quote_value(&buf, indexname);
-				}
 
 				break;
 			}
@@ -3603,13 +3594,6 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 					continue;
 
 				use_index = true;
-
-				/* to log the candidate of index */
-				if (debug_level > 0)
-				{
-					appendStringInfoCharMacro(&buf, ' ');
-					quote_value(&buf, indexname);
-				}
 
 				break;
 			}
@@ -3654,8 +3638,16 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 
 	if (debug_level > 0)
 	{
+		StringInfoData buf;
 		StringInfoData rel_buf;
 		char	   *disprelname = "";
+
+		initStringInfo(&buf);
+		foreach_node(IndexOptInfo, info, rel->indexlist)
+		{
+			appendStringInfoCharMacro(&buf, ' ');
+			quote_value(&buf, get_rel_name(info->indexoid));
+		}
 
 		/*
 		 * If this hint targetted the parent, use the real name of this child.

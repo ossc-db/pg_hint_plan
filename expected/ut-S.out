@@ -4520,7 +4520,7 @@ SELECT explain_filter('
 /*+IndexScan(ti1 not_exist)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 ');
-LOG:  available indexes for IndexScan(ti1):
+LOG:  available indexes for IndexScan(ti1): ti1_ts ti1_multi ti1_uniq ti1_pred ti1_expr ti1_gin ti1_gist ti1_hash ti1_btree ti1_i4 ti1_i3 ti1_i2 ti1_i1 ti1_c2_key ti1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4539,7 +4539,7 @@ SELECT explain_filter('
 /*+BitmapScan(ti1 not_exist)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.ti1 WHERE c1 = 100;
 ');
-LOG:  available indexes for BitmapScan(ti1):
+LOG:  available indexes for BitmapScan(ti1): ti1_ts ti1_multi ti1_uniq ti1_pred ti1_expr ti1_gin ti1_gist ti1_hash ti1_btree ti1_i4 ti1_i3 ti1_i2 ti1_i1 ti1_c2_key ti1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -4558,7 +4558,7 @@ SELECT explain_filter('
 /*+IndexOnlyScan(ti1 not_exist)*/
 EXPLAIN (COSTS true) SELECT c1 FROM s1.ti1 WHERE c1 = 100;
 ');
-LOG:  available indexes for IndexOnlyScan(ti1):
+LOG:  available indexes for IndexOnlyScan(ti1): ti1_ts ti1_multi ti1_uniq ti1_pred ti1_expr ti1_gin ti1_gist ti1_hash ti1_btree ti1_i4 ti1_i3 ti1_i2 ti1_i1 ti1_c2_key ti1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -5276,9 +5276,9 @@ SELECT explain_filter('
 EXPLAIN SELECT c2 FROM s1.p1 WHERE c2 = 1;
 ');
 LOG:  available indexes for IndexScan(p1): p1_i2
-LOG:  available indexes for IndexScan(p1c1):
-LOG:  available indexes for IndexScan(p1c2):
-LOG:  available indexes for IndexScan(p1c3):
+LOG:  available indexes for IndexScan(p1c1): p1c1_i p1c1_c4_expr_idx p1c1_pkey
+LOG:  available indexes for IndexScan(p1c2): p1c2_i p1c2_c4_expr_idx p1c2_pkey
+LOG:  available indexes for IndexScan(p1c3): p1c3_i p1c3_c4_expr_idx p1c3_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p1 p1_i2)
@@ -5304,9 +5304,9 @@ SELECT explain_filter('
 /*+IndexScan(p2 p2c1_pkey)*/
 EXPLAIN (COSTS true) SELECT * FROM s1.p2 WHERE c1 = 1;
 ');
-LOG:  available indexes for IndexScan(p2):
+LOG:  available indexes for IndexScan(p2): p2_i p2_pkey
 LOG:  available indexes for IndexScan(p2c1): p2c1_pkey
-LOG:  available indexes for IndexScan(p2c1c1):
+LOG:  available indexes for IndexScan(p2c1c1): p2c1c1_i p2c1c1_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2c1_pkey)
@@ -6017,7 +6017,7 @@ error hint:
 -- No. S-3-14-3
 /*+IndexScanRegexp(ti1 no.*_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
-LOG:  available indexes for IndexScanRegexp(ti1):
+LOG:  available indexes for IndexScanRegexp(ti1): ti1_ts ti1_multi ti1_uniq ti1_pred ti1_expr ti1_gin ti1_gist ti1_hash ti1_btree ti1_i4 ti1_i3 ti1_i2 ti1_i1 ti1_c2_key ti1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6076,8 +6076,8 @@ error hint:
 -- No. S-3-14-6
 /*+IndexScanRegexp(p1 no.*_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p1 WHERE c1 = 1;
-LOG:  available indexes for IndexScanRegexp(p1):
-LOG:  available indexes for IndexScanRegexp(p1c1):
+LOG:  available indexes for IndexScanRegexp(p1): p1_i2 p1_i p1_parent p1_pkey
+LOG:  available indexes for IndexScanRegexp(p1c1): p1c1_i p1c1_c4_expr_idx p1c1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6117,7 +6117,7 @@ error hint:
 -- No. S-3-15-2
 /*+IndexScan(ti1 not_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
-LOG:  available indexes for IndexScan(ti1):
+LOG:  available indexes for IndexScan(ti1): ti1_ts ti1_multi ti1_uniq ti1_pred ti1_expr ti1_gin ti1_gist ti1_hash ti1_btree ti1_i4 ti1_i3 ti1_i2 ti1_i1 ti1_c2_key ti1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6168,7 +6168,7 @@ error hint:
 -- No. S-3-15-5
 /*+IndexScan(ti1 not_exist1 not_exist2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.ti1 WHERE c2 = 1;
-LOG:  available indexes for IndexScan(ti1):
+LOG:  available indexes for IndexScan(ti1): ti1_ts ti1_multi ti1_uniq ti1_pred ti1_expr ti1_gin ti1_gist ti1_hash ti1_btree ti1_i4 ti1_i3 ti1_i2 ti1_i1 ti1_c2_key ti1_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:

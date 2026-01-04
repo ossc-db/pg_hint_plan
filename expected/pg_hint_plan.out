@@ -5592,7 +5592,7 @@ error hint:
 
 /*+IndexScan(t5 no_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM t5 WHERE t5.id = 1;
-LOG:  available indexes for IndexScan(t5):
+LOG:  available indexes for IndexScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -5640,7 +5640,7 @@ error hint:
 
 /*+IndexScan(t5 no_exist5 no_exist2)*/
 EXPLAIN (COSTS false) SELECT * FROM t5 WHERE t5.id = 1;
-LOG:  available indexes for IndexScan(t5):
+LOG:  available indexes for IndexScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6761,15 +6761,15 @@ EXPLAIN (COSTS false) SELECT val FROM p2 WHERE val >= '50' AND val <= '51' AND p
 set max_parallel_workers_per_gather to 0;
 /*+ IndexScan(p2 p2_val)*/
 EXPLAIN (COSTS false) SELECT val FROM p2 WHERE val >= '50' AND val <= '51' AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
-LOG:  available indexes for IndexScan(p2_c1):
-LOG:  available indexes for IndexScan(p2_c2):
-LOG:  available indexes for IndexScan(p2_c3):
-LOG:  available indexes for IndexScan(p2_c4):
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
-LOG:  available indexes for IndexScan(p2_c3_c1):
-LOG:  available indexes for IndexScan(p2_c3_c2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
+LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val p2_c1_val_idx8 p2_c1_val_idx7 p2_c1_expr_idx1 p2_c1_expr_idx p2_c1_val_idx6 p2_c1_val_idx5 p2_c1_val_idx4 p2_c1_val_idx3 p2_c1_val_id_idx p2_c1_val_idx2 p2_c1_val_idx1 p2_c1_val_idx p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val p2_c2_val_idx8 p2_c2_val_idx7 p2_c2_expr_idx1 p2_c2_expr_idx p2_c2_val_idx6 p2_c2_val_idx5 p2_c2_val_idx4 p2_c2_val_idx3 p2_c2_val_id_idx p2_c2_val_idx2 p2_c2_val_idx1 p2_c2_val_idx p2_c2_id_val_idx p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6834,8 +6834,8 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_id2_val
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_id2_val)
@@ -6861,9 +6861,9 @@ error hint:
 /*+IndexScan(p2 p2_val2_id)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_val2_id
-LOG:  available indexes for IndexScan(p2_c1):
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val p2_c1_val_idx8 p2_c1_val_idx7 p2_c1_expr_idx1 p2_c1_expr_idx p2_c1_val_idx6 p2_c1_val_idx5 p2_c1_val_idx4 p2_c1_val_idx3 p2_c1_val_id_idx p2_c1_val_idx2 p2_c1_val_idx1 p2_c1_val_idx p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_val2_id)
@@ -6917,10 +6917,10 @@ error hint:
 
 /*+IndexScan(p2 p2_c1_id_val_idx)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_c1_id_val_idx)
@@ -6944,10 +6944,10 @@ error hint:
 
 /*+IndexScan(p2 no_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
-LOG:  available indexes for IndexScan(p2_c1):
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
+LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val p2_c1_val_idx8 p2_c1_val_idx7 p2_c1_expr_idx1 p2_c1_expr_idx p2_c1_val_idx6 p2_c1_val_idx5 p2_c1_val_idx4 p2_c1_val_idx3 p2_c1_val_id_idx p2_c1_val_idx2 p2_c1_val_idx1 p2_c1_val_idx p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7030,10 +7030,10 @@ error hint:
 
 /*+IndexScan(p2 p2_c1_id_val_idx no_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_c1_id_val_idx no_exist)
@@ -7328,7 +7328,7 @@ error hint:
 
 /*+ IndexScanRegexp(t5 t5[^_].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexScanRegexp(t5):
+LOG:  available indexes for IndexScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7344,7 +7344,7 @@ error hint:
 
 /*+ IndexScanRegexp(t5 ^.*t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexScanRegexp(t5):
+LOG:  available indexes for IndexScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7360,7 +7360,7 @@ error hint:
 
 /*+ IndexScan(t5 t5_id[0-9].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexScan(t5):
+LOG:  available indexes for IndexScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7408,7 +7408,7 @@ error hint:
 
 /*+ IndexOnlyScanRegexp(t5 t5[^_].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexOnlyScanRegexp(t5):
+LOG:  available indexes for IndexOnlyScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7424,7 +7424,7 @@ error hint:
 
 /*+ IndexOnlyScanRegexp(t5 ^.*t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexOnlyScanRegexp(t5):
+LOG:  available indexes for IndexOnlyScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7440,7 +7440,7 @@ error hint:
 
 /*+ IndexOnlyScan(t5 t5_id[0-9].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexOnlyScan(t5):
+LOG:  available indexes for IndexOnlyScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7492,7 +7492,7 @@ error hint:
 
 /*+ BitmapScanRegexp(t5 t5[^_].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for BitmapScanRegexp(t5):
+LOG:  available indexes for BitmapScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7508,7 +7508,7 @@ error hint:
 
 /*+ BitmapScanRegexp(t5 ^.*t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for BitmapScanRegexp(t5):
+LOG:  available indexes for BitmapScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7524,7 +7524,7 @@ error hint:
 
 /*+ BitmapScan(t5 t5_id[0-9].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for BitmapScan(t5):
+LOG:  available indexes for BitmapScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7656,15 +7656,15 @@ error hint:
 
 /*+ IndexScanRegexp(p1 p1[^_].*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexScanRegexp(p1):
-LOG:  available indexes for IndexScanRegexp(p1_c1):
-LOG:  available indexes for IndexScanRegexp(p1_c2):
-LOG:  available indexes for IndexScanRegexp(p1_c3):
-LOG:  available indexes for IndexScanRegexp(p1_c4):
-LOG:  available indexes for IndexScanRegexp(p1_c1_c1):
-LOG:  available indexes for IndexScanRegexp(p1_c1_c2):
-LOG:  available indexes for IndexScanRegexp(p1_c3_c1):
-LOG:  available indexes for IndexScanRegexp(p1_c3_c2):
+LOG:  available indexes for IndexScanRegexp(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7697,15 +7697,15 @@ error hint:
 
 /*+ IndexScan(p1 p1_.*val2.*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexScan(p1):
-LOG:  available indexes for IndexScan(p1_c1):
-LOG:  available indexes for IndexScan(p1_c2):
-LOG:  available indexes for IndexScan(p1_c3):
-LOG:  available indexes for IndexScan(p1_c4):
-LOG:  available indexes for IndexScan(p1_c1_c1):
-LOG:  available indexes for IndexScan(p1_c1_c2):
-LOG:  available indexes for IndexScan(p1_c3_c1):
-LOG:  available indexes for IndexScan(p1_c3_c2):
+LOG:  available indexes for IndexScan(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexScan(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexScan(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexScan(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexScan(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexScan(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexScan(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexScan(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexScan(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7829,15 +7829,15 @@ error hint:
 
 /*+ IndexOnlyScanRegexp(p1 p1[^_].*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexOnlyScanRegexp(p1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c2):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c3):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c4):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c2):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c2):
+LOG:  available indexes for IndexOnlyScanRegexp(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7870,15 +7870,15 @@ error hint:
 
 /*+ IndexOnlyScan(p1 p1_.*val2.*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexOnlyScan(p1):
-LOG:  available indexes for IndexOnlyScan(p1_c1):
-LOG:  available indexes for IndexOnlyScan(p1_c2):
-LOG:  available indexes for IndexOnlyScan(p1_c3):
-LOG:  available indexes for IndexOnlyScan(p1_c4):
-LOG:  available indexes for IndexOnlyScan(p1_c1_c1):
-LOG:  available indexes for IndexOnlyScan(p1_c1_c2):
-LOG:  available indexes for IndexOnlyScan(p1_c3_c1):
-LOG:  available indexes for IndexOnlyScan(p1_c3_c2):
+LOG:  available indexes for IndexOnlyScan(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -8020,15 +8020,15 @@ error hint:
 
 /*+ BitmapScanRegexp(p1 p1[^_].*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for BitmapScanRegexp(p1):
-LOG:  available indexes for BitmapScanRegexp(p1_c1):
-LOG:  available indexes for BitmapScanRegexp(p1_c2):
-LOG:  available indexes for BitmapScanRegexp(p1_c3):
-LOG:  available indexes for BitmapScanRegexp(p1_c4):
-LOG:  available indexes for BitmapScanRegexp(p1_c1_c1):
-LOG:  available indexes for BitmapScanRegexp(p1_c1_c2):
-LOG:  available indexes for BitmapScanRegexp(p1_c3_c1):
-LOG:  available indexes for BitmapScanRegexp(p1_c3_c2):
+LOG:  available indexes for BitmapScanRegexp(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -8061,15 +8061,15 @@ error hint:
 
 /*+ BitmapScan(p1 p1_.*val2.*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for BitmapScan(p1):
-LOG:  available indexes for BitmapScan(p1_c1):
-LOG:  available indexes for BitmapScan(p1_c2):
-LOG:  available indexes for BitmapScan(p1_c3):
-LOG:  available indexes for BitmapScan(p1_c4):
-LOG:  available indexes for BitmapScan(p1_c1_c1):
-LOG:  available indexes for BitmapScan(p1_c1_c2):
-LOG:  available indexes for BitmapScan(p1_c3_c1):
-LOG:  available indexes for BitmapScan(p1_c3_c2):
+LOG:  available indexes for BitmapScan(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for BitmapScan(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for BitmapScan(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for BitmapScan(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for BitmapScan(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for BitmapScan(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for BitmapScan(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for BitmapScan(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for BitmapScan(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
