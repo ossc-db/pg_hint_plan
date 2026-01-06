@@ -401,6 +401,7 @@ struct HintState
 	List	   *parent_index_infos; /* list of parent table's index */
 
 	int			init_join_mask; /* initial value join parameter */
+	bool		deny_all_joins; /* used when processing join order hints */
 	List	  **join_hint_level;
 	List	  **memoize_hint_level;
 	GucContext	context;		/* which GUC parameters can we set? */
@@ -507,26 +508,23 @@ void		pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 										  Index rti, RangeTblEntry *rte);
 static void pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 												bool inhparent, RelOptInfo *rel);
+static void pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
+				   RelOptInfo *outerrel, RelOptInfo *innerrel,
+				   SpecialJoinInfo *sjinfo, List *restrictlist);
+static void pg_hint_plan_join_path_setup(PlannerInfo *root, RelOptInfo *joinrel,
+					 RelOptInfo *outerrel, RelOptInfo *innerrel,
+					 JoinType jointype, JoinPathExtraData *extra);
 static void create_plain_partial_paths(PlannerInfo *root,
 									   RelOptInfo *rel);
-static void make_rels_by_clause_joins(PlannerInfo *root, RelOptInfo *old_rel,
-									  List *other_rels,
-									  int first_rel_idx);
-static void make_rels_by_clauseless_joins(PlannerInfo *root,
-										  RelOptInfo *old_rel,
-										  List *other_rels);
-static bool has_join_restriction(PlannerInfo *root, RelOptInfo *rel);
 static void set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 								   RangeTblEntry *rte);
-static void free_child_join_sjinfo(SpecialJoinInfo *sjinfo,
-								   SpecialJoinInfo *parent_sjinfo);
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
 static int	set_config_option_noerror(const char *name, const char *value,
 									  GucContext context, GucSource source,
 									  GucAction action, bool changeVal, int elevel);
-static void setup_scan_method_enforcement(ScanMethodHint *scanhint,
+static void setup_scan_method_enforcement(uint64 *pgs_mask_p, ScanMethodHint *scanhint,
 										  HintState *state);
 static int	set_config_int32_option(const char *name, int32 value,
 									GucContext context);
@@ -595,6 +593,8 @@ static planner_hook_type prev_planner = NULL;
 static join_search_hook_type prev_join_search = NULL;
 static set_rel_pathlist_hook_type prev_set_rel_pathlist = NULL;
 static get_relation_info_hook_type prev_get_relation_info_hook = NULL;
+static join_path_setup_hook_type prev_join_path_setup = NULL;
+static joinrel_setup_hook_type prev_joinrel_setup = NULL;
 static needs_fmgr_hook_type prev_needs_fmgr_hook = NULL;
 static fmgr_hook_type prev_fmgr_hook = NULL;
 static ExecutorEnd_hook_type prev_ExecutorEnd = NULL;
@@ -817,6 +817,10 @@ _PG_init(void)
 	ExecutorEnd_hook = pg_hint_ExecutorEnd;
 	prev_get_relation_info_hook = get_relation_info_hook;
 	get_relation_info_hook = pg_hint_plan_get_relation_info_hook;
+	prev_joinrel_setup = joinrel_setup_hook;
+	joinrel_setup_hook = pg_hint_plan_joinrel_setup;
+	prev_join_path_setup = join_path_setup_hook;
+	join_path_setup_hook = pg_hint_plan_join_path_setup;
 }
 
 static bool
@@ -2766,30 +2770,34 @@ setup_parallel_plan_enforcement(RelOptInfo *rel, ParallelHint *hint, HintState *
 
 	hint->base.state = HINT_STATE_USED;
 	rel->rel_parallel_workers = hint->nworkers;
-}
 
-#define SET_CONFIG_OPTION(name, type_bits) \
-	set_config_option_noerror((name), \
-		(mask & (type_bits)) ? "true" : "false", \
-		context, PGC_S_SESSION, GUC_ACTION_SAVE, true, ERROR)
+	if (!hint->force_parallel)
+		return;
+
+	if (hint->nworkers > 0)
+	{
+		rel->pgs_mask |= PGS_GATHER;
+		rel->pgs_mask &= ~PGS_CONSIDER_NONPARTIAL;
+	}
+	else
+	{
+		rel->pgs_mask &= ~PGS_GATHER;
+	}
+}
 
 
 /*
- * Setup GUC environment to enforce scan methods. If scanhint is NULL, reset
- * GUCs to the saved state in state.
+ * Setup GUC environment to enforce scan methods.
  */
 static void
-setup_scan_method_enforcement(ScanMethodHint *scanhint, HintState *state)
+setup_scan_method_enforcement(uint64 *pgs_mask_p, ScanMethodHint *scanhint, HintState *state)
 {
-	unsigned char enforce_mask = state->init_scan_mask;
-	GucContext	context = state->context;
+	unsigned char enforce_mask = scanhint->enforce_mask;
 	unsigned char mask;
 
-	if (scanhint)
-	{
-		enforce_mask = scanhint->enforce_mask;
-		scanhint->base.state = HINT_STATE_USED;
-	}
+	Assert(scanhint != NULL);
+
+	scanhint->base.state = HINT_STATE_USED;
 
 	if (enforce_mask == ENABLE_SEQSCAN || enforce_mask == ENABLE_INDEXSCAN ||
 		enforce_mask == ENABLE_BITMAPSCAN || enforce_mask == ENABLE_TIDSCAN
@@ -2799,16 +2807,28 @@ setup_scan_method_enforcement(ScanMethodHint *scanhint, HintState *state)
 	else
 		mask = enforce_mask & current_hint_state->init_scan_mask;
 
-	SET_CONFIG_OPTION("enable_seqscan", ENABLE_SEQSCAN);
-	SET_CONFIG_OPTION("enable_indexscan", ENABLE_INDEXSCAN);
-	SET_CONFIG_OPTION("enable_bitmapscan", ENABLE_BITMAPSCAN);
-	SET_CONFIG_OPTION("enable_tidscan", ENABLE_TIDSCAN);
-	SET_CONFIG_OPTION("enable_indexonlyscan", ENABLE_INDEXONLYSCAN);
+	*pgs_mask_p &=
+		~(PGS_SCAN_ANY | PGS_APPEND | PGS_MERGE_APPEND |
+			PGS_CONSIDER_INDEXONLY);
+
+	if (mask & ENABLE_SEQSCAN)
+		*pgs_mask_p |= PGS_SEQSCAN;
+
+	if (mask & ENABLE_INDEXSCAN)
+		*pgs_mask_p |= PGS_INDEXSCAN;
+
+	if (mask & ENABLE_BITMAPSCAN)
+		*pgs_mask_p |= PGS_BITMAPSCAN;
+
+	if (mask & ENABLE_TIDSCAN)
+		*pgs_mask_p |= PGS_TIDSCAN;
+
+	if (mask & ENABLE_INDEXONLYSCAN)
+		*pgs_mask_p |= PGS_INDEXONLYSCAN | PGS_CONSIDER_INDEXONLY;
 }
 
 static void
-set_join_config_options(unsigned char enforce_mask, bool set_memoize,
-						GucContext context)
+set_join_config_options(uint64 *pgs_mask_p, unsigned char enforce_mask)
 {
 	unsigned char mask;
 
@@ -2818,37 +2838,17 @@ set_join_config_options(unsigned char enforce_mask, bool set_memoize,
 	else
 		mask = enforce_mask & current_hint_state->init_join_mask;
 
-	SET_CONFIG_OPTION("enable_nestloop", ENABLE_NESTLOOP);
-	SET_CONFIG_OPTION("enable_mergejoin", ENABLE_MERGEJOIN);
-	SET_CONFIG_OPTION("enable_hashjoin", ENABLE_HASHJOIN);
+	*pgs_mask_p &= ~PGS_JOIN_ANY;
+	*pgs_mask_p |= PGS_FOREIGNJOIN;
 
-	if (set_memoize)
-		SET_CONFIG_OPTION("enable_memoize", ENABLE_MEMOIZE);
+	if (mask & ENABLE_NESTLOOP)
+		*pgs_mask_p |= PGS_NESTLOOP_PLAIN | PGS_NESTLOOP_MATERIALIZE | PGS_NESTLOOP_MEMOIZE;
 
-	/*
-	 * Hash join may be rejected for the reason of estimated memory usage. Try
-	 * getting rid of that limitation.
-	 */
-	if (enforce_mask == ENABLE_HASHJOIN)
-	{
-		char		buf[32];
-		int			new_multipler;
+	if (mask & ENABLE_MERGEJOIN)
+		*pgs_mask_p |= PGS_MERGEJOIN_PLAIN | PGS_MERGEJOIN_MATERIALIZE;
 
-		/* See final_cost_hashjoin(). */
-		new_multipler = MAX_KILOBYTES / work_mem;
-
-		/* See guc.c for the upper limit */
-		if (new_multipler >= 1000)
-			new_multipler = 1000;
-
-		if (new_multipler > hash_mem_multiplier)
-		{
-			snprintf(buf, sizeof(buf), UINT64_FORMAT, (uint64) new_multipler);
-			set_config_option_noerror("hash_mem_multiplier", buf,
-									  context, PGC_S_SESSION, GUC_ACTION_SAVE,
-									  true, ERROR);
-		}
-	}
+	if (mask & ENABLE_HASHJOIN)
+		*pgs_mask_p |= PGS_HASHJOIN;
 }
 
 /*
@@ -3459,12 +3459,16 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 	List	   *unused_indexes = NIL;
 	bool		restrict_result;
 
+	if (hint->enforce_mask == ENABLE_SEQSCAN)
+		return true;
+
 	/*
-	 * We delete all the IndexOptInfo list and prevent you from being usable
-	 * by a scan.
+	 * For TID scans, we delete all the IndexOptInfo list to force it to regress to a
+	 * sequential scan (instead of an index scan) if its not possible to do a TID scan.
+	 *
+	 * This matches historic behaviour, but may be worth reconsidering.
 	 */
-	if (hint->enforce_mask == ENABLE_SEQSCAN ||
-		hint->enforce_mask == ENABLE_TIDSCAN)
+	if (hint->enforce_mask == ENABLE_TIDSCAN)
 	{
 		list_free_deep(rel->indexlist);
 		rel->indexlist = NIL;
@@ -3688,15 +3692,6 @@ get_parent_index_info(Oid indexoid, Oid relid)
 }
 
 /*
- * cancel hint enforcement
- */
-static void
-reset_hint_enforcement(void)
-{
-	setup_scan_method_enforcement(NULL, current_hint_state);
-}
-
-/*
  * Set planner guc parameters according to corresponding scan hints.  Returns
  * bitmap of HintTypeBitmap. If shint or phint is not NULL, set used hint
  * there respectively.
@@ -3813,7 +3808,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		 * restrictions applied.
 		 */
 		if (restrict_result)
-			setup_scan_method_enforcement(shint, current_hint_state);
+			setup_scan_method_enforcement(&rel->pgs_mask, shint, current_hint_state);
 
 		if (debug_level > 1)
 		{
@@ -3848,26 +3843,6 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 
 	if (phint)
 		ret |= HINT_BM_PARALLEL;
-
-	/* Nothing to apply. Reset the scan mask to intial state */
-	if (!shint && !phint)
-	{
-		if (debug_level > 1)
-			ereport(pg_hint_plan_debug_message_level,
-					(errhidestmt(true),
-					 errmsg("pg_hint_plan%s: setup_hint_enforcement"
-							" no hint applied:"
-							" relation=%u(%s), inhparent=%d, current_hint=%p,"
-							" hint_inhibit_level=%d, scanmask=0x%x",
-							qnostr, relationObjectId,
-							get_rel_name(relationObjectId),
-							inhparent, current_hint_state, hint_inhibit_level,
-							current_hint_state->init_scan_mask)));
-
-		setup_scan_method_enforcement(NULL, current_hint_state);
-
-		return ret;
-	}
 
 	if (rshint != NULL)
 		*rshint = shint;
@@ -4358,165 +4333,201 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 
 	if (hint_state_enabled(lhint))
 	{
-		set_join_config_options(DISABLE_ALL_JOIN, false,
-								current_hint_state->context);
+		hstate->deny_all_joins = true;
 		return true;
 	}
 	return false;
 }
 
 /*
- * wrapper of make_join_rel()
- *
- * call make_join_rel() after changing enable_* parameters according to given
- * hints.
+ * adjust_rows: tweak estimated row numbers according to the hint.
  */
-static RelOptInfo *
-make_join_rel_wrapper(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
+static double
+adjust_rows(double rows, RowsHint *hint)
 {
-	Relids		joinrelids;
-	JoinMethodHint *join_hint;
-	JoinMethodHint *memoize_hint;
-	RelOptInfo *rel;
-	int			save_nestlevel;
+	double		result = 0.0;	/* keep compiler quiet */
 
-	joinrelids = bms_union(rel1->relids, rel2->relids);
+	if (hint->value_type == RVT_ABSOLUTE)
+		result = hint->rows;
+	else if (hint->value_type == RVT_ADD)
+		result = rows + hint->rows;
+	else if (hint->value_type == RVT_SUB)
+		result = rows - hint->rows;
+	else if (hint->value_type == RVT_MULTI)
+		result = rows * hint->rows;
+	else
+		Assert(false);			/* unrecognized rows value type */
 
-	/*
-	 * joinrelids may include outer-join relids since PostgreSQL 16, so filter
-	 * them out as hints can only handle base relations.
-	 */
-	joinrelids = bms_intersect(joinrelids, root->all_baserels);
+	hint->base.state = HINT_STATE_USED;
+	if (result < 1.0)
+		ereport(WARNING,
+				(errmsg("Force estimate to be at least one row, to avoid possible divide-by-zero when interpolating costs : %s",
+						hint->base.hint_str)));
+	result = clamp_row_est(result);
+	elog(DEBUG1, "adjusted rows %d to %d", (int) rows, (int) result);
 
-	join_hint = find_join_hint(joinrelids);
-	memoize_hint = find_memoize_hint(joinrelids);
-	bms_free(joinrelids);
-
-	/* reject non-matching hints */
-	if (join_hint && join_hint->inner_nrels != 0)
-		join_hint = NULL;
-
-	if (memoize_hint && memoize_hint->inner_nrels != 0)
-		memoize_hint = NULL;
-
-	if (join_hint || memoize_hint)
-	{
-		save_nestlevel = NewGUCNestLevel();
-
-		if (join_hint)
-			set_join_config_options(join_hint->enforce_mask, false,
-									current_hint_state->context);
-
-		if (memoize_hint)
-		{
-			bool		memoize =
-				memoize_hint->base.hint_keyword == HINT_KEYWORD_MEMOIZE;
-
-			set_config_option_noerror("enable_memoize",
-									  memoize ? "true" : "false",
-									  current_hint_state->context,
-									  PGC_S_SESSION, GUC_ACTION_SAVE,
-									  true, ERROR);
-		}
-	}
-
-	/* do the work */
-	rel = pg_hint_plan_make_join_rel(root, rel1, rel2);
-
-	/* Restore the GUC variables we set above. */
-	if (join_hint || memoize_hint)
-	{
-		if (join_hint)
-			join_hint->base.state = HINT_STATE_USED;
-
-		if (memoize_hint)
-			memoize_hint->base.state = HINT_STATE_USED;
-
-		AtEOXact_GUC(true, save_nestlevel);
-	}
-
-	return rel;
+	return result;
 }
 
-/*
- * TODO : comment
- */
 static void
-add_paths_to_joinrel_wrapper(PlannerInfo *root,
-							 RelOptInfo *joinrel,
-							 RelOptInfo *outerrel,
-							 RelOptInfo *innerrel,
-							 JoinType jointype,
-							 SpecialJoinInfo *sjinfo,
-							 List *restrictlist)
+pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
+				   RelOptInfo *outerrel, RelOptInfo *innerrel,
+				   SpecialJoinInfo *sjinfo, List *restrictlist)
 {
-	Relids		joinrelids;
-	JoinMethodHint *join_hint;
-	JoinMethodHint *memoize_hint;
-	int			save_nestlevel;
+	Assert(bms_membership(joinrel->relids) == BMS_MULTIPLE);
 
-	joinrelids = bms_union(outerrel->relids, innerrel->relids);
-
-	/*
-	 * joinrelids may include outer-join relids since PostgreSQL 16, so filter
-	 * them out as hints can only handle base relations.
-	 */
-	joinrelids = bms_intersect(joinrelids, root->all_baserels);
-
-	join_hint = find_join_hint(joinrelids);
-	memoize_hint = find_memoize_hint(joinrelids);
-	bms_free(joinrelids);
-
-	/* reject the found hints if they don't match this join */
-	if (join_hint && join_hint->inner_nrels == 0)
-		join_hint = NULL;
-
-	if (memoize_hint && memoize_hint->inner_nrels == 0)
-		memoize_hint = NULL;
-
-	/* set up configuration if needed */
-	if (join_hint || memoize_hint)
+	if (current_hint_state)
 	{
-		save_nestlevel = NewGUCNestLevel();
+		RowsHint   *rows_hint = NULL;
+		int			i;
+		RowsHint   *justforme = NULL;
+		RowsHint   *domultiply = NULL;
+		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
 
-		if (join_hint)
+		/* Search for applicable rows hint for this join node */
+		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)
 		{
-			if (bms_equal(join_hint->inner_joinrelids, innerrel->relids))
-				set_join_config_options(join_hint->enforce_mask, false,
-										current_hint_state->context);
-			else
-				set_join_config_options(DISABLE_ALL_JOIN, false,
-										current_hint_state->context);
+			rows_hint = rows_hints[i];
+
+			/*
+			 * Skip this rows_hint if it is invalid from the first or it
+			 * doesn't target any join rels.
+			 */
+			if (!rows_hint->joinrelids ||
+				rows_hint->base.state == HINT_STATE_ERROR)
+				continue;
+
+			if (bms_equal(joinrel->relids, rows_hint->joinrelids))
+			{
+				/*
+				 * This joinrel is just the target of this rows_hint, so tweak
+				 * rows estimation according to the hint.
+				 */
+				justforme = rows_hint;
+			}
+			else if (!(bms_is_subset(rows_hint->joinrelids, outerrel->relids) ||
+					   bms_is_subset(rows_hint->joinrelids, innerrel->relids)) &&
+					 bms_is_subset(rows_hint->joinrelids, joinrel->relids) &&
+					 rows_hint->value_type == RVT_MULTI)
+			{
+				/*
+				 * If the rows_hint's target relids is not a subset of both of
+				 * component rels and is a subset of this joinrel, ths hint's
+				 * targets spread over both component rels. This menas that
+				 * this hint has been never applied so far and this joinrel is
+				 * the first (and only) chance to fire in current join tree.
+				 * Only the multiplication hint has the cumulative nature so
+				 * we apply only RVT_MULTI in this way.
+				 */
+				domultiply = rows_hint;
+			}
 		}
 
-		if (memoize_hint)
+		if (justforme)
 		{
-			bool		memoize =
-				memoize_hint->base.hint_keyword == HINT_KEYWORD_MEMOIZE;
-
-			set_config_option_noerror("enable_memoize",
-									  memoize ? "true" : "false",
-									  current_hint_state->context,
-									  PGC_S_SESSION, GUC_ACTION_SAVE,
-									  true, ERROR);
+			/*
+			 * If a hint just for me is found, no other adjust method is
+			 * useles, but this cannot be more than twice becuase this joinrel
+			 * is already adjusted by this hint.
+			 */
+			if (justforme->base.state == HINT_STATE_NOTUSED)
+				joinrel->rows = adjust_rows(joinrel->rows, justforme);
 		}
+		else
+		{
+			if (domultiply)
+			{
+				/*
+				 * If we have multiple routes up to this joinrel which are not
+				 * applicable this hint, this multiply hint will applied more
+				 * than twice. But there's no means to know of that,
+				 * re-estimate the row number of this joinrel always just
+				 * before applying the hint. This is a bit different from
+				 * normal planner behavior but it doesn't harm so much.
+				 */
+				set_joinrel_size_estimates(root, joinrel, outerrel, innerrel, sjinfo,
+										   restrictlist);
+
+				joinrel->rows = adjust_rows(joinrel->rows, domultiply);
+			}
+		}
+
+		/*
+		 * Propagate PGS_GATHER/PGS_GATHER_MERGE flag changes if either of the rels being
+		 * joined has them unset. Note we don't propagate PGS_CONSIDER_NONPARTIAL here
+		 * because that flag is concerned with forcing parallelism for the given rel, and
+		 * we don't assume that means that a join the rel is involved in must be parallel.
+		 */
+		if ((innerrel->pgs_mask & PGS_GATHER) == 0 || (outerrel->pgs_mask & PGS_GATHER) == 0)
+			joinrel->pgs_mask &= ~PGS_GATHER;
+		if ((innerrel->pgs_mask & PGS_GATHER_MERGE) == 0 || (outerrel->pgs_mask & PGS_GATHER_MERGE) == 0)
+			joinrel->pgs_mask &= ~PGS_GATHER_MERGE;
 	}
 
-	/* generate paths */
-	add_paths_to_joinrel(root, joinrel, outerrel, innerrel, jointype,
-						 sjinfo, restrictlist);
+	/* Pass call to previous hook. */
+	if (prev_joinrel_setup)
+		(*prev_joinrel_setup) (root, joinrel, outerrel, innerrel,
+							   sjinfo, restrictlist);
+}
 
-	/* restore GUC variables */
-	if (join_hint || memoize_hint)
+static void
+pg_hint_plan_join_path_setup(PlannerInfo *root, RelOptInfo *joinrel,
+					 RelOptInfo *outerrel, RelOptInfo *innerrel,
+					 JoinType jointype, JoinPathExtraData *extra)
+{
+	JoinMethodHint *join_hint = NULL;
+	JoinMethodHint *memoize_hint = NULL;
+
+	Assert(bms_membership(joinrel->relids) == BMS_MULTIPLE);
+
+	/* current_hint_state->join_hint_level is NULL for GEQO */
+	if (current_hint_state && current_hint_state->join_hint_level && hint_inhibit_level == 0)
 	{
-		if (join_hint)
+		Relids		joinrelids = bms_union(outerrel->relids, innerrel->relids);
+
+		/*
+		* joinrelids may include outer-join relids since PostgreSQL 16, so filter
+		* them out as hints can only handle base relations.
+		*/
+		joinrelids = bms_intersect(joinrelids, root->all_baserels);
+
+		join_hint = find_join_hint(joinrelids);
+		memoize_hint = find_memoize_hint(joinrelids);
+
+		bms_free(joinrelids);
+	}
+
+	if (join_hint)
+	{
+		if (join_hint->inner_nrels == 0 || bms_equal(join_hint->inner_joinrelids, innerrel->relids))
+		{
 			join_hint->base.state = HINT_STATE_USED;
-
-		if (memoize_hint)
-			memoize_hint->base.state = HINT_STATE_USED;
-
-		AtEOXact_GUC(true, save_nestlevel);
+			set_join_config_options(&extra->pgs_mask, join_hint->enforce_mask);
+		}
+		else
+		{
+			set_join_config_options(&extra->pgs_mask, DISABLE_ALL_JOIN);
+		}
 	}
+	else if (current_hint_state && current_hint_state->deny_all_joins)
+	{
+		set_join_config_options(&extra->pgs_mask, DISABLE_ALL_JOIN);
+	}
+
+	if (memoize_hint)
+	{
+		memoize_hint->base.state = HINT_STATE_USED;
+
+		if (memoize_hint->base.hint_keyword == HINT_KEYWORD_MEMOIZE)
+			extra->pgs_mask = (extra->pgs_mask & ~PGS_NESTLOOP_ANY) | PGS_NESTLOOP_MEMOIZE;
+		else
+			extra->pgs_mask = extra->pgs_mask & ~PGS_NESTLOOP_MEMOIZE;
+	}
+
+	/* Pass call to previous hook. */
+	if (prev_join_path_setup)
+		(*prev_join_path_setup) (root, joinrel, outerrel, innerrel,
+								 jointype, extra);
 }
 
 static int
@@ -4586,7 +4597,7 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 											   root, nbaserel,
 											   initial_rels, join_method_hints);
 
-	rel = pg_hint_plan_standard_join_search(root, levels_needed, initial_rels);
+	rel = standard_join_search(root, levels_needed, initial_rels);
 
 	/*
 	 * Adjust number of parallel workers of the result rel to the largest
@@ -4633,8 +4644,7 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 	pfree(join_method_hints);
 
 	if (leading_hint_enable)
-		set_join_config_options(current_hint_state->init_join_mask, true,
-								current_hint_state->context);
+		current_hint_state->deny_all_joins = false;
 
 	return rel;
 }
@@ -4647,7 +4657,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 							  Index rti, RangeTblEntry *rte)
 {
 	ParallelHint *phint;
-	ListCell   *l;
 	int			found_hints;
 
 	/* call the previous hook */
@@ -4741,33 +4750,9 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 		/*
 		 * When hint is specified on non-parent relations, discard existing
 		 * paths and regenerate based on the hint considered. Otherwise we
-		 * already have hinted child paths then just adjust the number of
-		 * planned number of workers.
+		 * already have hinted child paths.
 		 */
-		if (root->simple_rte_array[rel->relid]->inh)
-		{
-			/* enforce number of workers if requested */
-			if (phint && phint->force_parallel)
-			{
-				if (phint->nworkers == 0)
-				{
-					list_free_deep(rel->partial_pathlist);
-					rel->partial_pathlist = NIL;
-				}
-				else
-				{
-					/* disable non-partial paths */
-					foreach(l, rel->pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->disabled_nodes < 1)
-							ppath->disabled_nodes++;
-					}
-				}
-			}
-		}
-		else
+		if (!root->simple_rte_array[rel->relid]->inh)
 		{
 			/* Just discard all the paths considered so far */
 			list_free_deep(rel->pathlist);
@@ -4777,34 +4762,8 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 
 			/* Regenerate paths with the current enforcement */
 			set_plain_rel_pathlist(root, rel, rte);
-
-			/* Additional work to enforce parallel query execution */
-			if (phint && phint->nworkers > 0)
-			{
-				if (phint->force_parallel)
-				{
-					/* disable non-partial paths */
-					foreach(l, rel->pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->disabled_nodes < 1)
-							ppath->disabled_nodes++;
-					}
-				}
-
-				/*
-				 * Generate gather paths.  However, if this is an inheritance
-				 * child, skip it.
-				 */
-				if (rel->reloptkind == RELOPT_BASEREL &&
-					!bms_equal(rel->relids, root->all_baserels))
-					generate_useful_gather_paths(root, rel, false);
-			}
 		}
 	}
-
-	reset_hint_enforcement();
 }
 
 /*
@@ -5171,20 +5130,4 @@ pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 	current_hint_state->parent_disableindex_hint = NULL;
 }
 
-/* include core static functions */
-static void make_grouped_join_rel(PlannerInfo *root, RelOptInfo *rel1,
-								  RelOptInfo *rel2, RelOptInfo *joinrel,
-								  SpecialJoinInfo *sjinfo, List *restrictlist);
-static void populate_joinrel_with_paths(PlannerInfo *root, RelOptInfo *rel1,
-										RelOptInfo *rel2, RelOptInfo *joinrel,
-										SpecialJoinInfo *sjinfo, List *restrictlist);
-
-#define standard_join_search pg_hint_plan_standard_join_search
-#define join_search_one_level pg_hint_plan_join_search_one_level
-#define make_join_rel make_join_rel_wrapper
 #include "core.c"
-
-#undef make_join_rel
-#define make_join_rel pg_hint_plan_make_join_rel
-#define add_paths_to_joinrel add_paths_to_joinrel_wrapper
-#include "make_join_rel.c"

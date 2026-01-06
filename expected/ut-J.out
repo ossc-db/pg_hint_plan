@@ -4542,8 +4542,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-NestLoop(t1 t2)
 not used hint:
+NestLoop(t1 t2)
 duplication hint:
 error hint:
 
@@ -4556,8 +4556,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-HashJoin(t1 t2)
 not used hint:
+HashJoin(t1 t2)
 duplication hint:
 error hint:
 
@@ -4570,8 +4570,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-MergeJoin(t1 t2)
 not used hint:
+MergeJoin(t1 t2)
 duplication hint:
 error hint:
 
@@ -4584,8 +4584,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-NoNestLoop(t1 t2)
 not used hint:
+NoNestLoop(t1 t2)
 duplication hint:
 error hint:
 
@@ -4598,8 +4598,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-NoHashJoin(t1 t2)
 not used hint:
+NoHashJoin(t1 t2)
 duplication hint:
 error hint:
 
@@ -4612,8 +4612,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-NoMergeJoin(t1 t2)
 not used hint:
+NoMergeJoin(t1 t2)
 duplication hint:
 error hint:
 
@@ -4658,8 +4658,8 @@ NestLoop(t1)
 SELECT * FROM s1.t1, s1.t2 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-NestLoop(t1 t2)
 not used hint:
+NestLoop(t1 t2)
 duplication hint:
 error hint:
 
@@ -4672,8 +4672,8 @@ error hint:
 SELECT * FROM s1.t1, s1.t2, s1.t3 WHERE false;
 LOG:  pg_hint_plan:
 used hint:
-NestLoop(t1 t2 t3)
 not used hint:
+NestLoop(t1 t2 t3)
 duplication hint:
 error hint:
 
