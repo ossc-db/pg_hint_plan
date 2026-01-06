@@ -396,8 +396,6 @@ struct HintState
 	int			init_min_para_tablescan_size;
 	/* min_parallel_index_scan_size */
 	int			init_min_para_indexscan_size;
-	double		init_paratup_cost;	/* parallel_tuple_cost */
-	double		init_parasetup_cost;	/* parallel_setup_cost */
 
 	PlannerInfo *current_root;	/* PlannerInfo for the followings */
 	Index		parent_relid;	/* inherit parent of table relid */
@@ -537,8 +535,6 @@ static void setup_scan_method_enforcement(ScanMethodHint *scanhint,
 										  HintState *state);
 static int	set_config_int32_option(const char *name, int32 value,
 									GucContext context);
-static int	set_config_double_option(const char *name, double value,
-									 GucContext context);
 static bool check_index_match(IndexOptInfo *info,
 							  ParentIndexInfo *p_info,
 							  Oid relationObjectId);
@@ -1179,8 +1175,6 @@ HintStateCreate(void)
 	hstate->init_nworkers = 0;
 	hstate->init_min_para_tablescan_size = 0;
 	hstate->init_min_para_indexscan_size = 0;
-	hstate->init_paratup_cost = 0;
-	hstate->init_parasetup_cost = 0;
 	hstate->current_root = NULL;
 	hstate->parent_relid = 0;
 	hstate->parent_scan_hint = NULL;
@@ -2744,23 +2738,6 @@ set_config_int32_option(const char *name, int32 value, GucContext context)
 								  pg_hint_plan_parse_message_level);
 }
 
-/*
- * Sets GUC parameter of double type without throwing exceptions. Returns false
- * if something wrong.
- */
-static int
-set_config_double_option(const char *name, double value, GucContext context)
-{
-	char	   *buf = float8out_internal(value);
-	int			result;
-
-	result = set_config_option_noerror(name, buf, context,
-									   PGC_S_SESSION, GUC_ACTION_SAVE, true,
-									   pg_hint_plan_parse_message_level);
-	pfree(buf);
-	return result;
-}
-
 /* setup scan method enforcement according to given options */
 static void
 setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
@@ -2808,8 +2785,6 @@ setup_parallel_plan_enforcement(ParallelHint *hint, HintState *state)
 	/* force means that enforce parallel as far as possible */
 	if (hint && hint->force_parallel && hint->nworkers > 0)
 	{
-		set_config_double_option("parallel_tuple_cost", 0.0, state->context);
-		set_config_double_option("parallel_setup_cost", 0.0, state->context);
 		set_config_int32_option("min_parallel_table_scan_size", 0,
 								state->context);
 		set_config_int32_option("min_parallel_index_scan_size", 0,
@@ -2817,10 +2792,6 @@ setup_parallel_plan_enforcement(ParallelHint *hint, HintState *state)
 	}
 	else
 	{
-		set_config_double_option("parallel_tuple_cost",
-								 state->init_paratup_cost, state->context);
-		set_config_double_option("parallel_setup_cost",
-								 state->init_parasetup_cost, state->context);
 		set_config_int32_option("min_parallel_table_scan_size",
 								state->init_min_para_tablescan_size,
 								state->context);
@@ -3226,8 +3197,6 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions,
 			min_parallel_table_scan_size;
 		current_hint_state->init_min_para_indexscan_size =
 			min_parallel_index_scan_size;
-		current_hint_state->init_paratup_cost = parallel_tuple_cost;
-		current_hint_state->init_parasetup_cost = parallel_setup_cost;
 
 		/*
 		 * max_parallel_workers_per_gather should be non-zero here if Workers
@@ -4825,26 +4794,21 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 				}
 				else
 				{
-					/* prioritize partial paths */
+					/* enforce number of workers if requested */
 					foreach(l, rel->partial_pathlist)
 					{
 						Path	   *ppath = (Path *) lfirst(l);
 
 						if (ppath->parallel_safe)
-						{
 							ppath->parallel_workers = phint->nworkers;
-							ppath->startup_cost = 0;
-							ppath->total_cost = 0;
-							ppath->disabled_nodes = 0;
-						}
 					}
 
-					/* disable non-partial paths */
+					/* disable non-partial paths on non-empty relations */
 					foreach(l, rel->pathlist)
 					{
 						Path	   *ppath = (Path *) lfirst(l);
 
-						if (ppath->disabled_nodes < 1)
+						if ((ppath->pathtype != T_SeqScan || rel->pages > 0) && ppath->disabled_nodes < 1)
 							ppath->disabled_nodes++;
 					}
 				}
@@ -4864,30 +4828,24 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 			/* Additional work to enforce parallel query execution */
 			if (phint && phint->nworkers > 0)
 			{
-				/*
-				 * For Parallel Append to be planned properly, we shouldn't
-				 * set the costs of non-partial paths to disable-value.  Lower
-				 * the priority of non-parallel paths by setting partial path
-				 * costs to 0 instead.
-				 */
-				foreach(l, rel->partial_pathlist)
-				{
-					Path	   *path = (Path *) lfirst(l);
-
-					path->startup_cost = 0;
-					path->total_cost = 0;
-					path->disabled_nodes = 0;
-				}
-
-				/* enforce number of workers if requested */
 				if (phint->force_parallel)
 				{
+					/* enforce number of workers if requested */
 					foreach(l, rel->partial_pathlist)
 					{
 						Path	   *ppath = (Path *) lfirst(l);
 
 						if (ppath->parallel_safe)
 							ppath->parallel_workers = phint->nworkers;
+					}
+
+					/* disable non-partial paths on non-empty relations */
+					foreach(l, rel->pathlist)
+					{
+						Path	   *ppath = (Path *) lfirst(l);
+
+						if ((ppath->pathtype != T_SeqScan || rel->pages > 0) && ppath->disabled_nodes < 1)
+							ppath->disabled_nodes++;
 					}
 				}
 
