@@ -4803,12 +4803,12 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 							ppath->parallel_workers = phint->nworkers;
 					}
 
-					/* disable non-partial paths on non-empty relations */
+					/* disable non-partial paths */
 					foreach(l, rel->pathlist)
 					{
 						Path	   *ppath = (Path *) lfirst(l);
 
-						if ((ppath->pathtype != T_SeqScan || rel->pages > 0) && ppath->disabled_nodes < 1)
+						if (ppath->disabled_nodes < 1)
 							ppath->disabled_nodes++;
 					}
 				}
@@ -4839,12 +4839,12 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 							ppath->parallel_workers = phint->nworkers;
 					}
 
-					/* disable non-partial paths on non-empty relations */
+					/* disable non-partial paths */
 					foreach(l, rel->pathlist)
 					{
 						Path	   *ppath = (Path *) lfirst(l);
 
-						if ((ppath->pathtype != T_SeqScan || rel->pages > 0) && ppath->disabled_nodes < 1)
+						if (ppath->disabled_nodes < 1)
 							ppath->disabled_nodes++;
 					}
 				}
