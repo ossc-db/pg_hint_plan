@@ -77,9 +77,6 @@ TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 
 rpms: rpm19
 
-# pg_hint_plan.c includes core.c
-pg_hint_plan.o: core.c
-
 $(STARBALLS): $(TARSOURCES)
 	if [ -h $(subst .tar.gz,,$@) ]; then rm $(subst .tar.gz,,$@); fi
 	if [ -e $(subst .tar.gz,,$@) ]; then \

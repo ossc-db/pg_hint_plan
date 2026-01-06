@@ -514,10 +514,6 @@ static void pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
 static void pg_hint_plan_join_path_setup(PlannerInfo *root, RelOptInfo *joinrel,
 					 RelOptInfo *outerrel, RelOptInfo *innerrel,
 					 JoinType jointype, JoinPathExtraData *extra);
-static void create_plain_partial_paths(PlannerInfo *root,
-									   RelOptInfo *rel);
-static void set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
-								   RangeTblEntry *rte);
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
@@ -3253,6 +3249,43 @@ standard_planner_proc:
 }
 
 /*
+ * Checks whether a given range table index is for an append rel child.
+ *
+ * This cannot rely on RELOPT_OTHER_MEMBER_REL because simple_rel_array is not
+ * yet initialized for inheritance children when get_relation_info gets called.
+ */
+static bool
+is_appendrel_child(PlannerInfo *root, Index rti)
+{
+	Index		top_rti = rti;
+
+	/*
+	 * If this is a child RTE, find the topmost parent that is still of type
+	 * RTE_RELATION. We do this because we identify children of partitioned
+	 * tables by the name of the child table, but subqueries can also have
+	 * child rels and we don't care about those here.
+	 */
+	for (;;)
+	{
+		AppendRelInfo *appinfo;
+		RangeTblEntry *parent_rte;
+
+		/* append_rel_array can be NULL if there are no children */
+		if (root->append_rel_array == NULL ||
+			(appinfo = root->append_rel_array[top_rti]) == NULL)
+			break;
+
+		parent_rte = planner_rt_fetch(appinfo->parent_relid, root);
+		if (parent_rte->rtekind != RTE_RELATION)
+			break;
+
+		top_rti = appinfo->parent_relid;
+	}
+
+	return rti != top_rti;
+}
+
+/*
  * Helper macro used by the find_*_hint routines checking for a match
  * for a relation name stored in a hint and a RTE.
  *
@@ -3282,8 +3315,7 @@ do {																\
 			alias_hint = hint;										\
 																	\
 		/* check the real name for appendrel children */			\
-		if (!real_name_hint &&										\
-			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)		\
+		if (!real_name_hint && is_appendrel_child(root, relid))		\
 		{															\
 			char	   *realname = get_rel_name(rte->relid);		\
 																	\
@@ -3363,29 +3395,7 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 	RangeTblEntry *rte;
 	ParallelHint *match_hint;
 
-	/* This should not be a join rel */
-	Assert(relid > 0);
-	rel = root->simple_rel_array[relid];
-
-	/*
-	 * Parallel planning is appliable only on base relation, which has
-	 * RelOptInfo.
-	 */
-	if (!rel)
-		return NULL;
-
-	/*
-	 * We have set root->glob->parallelModeOK if needed. What we should do
-	 * here is just following the decision of planner.
-	 */
-	if (!rel->consider_parallel)
-		return NULL;
-
-	/*
-	 * This is baserel or appendrel children. We can refer to RangeTblEntry.
-	 */
-	rte = root->simple_rte_array[relid];
-	Assert(rte);
+	CHECK_RELATION_FOR_HINT();
 
 	/* Loop through the parallel hints */
 	FIND_MATCHING_HINT(ParallelHint, HINT_TYPE_PARALLEL);
@@ -3697,21 +3707,13 @@ get_parent_index_info(Oid indexoid, Oid relid)
  * there respectively.
  */
 static int
-setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
-					   ScanMethodHint **rshint, ParallelHint **rphint)
+setup_hint_enforcement(PlannerInfo *root, Oid relationObjectId,
+					  bool inhparent, RelOptInfo *rel)
 {
 	Index		new_parent_relid = 0;
 	ScanMethodHint *shint = NULL;
 	ParallelHint *phint = NULL;
-	bool		inhparent = root->simple_rte_array[rel->relid]->inh;
-	Oid			relationObjectId = root->simple_rte_array[rel->relid]->relid;
 	int			ret = 0;
-
-	/* reset returns if requested  */
-	if (rshint != NULL)
-		*rshint = NULL;
-	if (rphint != NULL)
-		*rphint = NULL;
 
 	/*
 	 * We could register the parent relation of the following children here
@@ -3727,8 +3729,6 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		if (phint)
 		{
 			setup_parallel_plan_enforcement(rel, phint, current_hint_state);
-			if (rphint)
-				*rphint = phint;
 			ret |= HINT_BM_PARALLEL;
 			return ret;
 		}
@@ -3843,11 +3843,6 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 
 	if (phint)
 		ret |= HINT_BM_PARALLEL;
-
-	if (rshint != NULL)
-		*rshint = shint;
-	if (rphint != NULL)
-		*rphint = phint;
 
 	return ret;
 }
@@ -4656,9 +4651,6 @@ void
 pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 							  Index rti, RangeTblEntry *rte)
 {
-	ParallelHint *phint;
-	int			found_hints;
-
 	/* call the previous hook */
 	if (prev_set_rel_pathlist)
 		prev_set_rel_pathlist(root, rel, rti, rte);
@@ -4669,16 +4661,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 
 	/* Don't touch dummy rels. */
 	if (IS_DUMMY_REL(rel))
-		return;
-
-	/*
-	 * We can accept only plain relations, foreign tables and tablesamples are
-	 * also unacceptable. See set_rel_pathlist.
-	 */
-	if ((rel->rtekind != RTE_RELATION &&
-		 rel->rtekind != RTE_SUBQUERY) ||
-		rte->relkind == RELKIND_FOREIGN_TABLE ||
-		rte->tablesample != NULL)
 		return;
 
 	/*
@@ -4734,35 +4716,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 		}
 
 		return;
-	}
-
-	/* We cannot handle if this requires an outer */
-	if (rel->lateral_relids)
-		return;
-
-	/* Return if this relation gets no enforcement */
-	if ((found_hints = setup_hint_enforcement(root, rel, NULL, &phint)) == 0)
-		return;
-
-	/* Here, we regenerate paths with the current hint restriction */
-	if (found_hints & HINT_BM_SCAN_METHOD || found_hints & HINT_BM_PARALLEL)
-	{
-		/*
-		 * When hint is specified on non-parent relations, discard existing
-		 * paths and regenerate based on the hint considered. Otherwise we
-		 * already have hinted child paths.
-		 */
-		if (!root->simple_rte_array[rel->relid]->inh)
-		{
-			/* Just discard all the paths considered so far */
-			list_free_deep(rel->pathlist);
-			rel->pathlist = NIL;
-			list_free_deep(rel->partial_pathlist);
-			rel->partial_pathlist = NIL;
-
-			/* Regenerate paths with the current enforcement */
-			set_plain_rel_pathlist(root, rel, rte);
-		}
 	}
 }
 
@@ -4977,24 +4930,17 @@ set_parent_index_infos(Index parent_relid,
 	table_close(parent_rel, NoLock);
 }
 
-/*
- * relation_info_hook, to control the list of indexes disabled for a given
- * relation with the DisableIndex hints.
- */
-void
-pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
-									bool inhparent, RelOptInfo *rel)
+static void
+process_disable_index(PlannerInfo *root, Oid relationObjectId,
+					  bool inhparent, RelOptInfo *rel)
 {
 	ListCell   *cell;
 	StringInfoData buf;
 	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
 	DisableIndexHint *match_hint = NULL;
+	Index relid = rel->relid;
 
-	/* call the previous hook */
-	if (prev_get_relation_info_hook)
-		prev_get_relation_info_hook(root, relationObjectId, inhparent, rel);
-
-	if (!current_hint_state || inhparent)
+	if (inhparent)
 		return;
 
 	/* Loop through the disable index hints */
@@ -5130,4 +5076,22 @@ pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 	current_hint_state->parent_disableindex_hint = NULL;
 }
 
-#include "core.c"
+/*
+ * relation_info_hook, to control the list of indexes disabled for a given
+ * relation with the DisableIndex hints.
+ */
+void
+pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
+									bool inhparent, RelOptInfo *rel)
+{
+	/* call the previous hook */
+	if (prev_get_relation_info_hook)
+		prev_get_relation_info_hook(root, relationObjectId, inhparent, rel);
+
+	if (!current_hint_state)
+		return;
+
+	process_disable_index(root, relationObjectId, inhparent, rel);
+
+	setup_hint_enforcement(root, relationObjectId, inhparent, rel);//, NULL, NULL);
+}

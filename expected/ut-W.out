@@ -968,8 +968,8 @@ EXPLAIN (COSTS false) SELECT * FROM p1 join p2 on p1.id = p2.id;
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p1)
-not used hint:
 Parallel(p1 0 hard)
+not used hint:
 duplication hint:
 error hint:
 
@@ -1356,12 +1356,12 @@ SELECT x FROM (VALUES (1), (2), (3)) t(x);
 LOG:  pg_hint_plan:
 used hint:
 Parallel(p1 5 hard)
+Parallel(s1 3 hard)
 not used hint:
 IndexScan(*VALUES*)
 SeqScan(cte1)
 IndexScan(ft1)
 IndexScan(t)
-Parallel(s1 3 hard)
 duplication hint:
 error hint:
 
