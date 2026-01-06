@@ -391,11 +391,6 @@ struct HintState
 
 	/* Initial values of parameters  */
 	int			init_scan_mask; /* enable_* mask */
-	int			init_nworkers;	/* max_parallel_workers_per_gather */
-	/* min_parallel_table_scan_size */
-	int			init_min_para_tablescan_size;
-	/* min_parallel_index_scan_size */
-	int			init_min_para_indexscan_size;
 
 	PlannerInfo *current_root;	/* PlannerInfo for the followings */
 	Index		parent_relid;	/* inherit parent of table relid */
@@ -1172,9 +1167,6 @@ HintStateCreate(void)
 	hstate->all_hints = NULL;
 	memset(hstate->num_hints, 0, sizeof(hstate->num_hints));
 	hstate->init_scan_mask = 0;
-	hstate->init_nworkers = 0;
-	hstate->init_min_para_tablescan_size = 0;
-	hstate->init_min_para_indexscan_size = 0;
 	hstate->current_root = NULL;
 	hstate->parent_relid = 0;
 	hstate->parent_scan_hint = NULL;
@@ -2766,39 +2758,14 @@ setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
 
 /*
  * Setup parallel execution environment.
- *
- * If hint is not NULL, set up using it, elsewise reset to initial environment.
  */
 static void
-setup_parallel_plan_enforcement(ParallelHint *hint, HintState *state)
+setup_parallel_plan_enforcement(RelOptInfo *rel, ParallelHint *hint, HintState *state)
 {
-	if (hint)
-	{
-		hint->base.state = HINT_STATE_USED;
-		set_config_int32_option("max_parallel_workers_per_gather",
-								hint->nworkers, state->context);
-	}
-	else
-		set_config_int32_option("max_parallel_workers_per_gather",
-								state->init_nworkers, state->context);
+	Assert(hint != NULL);
 
-	/* force means that enforce parallel as far as possible */
-	if (hint && hint->force_parallel && hint->nworkers > 0)
-	{
-		set_config_int32_option("min_parallel_table_scan_size", 0,
-								state->context);
-		set_config_int32_option("min_parallel_index_scan_size", 0,
-								state->context);
-	}
-	else
-	{
-		set_config_int32_option("min_parallel_table_scan_size",
-								state->init_min_para_tablescan_size,
-								state->context);
-		set_config_int32_option("min_parallel_index_scan_size",
-								state->init_min_para_indexscan_size,
-								state->context);
-	}
+	hint->base.state = HINT_STATE_USED;
+	rel->rel_parallel_workers = hint->nworkers;
 }
 
 #define SET_CONFIG_OPTION(name, type_bits) \
@@ -3193,19 +3160,14 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions,
 
 		current_hint_state->init_scan_mask = get_current_scan_mask();
 		current_hint_state->init_join_mask = get_current_join_mask();
-		current_hint_state->init_min_para_tablescan_size =
-			min_parallel_table_scan_size;
-		current_hint_state->init_min_para_indexscan_size =
-			min_parallel_index_scan_size;
 
 		/*
 		 * max_parallel_workers_per_gather should be non-zero here if Workers
 		 * hint is specified.
 		 */
-		if (max_hint_nworkers > 0 && max_parallel_workers_per_gather < 1)
+		if (max_hint_nworkers > 0 && max_parallel_workers_per_gather < max_hint_nworkers)
 			set_config_int32_option("max_parallel_workers_per_gather",
-									1, current_hint_state->context);
-		current_hint_state->init_nworkers = max_parallel_workers_per_gather;
+									max_hint_nworkers, current_hint_state->context);
 
 		if (debug_level > 1)
 		{
@@ -3732,7 +3694,6 @@ static void
 reset_hint_enforcement(void)
 {
 	setup_scan_method_enforcement(NULL, current_hint_state);
-	setup_parallel_plan_enforcement(NULL, current_hint_state);
 }
 
 /*
@@ -3770,7 +3731,7 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		phint = find_parallel_hint(root, rel->relid);
 		if (phint)
 		{
-			setup_parallel_plan_enforcement(phint, current_hint_state);
+			setup_parallel_plan_enforcement(rel, phint, current_hint_state);
 			if (rphint)
 				*rphint = phint;
 			ret |= HINT_BM_PARALLEL;
@@ -3882,7 +3843,8 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 	if (!phint)
 		phint = current_hint_state->parent_parallel_hint;
 
-	setup_parallel_plan_enforcement(phint, current_hint_state);
+	if (phint)
+		setup_parallel_plan_enforcement(rel, phint, current_hint_state);
 
 	if (phint)
 		ret |= HINT_BM_PARALLEL;
@@ -4794,15 +4756,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 				}
 				else
 				{
-					/* enforce number of workers if requested */
-					foreach(l, rel->partial_pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->parallel_safe)
-							ppath->parallel_workers = phint->nworkers;
-					}
-
 					/* disable non-partial paths */
 					foreach(l, rel->pathlist)
 					{
@@ -4830,15 +4783,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 			{
 				if (phint->force_parallel)
 				{
-					/* enforce number of workers if requested */
-					foreach(l, rel->partial_pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->parallel_safe)
-							ppath->parallel_workers = phint->nworkers;
-					}
-
 					/* disable non-partial paths */
 					foreach(l, rel->pathlist)
 					{
