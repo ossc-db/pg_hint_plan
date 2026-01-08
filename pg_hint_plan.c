@@ -2760,7 +2760,7 @@ setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
  * Setup parallel execution environment.
  */
 static void
-setup_parallel_plan_enforcement(RelOptInfo *rel, ParallelHint *hint, HintState *state)
+setup_parallel_plan_enforcement(RelOptInfo *rel, RangeTblEntry *rte, ParallelHint *hint, HintState *state)
 {
 	Assert(hint != NULL);
 
@@ -2773,7 +2773,10 @@ setup_parallel_plan_enforcement(RelOptInfo *rel, ParallelHint *hint, HintState *
 	if (hint->nworkers > 0)
 	{
 		rel->pgs_mask |= PGS_GATHER;
-		rel->pgs_mask &= ~PGS_CONSIDER_NONPARTIAL;
+
+		/* Ensure non-partial paths are disabled, except for tablesample (which can never be partial) */
+		if (!rte->tablesample)
+			rel->pgs_mask &= ~PGS_CONSIDER_NONPARTIAL;
 	}
 	else
 	{
@@ -3708,7 +3711,7 @@ get_parent_index_info(Oid indexoid, Oid relid)
  */
 static int
 setup_hint_enforcement(PlannerInfo *root, Oid relationObjectId,
-					  bool inhparent, RelOptInfo *rel)
+					  bool inhparent, RelOptInfo *rel, RangeTblEntry *rte)
 {
 	Index		new_parent_relid = 0;
 	ScanMethodHint *shint = NULL;
@@ -3728,7 +3731,7 @@ setup_hint_enforcement(PlannerInfo *root, Oid relationObjectId,
 		phint = find_parallel_hint(root, rel->relid);
 		if (phint)
 		{
-			setup_parallel_plan_enforcement(rel, phint, current_hint_state);
+			setup_parallel_plan_enforcement(rel, rte, phint, current_hint_state);
 			ret |= HINT_BM_PARALLEL;
 			return ret;
 		}
@@ -3839,7 +3842,7 @@ setup_hint_enforcement(PlannerInfo *root, Oid relationObjectId,
 		phint = current_hint_state->parent_parallel_hint;
 
 	if (phint)
-		setup_parallel_plan_enforcement(rel, phint, current_hint_state);
+		setup_parallel_plan_enforcement(rel, rte, phint, current_hint_state);
 
 	if (phint)
 		ret |= HINT_BM_PARALLEL;
@@ -5084,6 +5087,8 @@ void
 pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 									bool inhparent, RelOptInfo *rel)
 {
+	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
+
 	/* call the previous hook */
 	if (prev_get_relation_info_hook)
 		prev_get_relation_info_hook(root, relationObjectId, inhparent, rel);
@@ -5093,5 +5098,5 @@ pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 
 	process_disable_index(root, relationObjectId, inhparent, rel);
 
-	setup_hint_enforcement(root, relationObjectId, inhparent, rel);//, NULL, NULL);
+	setup_hint_enforcement(root, relationObjectId, inhparent, rel, rte);
 }
