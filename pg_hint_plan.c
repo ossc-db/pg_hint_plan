@@ -2046,7 +2046,6 @@ get_hints_from_comment(const char *p)
 	query_buf = makeStringInfo();
 
 	query_scan_setup(sstate, p, strlen(p),
-					 standard_conforming_strings,
 					 pg_hint_plan_parse_message_level);
 	for (;;)
 	{
