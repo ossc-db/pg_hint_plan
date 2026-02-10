@@ -1938,12 +1938,12 @@ static const char *
 get_hints_from_table(uint64 queryId, const char *client_application)
 {
 	const char *search_query =
-			"SELECT hints "
-			"  FROM hint_plan.hints "
-			" WHERE query_id OPERATOR(pg_catalog.=) $1 "
-			"   AND ( application_name OPERATOR(pg_catalog.=) $2 "
-			"    OR application_name OPERATOR(pg_catalog.=) '' ) "
-			" ORDER BY application_name DESC";
+		"SELECT hints "
+		"  FROM hint_plan.hints "
+		" WHERE query_id OPERATOR(pg_catalog.=) $1 "
+		"   AND ( application_name OPERATOR(pg_catalog.=) $2 "
+		"    OR application_name OPERATOR(pg_catalog.=) '' ) "
+		" ORDER BY application_name DESC";
 	static SPIPlanPtr plan = NULL;
 	char	   *hints = NULL;
 	Oid			argtypes[2] = {INT8OID, TEXTOID};
