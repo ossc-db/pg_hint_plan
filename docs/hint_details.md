@@ -2,11 +2,12 @@
 
 ## Syntax and placement
 
-`pg_hint_plan` reads hints from only the first block comment and stops parsing
-from any characters except alphabetical characters, digits, spaces,
-underscores, commas and parentheses.  In the following example,
-`HashJoin(a b)` and `SeqScan(a)` are parsed as hints, but `IndexScan(a)` and
-`MergeJoin(a b)` are not:
+`pg_hint_plan` reads hints from only the first block comment and any additional
+hint comments cause an error.  Hint parsing also stops from any characters
+except alphabetical characters, digits, spaces, underscores, commas and
+parentheses.  In the following example, `HashJoin(a b)` and `SeqScan(a)` are
+parsed as hints, but `IndexScan(a)` and `MergeJoin(a b)` cause errors because
+they are in separate hint comments:
 
 ```sql
 =# /*+
@@ -127,7 +128,8 @@ children have no effect.
 ## Hints in multistatements
 
 One multistatement can have exactly one hint comment and the hint affects all
-of the individual statements in the multistatement.
+of the individual statements in the multistatement.  Multiple hint comments
+in a multistatement cause an error.
 
 ## VALUES expressions
 
