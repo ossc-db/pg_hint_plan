@@ -1881,9 +1881,9 @@ get_hints_from_table(const char *client_query, const char *client_application)
 	const char *search_query =
 		"SELECT hints "
 		"  FROM hint_plan.hints "
-		" WHERE norm_query_string = $1 "
-		"   AND ( application_name = $2 "
-		"    OR application_name = '' ) "
+		" WHERE norm_query_string OPERATOR(pg_catalog.=) $1 "
+		"   AND ( application_name OPERATOR(pg_catalog.=) $2 "
+		"    OR application_name OPERATOR(pg_catalog.=) '' ) "
 		" ORDER BY application_name DESC";
 	static SPIPlanPtr plan = NULL;
 	char   *hints = NULL;
