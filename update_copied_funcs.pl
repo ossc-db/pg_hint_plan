@@ -244,7 +244,7 @@ diff --git b/make_join_rel.c a/make_join_rel.c
 index 6e601a6c86e6..23f06be4e6d4 100644
 --- b/make_join_rel.c
 +++ a/make_join_rel.c
-@@ -123,6 +123,85 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
+@@ -123,6 +123,94 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
  							 sjinfo, pushed_down_joins,
  							 &restrictlist);
 
@@ -255,6 +255,13 @@ index 6e601a6c86e6..23f06be4e6d4 100644
 +		RowsHint   *justforme = NULL;
 +		RowsHint   *domultiply = NULL;
 +		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
++		Relids		hint_joinrelids;
++
++		/*
++		 * joinrelids may include outer-join relids since PostgreSQL 16,
++		 * so filter them out as hints can only handle base relations.
++		 */
++		hint_joinrelids = bms_intersect(joinrelids, root->all_baserels);
 +
 +		/* Search for applicable rows hint for this join node */
 +		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)
@@ -269,7 +276,7 @@ index 6e601a6c86e6..23f06be4e6d4 100644
 +				rows_hint->base.state == HINT_STATE_ERROR)
 +				continue;
 +
-+			if (bms_equal(joinrelids, rows_hint->joinrelids))
++			if (bms_equal(hint_joinrelids, rows_hint->joinrelids))
 +			{
 +				/*
 +				 * This joinrel is just the target of this rows_hint, so tweak
@@ -279,7 +286,7 @@ index 6e601a6c86e6..23f06be4e6d4 100644
 +			}
 +			else if (!(bms_is_subset(rows_hint->joinrelids, rel1->relids) ||
 +					   bms_is_subset(rows_hint->joinrelids, rel2->relids)) &&
-+					 bms_is_subset(rows_hint->joinrelids, joinrelids) &&
++					 bms_is_subset(rows_hint->joinrelids, hint_joinrelids) &&
 +					 rows_hint->value_type == RVT_MULTI)
 +			{
 +				/*
@@ -294,6 +301,8 @@ index 6e601a6c86e6..23f06be4e6d4 100644
 +				domultiply = rows_hint;
 +			}
 +		}
++
++		bms_free(hint_joinrelids);
 +
 +		if (justforme)
 +		{

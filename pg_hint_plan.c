@@ -4558,12 +4558,22 @@ add_paths_to_joinrel_wrapper(PlannerInfo *root,
 
 		if (join_hint)
 		{
-			if (bms_equal(join_hint->inner_joinrelids, innerrel->relids))
+			Relids	inner_relids;
+
+			/*
+			 * innerrel->relids may include outer-join relids since PostgreSQL
+			 * 16, so filter them out for hint matching.
+			 */
+			inner_relids = bms_intersect(innerrel->relids, root->all_baserels);
+
+			if (bms_equal(join_hint->inner_joinrelids, inner_relids))
 				set_join_config_options(join_hint->enforce_mask, false,
 										current_hint_state->context);
 			else
 				set_join_config_options(DISABLE_ALL_JOIN, false,
 										current_hint_state->context);
+
+			bms_free(inner_relids);
 		}
 
 		if (memoize_hint)
