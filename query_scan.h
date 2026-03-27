@@ -31,7 +31,6 @@ typedef enum
 extern QueryScanState query_scan_create(void);
 extern void query_scan_setup(QueryScanState state,
 							 const char *line, int line_len,
-							 bool std_strings,
 							 int elevel);
 extern void query_scan_finish(QueryScanState state);
 extern QueryScanResult query_scan(QueryScanState state,

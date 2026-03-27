@@ -67,8 +67,6 @@ typedef struct QueryScanStateData
 	char	   *scanbuf;		/* start of outer-level input buffer */
 	const char *scanline;		/* current input line at outer level */
 
-	bool		std_strings;	/* are string literals standard? */
-
 	/*
 	 * All this state lives across successive input lines.  start_state is
 	 * adopted by yylex() on entry, and updated with its finishing state on

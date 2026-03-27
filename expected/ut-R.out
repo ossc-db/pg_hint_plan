@@ -306,7 +306,7 @@ EXPLAIN SELECT *, (SELECT max(t1.c1) FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1) FROM
 -------------------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
                  Merge Cond: (t1_1.c1 = t2_1.c1)
@@ -335,7 +335,7 @@ error hint:
 -------------------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
                  Merge Cond: (t1_1.c1 = t2_1.c1)
@@ -365,7 +365,7 @@ error hint:
 ------------------------------------------------------------------------------------------------
  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
    Merge Cond: (t1.c1 = t2.c1)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
                  Merge Cond: (st1.c1 = st2.c1)
@@ -848,7 +848,7 @@ EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(s
                                          explain_filter                                         
 ------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
                  Merge Cond: (st1.c1 = st2.c1)
@@ -857,9 +857,9 @@ EXPLAIN SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1 AND t1.c1 = (SELECT max(s
                        Sort Key: st2.c1
                        ->  Seq Scan on t2 st2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
-         Index Cond: (c1 = (InitPlan 1).col1)
+         Index Cond: (c1 = (InitPlan expr_1).col1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=1 width=xxx)
-         Filter: (c1 = (InitPlan 1).col1)
+         Filter: (c1 = (InitPlan expr_1).col1)
 (13 rows)
 
 SELECT explain_filter('
@@ -877,7 +877,7 @@ error hint:
                                          explain_filter                                         
 ------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
                  Merge Cond: (st1.c1 = st2.c1)
@@ -886,9 +886,9 @@ error hint:
                        Sort Key: st2.c1
                        ->  Seq Scan on t2 st2  (cost=xxx..xxx rows=100 width=xxx)
    ->  Index Scan using t1_i1 on t1  (cost=xxx..xxx rows=1 width=xxx)
-         Index Cond: (c1 = (InitPlan 1).col1)
+         Index Cond: (c1 = (InitPlan expr_1).col1)
    ->  Seq Scan on t2  (cost=xxx..xxx rows=1 width=xxx)
-         Filter: (c1 = (InitPlan 1).col1)
+         Filter: (c1 = (InitPlan expr_1).col1)
 (13 rows)
 
 --
@@ -1067,7 +1067,7 @@ error hint:
                                                   explain_filter                                                   
 -------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1083,7 +1083,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -1161,7 +1161,7 @@ error hint:
                                                   explain_filter                                                   
 -------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1177,7 +1177,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -1253,7 +1253,7 @@ error hint:
                                                   explain_filter                                                   
 -------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1269,7 +1269,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -1282,7 +1282,7 @@ error hint:
                              ->  Seq Scan on t1 b2t1  (cost=xxx..xxx rows=1000 width=xxx)
                  ->  Index Only Scan using t2_i1 on t2 b2t2  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b2t1.c1)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=100 width=xxx)
@@ -1372,7 +1372,7 @@ error hint:
                                                   explain_filter                                                   
 -------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1388,7 +1388,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -1401,7 +1401,7 @@ error hint:
                                    ->  Index Only Scan using t4_i1 on t4 b2t4  (cost=xxx..xxx rows=1130 width=xxx)
                  ->  Index Only Scan using t2_i1 on t2 b2t2  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b2t1.c1)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -1602,7 +1602,7 @@ error hint:
                                                   explain_filter                                                   
 -------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1618,7 +1618,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -1639,7 +1639,7 @@ error hint:
                      ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
                            Merge Cond: (bmt1.c1 = bmt2.c1)
                            ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=998 width=xxx)
-                                 Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1))
+                                 Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1))
                            ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
                                  Sort Key: bmt2.c1
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
@@ -1697,7 +1697,7 @@ error hint:
                                                   explain_filter                                                   
 -------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1713,7 +1713,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -1734,7 +1734,7 @@ error hint:
                      ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
                            Merge Cond: (bmt1.c1 = bmt2.c1)
                            ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=998 width=xxx)
-                                 Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1))
+                                 Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1))
                            ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
                                  Sort Key: bmt2.c1
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
@@ -1786,10 +1786,10 @@ not used hint:
 duplication hint:
 error hint:
 
-                                                         explain_filter                                                          
----------------------------------------------------------------------------------------------------------------------------------
+                                                                 explain_filter                                                                 
+------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1805,7 +1805,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1000 width=xxx)
@@ -1818,7 +1818,7 @@ error hint:
                              ->  Seq Scan on t1 b2t1  (cost=xxx..xxx rows=1000 width=xxx)
                  ->  Index Only Scan using t2_i1 on t2 b2t2  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b2t1.c1)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=100 width=xxx)
@@ -1839,7 +1839,7 @@ error hint:
                      ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
                            Merge Cond: (bmt1.c1 = bmt2.c1)
                            ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=997 width=xxx)
-                                 Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1) AND (c1 <> (InitPlan 3).col1))
+                                 Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1) AND (c1 <> (InitPlan expr_3).col1))
                            ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
                                  Sort Key: bmt2.c1
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
@@ -1906,10 +1906,10 @@ not used hint:
 duplication hint:
 error hint:
 
-                                                         explain_filter                                                          
----------------------------------------------------------------------------------------------------------------------------------
+                                                                 explain_filter                                                                 
+------------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1925,7 +1925,7 @@ error hint:
                                          ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
                  ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b1t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -1938,7 +1938,7 @@ error hint:
                                    ->  Index Only Scan using t4_i1 on t4 b2t4  (cost=xxx..xxx rows=1130 width=xxx)
                  ->  Index Only Scan using t2_i1 on t2 b2t2  (cost=xxx..xxx rows=1 width=xxx)
                        Index Cond: (c1 = b2t1.c1)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate  (cost=xxx..xxx rows=1 width=xxx)
            ->  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
                  ->  Hash Join  (cost=xxx..xxx rows=1 width=xxx)
@@ -1959,7 +1959,7 @@ error hint:
                      ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
                            Merge Cond: (bmt1.c1 = bmt2.c1)
                            ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=997 width=xxx)
-                                 Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1) AND (c1 <> (InitPlan 3).col1))
+                                 Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1) AND (c1 <> (InitPlan expr_3).col1))
                            ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
                                  Sort Key: bmt2.c1
                                  ->  Seq Scan on t2 bmt2  (cost=xxx..xxx rows=100 width=xxx)
@@ -2473,15 +2473,15 @@ error hint:
                                   explain_filter                                  
 ----------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1 width=xxx)
            Index Cond: (c1 = 1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Index Only Scan using t1_i1 on t1 b3t1  (cost=xxx..xxx rows=1 width=xxx)
            Index Cond: (c1 = 1)
    ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = 1)
-         Filter: (c1 <> (InitPlan 2).col1)
+         Filter: (c1 <> (InitPlan expr_2).col1)
    ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = 1)
 (12 rows)
@@ -2521,15 +2521,15 @@ error hint:
                                   explain_filter                                  
 ----------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=1 width=xxx)
-   InitPlan 1
+   InitPlan expr_1
      ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1 width=xxx)
            Index Cond: (c1 = 1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Index Only Scan using t1_i1 on t1 b3t1  (cost=xxx..xxx rows=1 width=xxx)
            Index Cond: (c1 = 1)
    ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = 1)
-         Filter: (c1 <> (InitPlan 2).col1)
+         Filter: (c1 <> (InitPlan expr_2).col1)
    ->  Index Only Scan using t1_i1 on t1 b1t1  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = 1)
 (12 rows)
@@ -2579,14 +2579,14 @@ error hint:
 -----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Disabled: true
-   InitPlan 1
+   InitPlan expr_1
      ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
            Merge Cond: (b2t1.c1 = b2t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1000 width=xxx)
            ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
                  Sort Key: b2t2.c1
                  ->  Seq Scan on t2 b2t2  (cost=xxx..xxx rows=100 width=xxx)
-   InitPlan 2
+   InitPlan expr_2
      ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
            Merge Cond: (b3t1.c1 = b3t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b3t1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -2603,7 +2603,7 @@ error hint:
                      ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = b1t1.c1)
-               Filter: (c1 <> (InitPlan 2).col1)
+               Filter: (c1 <> (InitPlan expr_2).col1)
    ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt1.c1)
 (29 rows)
@@ -2663,14 +2663,14 @@ error hint:
 -----------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Disabled: true
-   InitPlan 1
+   InitPlan expr_1
      ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
            Merge Cond: (b2t1.c1 = b2t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1000 width=xxx)
            ->  Sort  (cost=xxx..xxx rows=100 width=xxx)
                  Sort Key: b2t2.c1
                  ->  Seq Scan on t2 b2t2  (cost=xxx..xxx rows=100 width=xxx)
-   InitPlan 2
+   InitPlan expr_2
      ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
            Merge Cond: (b3t1.c1 = b3t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b3t1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -2687,7 +2687,7 @@ error hint:
                      ->  Seq Scan on t2 b1t2  (cost=xxx..xxx rows=100 width=xxx)
          ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                Index Cond: (c1 = b1t1.c1)
-               Filter: (c1 <> (InitPlan 2).col1)
+               Filter: (c1 <> (InitPlan expr_2).col1)
    ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
          Index Cond: (c1 = bmt1.c1)
 (29 rows)
@@ -2752,7 +2752,7 @@ error hint:
 --------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Disabled: true
-   InitPlan 1
+   InitPlan expr_1
      ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
            Merge Cond: (b2t1.c1 = b2t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -2766,7 +2766,7 @@ error hint:
                                    ->  Seq Scan on t4 b2t4  (cost=xxx..xxx rows=1130 width=xxx)
                        ->  Index Only Scan using t2_i1 on t2 b2t2  (cost=xxx..xxx rows=1 width=xxx)
                              Index Cond: (c1 = b2t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Merge Join  (cost=xxx..xxx rows=100 width=xxx)
            Merge Cond: (b3t1.c1 = b3t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b3t1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -2801,7 +2801,7 @@ error hint:
                                              Index Cond: (c1 = b1t3.c1)
                      ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                            Index Cond: (c1 = b1t1.c1)
-                           Filter: (c1 <> (InitPlan 2).col1)
+                           Filter: (c1 <> (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
                      Index Cond: (c1 = bmt1.c1)
          ->  Index Only Scan using t3_i1 on t3 bmt3  (cost=xxx..xxx rows=1 width=xxx)
@@ -2895,7 +2895,7 @@ error hint:
 --------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Disabled: true
-   InitPlan 1
+   InitPlan expr_1
      ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
            Merge Cond: (b2t1.c1 = b2t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -2909,7 +2909,7 @@ error hint:
                                    ->  Seq Scan on t4 b2t4  (cost=xxx..xxx rows=1130 width=xxx)
                        ->  Index Only Scan using t2_i1 on t2 b2t2  (cost=xxx..xxx rows=1 width=xxx)
                              Index Cond: (c1 = b2t3.c1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Merge Join  (cost=xxx..xxx rows=1 width=xxx)
            Merge Cond: (b3t1.c1 = b3t2.c1)
            ->  Index Only Scan using t1_i1 on t1 b3t1  (cost=xxx..xxx rows=1000 width=xxx)
@@ -2944,7 +2944,7 @@ error hint:
                                              Index Cond: (c1 = b1t3.c1)
                      ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                            Index Cond: (c1 = b1t1.c1)
-                           Filter: (c1 <> (InitPlan 2).col1)
+                           Filter: (c1 <> (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
                      Index Cond: (c1 = bmt1.c1)
          ->  Index Only Scan using t3_i1 on t3 bmt3  (cost=xxx..xxx rows=1 width=xxx)
@@ -2997,10 +2997,10 @@ error hint:
 -----------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Disabled: true
-   InitPlan 1
+   InitPlan expr_1
      ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1 width=xxx)
            Index Cond: (c1 = 1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Seq Scan on t1 b3t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
          Disabled: true
@@ -3022,7 +3022,7 @@ error hint:
                                  Index Cond: (c1 = b1t3.c1)
                      ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                            Index Cond: (c1 = b1t1.c1)
-                           Filter: (c1 <> (InitPlan 2).col1)
+                           Filter: (c1 <> (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
                      Index Cond: (c1 = bmt1.c1)
          ->  Index Only Scan using t3_i1 on t3 bmt3  (cost=xxx..xxx rows=1 width=xxx)
@@ -3088,10 +3088,10 @@ error hint:
 -----------------------------------------------------------------------------------------------------------------------
  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
    Disabled: true
-   InitPlan 1
+   InitPlan expr_1
      ->  Index Only Scan using t1_i1 on t1 b2t1  (cost=xxx..xxx rows=1 width=xxx)
            Index Cond: (c1 = 1)
-   InitPlan 2
+   InitPlan expr_2
      ->  Seq Scan on t1 b3t1  (cost=xxx..xxx rows=1000 width=xxx)
    ->  Nested Loop  (cost=xxx..xxx rows=10 width=xxx)
          Disabled: true
@@ -3113,7 +3113,7 @@ error hint:
                                  Index Cond: (c1 = b1t3.c1)
                      ->  Index Only Scan using t1_i1 on t1 bmt1  (cost=xxx..xxx rows=1 width=xxx)
                            Index Cond: (c1 = b1t1.c1)
-                           Filter: (c1 <> (InitPlan 2).col1)
+                           Filter: (c1 <> (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_i1 on t2 bmt2  (cost=xxx..xxx rows=1 width=xxx)
                      Index Cond: (c1 = bmt1.c1)
          ->  Index Only Scan using t3_i1 on t3 bmt3  (cost=xxx..xxx rows=1 width=xxx)

@@ -199,6 +199,7 @@ SELECT * FROM settings;
  jit_above_cost                 | 100000    | Query Tuning / Planner Cost Constants
  jit_inline_above_cost          | 500000    | Query Tuning / Planner Cost Constants
  jit_optimize_above_cost        | 500000    | Query Tuning / Planner Cost Constants
+ min_eager_agg_group_size       | 8         | Query Tuning / Planner Cost Constants
  min_parallel_index_scan_size   | 64        | Query Tuning / Planner Cost Constants
  min_parallel_table_scan_size   | 1024      | Query Tuning / Planner Cost Constants
  parallel_setup_cost            | 1000      | Query Tuning / Planner Cost Constants
@@ -208,6 +209,7 @@ SELECT * FROM settings;
  enable_async_append            | on        | Query Tuning / Planner Method Configuration
  enable_bitmapscan              | on        | Query Tuning / Planner Method Configuration
  enable_distinct_reordering     | on        | Query Tuning / Planner Method Configuration
+ enable_eager_aggregate         | on        | Query Tuning / Planner Method Configuration
  enable_gathermerge             | on        | Query Tuning / Planner Method Configuration
  enable_group_by_reordering     | on        | Query Tuning / Planner Method Configuration
  enable_hashagg                 | on        | Query Tuning / Planner Method Configuration
@@ -229,7 +231,7 @@ SELECT * FROM settings;
  enable_seqscan                 | on        | Query Tuning / Planner Method Configuration
  enable_sort                    | on        | Query Tuning / Planner Method Configuration
  enable_tidscan                 | on        | Query Tuning / Planner Method Configuration
-(53 rows)
+(55 rows)
 
 -- EXPLAIN filtering
 --

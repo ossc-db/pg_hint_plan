@@ -1050,20 +1050,22 @@ EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = (InitPlan 4).col1)
-   InitPlan 2
+   Index Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
                          Index Cond: (id < 10)
-   InitPlan 4
+   InitPlan expr_2
      ->  Result
-           InitPlan 3
+           Replaces: MinMaxAggregate
+           InitPlan minmax_2
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
                          Index Cond: (id < 10)
-(14 rows)
+(16 rows)
 
 /*+BitmapScan(v_1)*/
 EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM v1 WHERE v1.id = (SELECT max(id) FROM t1 v_2 WHERE id < 10);
@@ -1077,20 +1079,21 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = (InitPlan 3).col1)
-   InitPlan 1
+   Index Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 3
+   InitPlan expr_2
      ->  Result
-           InitPlan 2
+           Replaces: MinMaxAggregate
+           InitPlan minmax_2
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
                          Index Cond: (id < 10)
-(14 rows)
+(15 rows)
 
 /*+BitmapScan(v_2)*/
 EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM v1 WHERE v1.id = (SELECT max(id) FROM t1 v_2 WHERE id < 10);
@@ -1104,20 +1107,21 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = (InitPlan 3).col1)
-   InitPlan 2
+   Index Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
                          Index Cond: (id < 10)
-   InitPlan 3
+   InitPlan expr_2
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-(14 rows)
+(15 rows)
 
 /*+BitmapScan(t1)*/
 EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM v1 WHERE v1.id = (SELECT max(id) FROM t1 v_2 WHERE id < 10);
@@ -1131,22 +1135,24 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = (InitPlan 4).col1)
-   InitPlan 2
+   Recheck Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
                          Index Cond: (id < 10)
-   InitPlan 4
+   InitPlan expr_2
      ->  Result
-           InitPlan 3
+           Replaces: MinMaxAggregate
+           InitPlan minmax_2
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
                          Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = (InitPlan 4).col1)
-(16 rows)
+         Index Cond: (id = (InitPlan expr_2).col1)
+(18 rows)
 
 /*+BitmapScan(v_1)BitmapScan(v_2)*/
 EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM v1 WHERE v1.id = (SELECT max(id) FROM t1 v_2 WHERE id < 10);
@@ -1161,14 +1167,14 @@ error hint:
                     QUERY PLAN                    
 --------------------------------------------------
  Index Only Scan using t1_pkey on t1
-   Index Cond: (id = (InitPlan 2).col1)
-   InitPlan 1
+   Index Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
@@ -1189,22 +1195,23 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = (InitPlan 3).col1)
-   InitPlan 1
+   Recheck Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 3
+   InitPlan expr_2
      ->  Result
-           InitPlan 2
+           Replaces: MinMaxAggregate
+           InitPlan minmax_2
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_2
                          Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = (InitPlan 3).col1)
-(16 rows)
+         Index Cond: (id = (InitPlan expr_2).col1)
+(17 rows)
 
 /*+BitmapScan(v_2)BitmapScan(t1)*/
 EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM v1 WHERE v1.id = (SELECT max(id) FROM t1 v_2 WHERE id < 10);
@@ -1219,22 +1226,23 @@ error hint:
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = (InitPlan 3).col1)
-   InitPlan 2
+   Recheck Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Index Only Scan Backward using t1_pkey on t1 v_1
                          Index Cond: (id < 10)
-   InitPlan 3
+   InitPlan expr_2
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = (InitPlan 3).col1)
-(16 rows)
+         Index Cond: (id = (InitPlan expr_2).col1)
+(17 rows)
 
 /*+BitmapScan(v_1)BitmapScan(v_2)BitmapScan(t1)*/
 EXPLAIN (COSTS false) SELECT (SELECT max(id) FROM t1 v_1 WHERE id < 10), id FROM v1 WHERE v1.id = (SELECT max(id) FROM t1 v_2 WHERE id < 10);
@@ -1247,24 +1255,24 @@ not used hint:
 duplication hint:
 error hint:
 
-                    QUERY PLAN                    
---------------------------------------------------
+                    QUERY PLAN                     
+---------------------------------------------------
  Bitmap Heap Scan on t1
-   Recheck Cond: (id = (InitPlan 2).col1)
-   InitPlan 1
+   Recheck Cond: (id = (InitPlan expr_2).col1)
+   InitPlan expr_1
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_1
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Bitmap Heap Scan on t1 v_2
                  Recheck Cond: (id < 10)
                  ->  Bitmap Index Scan on t1_pkey
                        Index Cond: (id < 10)
    ->  Bitmap Index Scan on t1_pkey
-         Index Cond: (id = (InitPlan 2).col1)
+         Index Cond: (id = (InitPlan expr_2).col1)
 (16 rows)
 
 -- full scan hint pattern test
@@ -2068,7 +2076,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -2107,7 +2115,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Seq Scan on t2
@@ -2150,7 +2158,7 @@ error hint:
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Bitmap Heap Scan on t2
-         Recheck Cond: (t1.id = id)
+         Recheck Cond: (id = t1.id)
          Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Index Scan on t2_pkey
                Index Cond: (id = t1.id)
@@ -2189,7 +2197,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -2209,7 +2217,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -2229,7 +2237,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -4408,7 +4416,7 @@ error hint:
                  QUERY PLAN                  
 ---------------------------------------------
  Nested Loop
-   Join Filter: (p1.id = t1.id)
+   Join Filter: (t1.id = p1.id)
    ->  Tid Scan on p1
          TID Cond: (ctid = '(1,1)'::tid)
          Filter: ((id >= 50) AND (id <= 51))
@@ -4490,7 +4498,7 @@ error hint:
                  QUERY PLAN                  
 ---------------------------------------------
  Nested Loop
-   Join Filter: (p1.id = t1.id)
+   Join Filter: (t1.id = p1.id)
    ->  Tid Scan on p1
          TID Cond: (ctid = '(1,1)'::tid)
          Filter: ((id >= 50) AND (id <= 51))
@@ -4626,10 +4634,10 @@ SELECT t1_3.id FROM t1 t1_3, t2 t2_3, t3 t3_3 WHERE t1_3.id = t2_3.id AND t2_3.i
 ) v1_1(id), c1_1 WHERE t1_1.id = t2_1.id AND t2_1.id = t3_1.id AND t2_1.id = v1_1.id AND v1_1.id = c1_1.id AND t1_1.id = (
 SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t2_4.id = t3_4.id 
 );
-                                  QUERY PLAN                                  
-------------------------------------------------------------------------------
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4640,7 +4648,7 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4657,19 +4665,19 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = (InitPlan 2).col1)
+                                 Filter: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = (InitPlan 2).col1)
+                     Index Cond: (id = (InitPlan expr_2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = (InitPlan 2).col1)
+               Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Merge Join
@@ -4704,10 +4712,10 @@ not used hint:
 duplication hint:
 error hint:
 
-                                  QUERY PLAN                                  
-------------------------------------------------------------------------------
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4718,7 +4726,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4735,19 +4743,19 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = (InitPlan 2).col1)
+                                 Filter: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = (InitPlan 2).col1)
+                     Index Cond: (id = (InitPlan expr_2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = (InitPlan 2).col1)
+               Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -4783,10 +4791,10 @@ Leading(a t1_1 t1_2 t1_4 t1_5)
 duplication hint:
 error hint:
 
-                                  QUERY PLAN                                  
-------------------------------------------------------------------------------
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4797,7 +4805,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4814,19 +4822,19 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = (InitPlan 2).col1)
+                                 Filter: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = (InitPlan 2).col1)
+                     Index Cond: (id = (InitPlan expr_2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = (InitPlan 2).col1)
+               Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -4862,10 +4870,10 @@ Leading(a t3_2 t3_5 t2_2 c1_1 t3_4 t3_3 t2_3 t2_4 t1_3 t2_5 t1_2 t3_1 t1_4 t2_1 
 duplication hint:
 error hint:
 
-                                  QUERY PLAN                                  
-------------------------------------------------------------------------------
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -4876,7 +4884,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -4893,19 +4901,19 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_1
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                            ->  Seq Scan on t3 t3_1
-                                 Filter: (id = (InitPlan 2).col1)
+                                 Filter: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Index Only Scan using t2_pkey on t2 t2_3
-                     Index Cond: (id = (InitPlan 2).col1)
+                     Index Cond: (id = (InitPlan expr_2).col1)
          ->  Seq Scan on t3 t3_3
-               Filter: (id = (InitPlan 2).col1)
+               Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -4947,7 +4955,7 @@ error hint:
                                            QUERY PLAN                                           
 ------------------------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_2.id = t1_2.id)
@@ -4958,7 +4966,7 @@ error hint:
                              Sort Key: t3_2.id
                              ->  Seq Scan on t3 t3_2
                  ->  Index Only Scan using t1_pkey on t1 t1_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_4.id = t1_4.id)
@@ -4975,9 +4983,9 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Seq Scan on t3 t3_3
-                                       Filter: (id = (InitPlan 2).col1)
+                                       Filter: (id = (InitPlan expr_2).col1)
                                  ->  Aggregate
-                                       Filter: (max(t1_5.id) = (InitPlan 2).col1)
+                                       Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
                                        ->  Merge Join
                                              Merge Cond: (t2_5.id = t1_5.id)
                                              ->  Merge Join
@@ -4988,15 +4996,15 @@ error hint:
                                                          ->  Seq Scan on t3 t3_5
                                              ->  Index Only Scan using t1_pkey on t1 t1_5
                            ->  Index Only Scan using t2_pkey on t2 t2_3
-                                 Index Cond: (id = (InitPlan 2).col1)
+                                 Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
          ->  Index Only Scan using t2_pkey on t2 t2_1
-               Index Cond: (id = (InitPlan 2).col1)
+               Index Cond: (id = (InitPlan expr_2).col1)
    ->  Index Only Scan using t1_pkey on t1 t1_1
-         Index Cond: (id = (InitPlan 2).col1)
+         Index Cond: (id = (InitPlan expr_2).col1)
 (51 rows)
 
 SET from_collapse_limit TO 1;
@@ -5011,10 +5019,10 @@ SELECT t1_3.id FROM t1 t1_3, t2 t2_3, t3 t3_3 WHERE t1_3.id = t2_3.id AND t2_3.i
 ) v1_1(id), c1_1 WHERE t1_1.id = t2_1.id AND t2_1.id = t3_1.id AND t2_1.id = v1_1.id AND v1_1.id = c1_1.id AND t1_1.id = (
 SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t2_4.id = t3_4.id 
 );
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5025,7 +5033,7 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5040,21 +5048,21 @@ SELECT max(t1_4.id) FROM t1 t1_4, t2 t2_4, t3 t3_4 WHERE t1_4.id = t2_4.id AND t
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Merge Join
@@ -5089,10 +5097,10 @@ not used hint:
 duplication hint:
 error hint:
 
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5103,7 +5111,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5118,21 +5126,21 @@ error hint:
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -5168,10 +5176,10 @@ Leading(a t1_1 t1_2 t1_4 t1_5)
 duplication hint:
 error hint:
 
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5182,7 +5190,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5197,21 +5205,21 @@ error hint:
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -5247,10 +5255,10 @@ Leading(a t3_2 t3_5 t2_2 c1_1 t3_4 t3_3 t2_3 t2_4 t1_3 t2_5 t1_2 t3_1 t1_4 t2_1 
 duplication hint:
 error hint:
 
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_2.id = t3_2.id)
@@ -5261,7 +5269,7 @@ error hint:
                  ->  Sort
                        Sort Key: t3_2.id
                        ->  Seq Scan on t3 t3_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_4.id = t3_4.id)
@@ -5276,21 +5284,21 @@ error hint:
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_1
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
          ->  Nested Loop
                ->  Nested Loop
                      ->  Index Only Scan using t1_pkey on t1 t1_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                      ->  Index Only Scan using t2_pkey on t2 t2_3
-                           Index Cond: (id = (InitPlan 2).col1)
+                           Index Cond: (id = (InitPlan expr_2).col1)
                ->  Seq Scan on t3 t3_3
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
    ->  Aggregate
-         Filter: (max(t1_5.id) = (InitPlan 2).col1)
+         Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
          ->  Merge Join
                Merge Cond: (t1_5.id = t3_5.id)
                ->  Nested Loop
@@ -5332,7 +5340,7 @@ error hint:
                                      QUERY PLAN                                     
 ------------------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_2.id = t1_2.id)
@@ -5343,7 +5351,7 @@ error hint:
                              Sort Key: t3_2.id
                              ->  Seq Scan on t3 t3_2
                  ->  Index Only Scan using t1_pkey on t1 t1_2
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t2_4.id = t1_4.id)
@@ -5360,13 +5368,13 @@ error hint:
                      ->  Nested Loop
                            ->  Nested Loop
                                  ->  Index Only Scan using t1_pkey on t1 t1_3
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                                  ->  Index Only Scan using t2_pkey on t2 t2_3
-                                       Index Cond: (id = (InitPlan 2).col1)
+                                       Index Cond: (id = (InitPlan expr_2).col1)
                            ->  Seq Scan on t3 t3_3
-                                 Filter: (id = (InitPlan 2).col1)
+                                 Filter: (id = (InitPlan expr_2).col1)
                      ->  Aggregate
-                           Filter: (max(t1_5.id) = (InitPlan 2).col1)
+                           Filter: (max(t1_5.id) = (InitPlan expr_2).col1)
                            ->  Merge Join
                                  Merge Cond: (t2_5.id = t1_5.id)
                                  ->  Merge Join
@@ -5377,11 +5385,11 @@ error hint:
                                              ->  Seq Scan on t3 t3_5
                                  ->  Index Only Scan using t1_pkey on t1 t1_5
                ->  Seq Scan on t3 t3_1
-                     Filter: (id = (InitPlan 2).col1)
+                     Filter: (id = (InitPlan expr_2).col1)
          ->  Index Only Scan using t2_pkey on t2 t2_1
-               Index Cond: (id = (InitPlan 2).col1)
+               Index Cond: (id = (InitPlan expr_2).col1)
    ->  Index Only Scan using t1_pkey on t1 t1_1
-         Index Cond: (id = (InitPlan 2).col1)
+         Index Cond: (id = (InitPlan expr_2).col1)
 (51 rows)
 
 -- ambiguous error
@@ -5584,7 +5592,7 @@ error hint:
 
 /*+IndexScan(t5 no_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM t5 WHERE t5.id = 1;
-LOG:  available indexes for IndexScan(t5):
+LOG:  available indexes for IndexScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -5632,7 +5640,7 @@ error hint:
 
 /*+IndexScan(t5 no_exist5 no_exist2)*/
 EXPLAIN (COSTS false) SELECT * FROM t5 WHERE t5.id = 1;
-LOG:  available indexes for IndexScan(t5):
+LOG:  available indexes for IndexScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -5957,7 +5965,7 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.id = t2.id AND t2.val = 
 --------------------------------------------------------------------
  Hash Join
    Hash Cond: (t2.val = t3.val)
-   InitPlan 1
+   InitPlan expr_1
      ->  Limit
            ->  Sort
                  Sort Key: t1_2.id
@@ -5969,7 +5977,7 @@ EXPLAIN (COSTS false) SELECT * FROM t1, t2, t3 WHERE t1.id = t2.id AND t2.val = 
    ->  Merge Join
          Merge Cond: (t1.id = t2.id)
          ->  Index Scan using t1_pkey on t1
-               Index Cond: (id < (InitPlan 1).col1)
+               Index Cond: (id < (InitPlan expr_1).col1)
          ->  Index Scan using t2_pkey on t2
    ->  Hash
          ->  Seq Scan on t3
@@ -5991,7 +5999,7 @@ error hint:
 --------------------------------------------------------------------
  Hash Join
    Hash Cond: (t1.id = t2.id)
-   InitPlan 1
+   InitPlan expr_1
      ->  Limit
            ->  Sort
                  Sort Key: t1_2.id
@@ -6005,7 +6013,7 @@ error hint:
          ->  Seq Scan on t3
          ->  Hash
                ->  Index Scan using t1_pkey on t1
-                     Index Cond: (id < (InitPlan 1).col1)
+                     Index Cond: (id < (InitPlan expr_1).col1)
    ->  Hash
          ->  Seq Scan on t2
 (19 rows)
@@ -6024,7 +6032,7 @@ error hint:
 --------------------------------------------------------------
  Hash Join
    Hash Cond: (t2.val = t3.val)
-   InitPlan 1
+   InitPlan expr_1
      ->  Limit
            ->  Merge Join
                  Merge Cond: (t1_2.id = t2_2.id)
@@ -6036,7 +6044,7 @@ error hint:
    ->  Merge Join
          Merge Cond: (t1.id = t2.id)
          ->  Index Scan using t1_pkey on t1
-               Index Cond: (id < (InitPlan 1).col1)
+               Index Cond: (id < (InitPlan expr_1).col1)
          ->  Index Scan using t2_pkey on t2
    ->  Hash
          ->  Seq Scan on t3
@@ -6055,7 +6063,7 @@ error hint:
 --------------------------------------------------------------------
  Hash Join
    Hash Cond: (t2.val = t3.val)
-   InitPlan 1
+   InitPlan expr_1
      ->  Limit
            ->  Sort
                  Sort Key: t1_2.id
@@ -6067,7 +6075,7 @@ error hint:
    ->  Merge Join
          Merge Cond: (t1.id = t2.id)
          ->  Index Scan using t1_pkey on t1
-               Index Cond: (id < (InitPlan 1).col1)
+               Index Cond: (id < (InitPlan expr_1).col1)
          ->  Index Scan using t2_pkey on t2
    ->  Hash
          ->  Seq Scan on t3
@@ -6639,8 +6647,13 @@ EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid =
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey)
@@ -6669,8 +6682,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_id_val_idx
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id_val_idx
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_id_val_idx
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_id_val_idx
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_id_val_idx
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_id_val_idx
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_id_val_idx
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_id_val_idx
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_id_val_idx)
@@ -6699,8 +6717,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_val_id_idx
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_val_id_idx
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_val_id_idx
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_id_idx
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_id_idx
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_id_idx
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_id_idx
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_id_idx
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_val_id_idx)
@@ -6753,15 +6776,15 @@ EXPLAIN (COSTS false) SELECT val FROM p2 WHERE val >= '50' AND val <= '51' AND p
 set max_parallel_workers_per_gather to 0;
 /*+ IndexScan(p2 p2_val)*/
 EXPLAIN (COSTS false) SELECT val FROM p2 WHERE val >= '50' AND val <= '51' AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
-LOG:  available indexes for IndexScan(p2_c1):
-LOG:  available indexes for IndexScan(p2_c2):
-LOG:  available indexes for IndexScan(p2_c3):
-LOG:  available indexes for IndexScan(p2_c4):
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
-LOG:  available indexes for IndexScan(p2_c3_c1):
-LOG:  available indexes for IndexScan(p2_c3_c2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
+LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val p2_c1_val_idx8 p2_c1_val_idx7 p2_c1_expr_idx1 p2_c1_expr_idx p2_c1_val_idx6 p2_c1_val_idx5 p2_c1_val_idx4 p2_c1_val_idx3 p2_c1_val_id_idx p2_c1_val_idx2 p2_c1_val_idx1 p2_c1_val_idx p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val p2_c2_val_idx8 p2_c2_val_idx7 p2_c2_expr_idx1 p2_c2_expr_idx p2_c2_val_idx6 p2_c2_val_idx5 p2_c2_val_idx4 p2_c2_val_idx3 p2_c2_val_id_idx p2_c2_val_idx2 p2_c2_val_idx1 p2_c2_val_idx p2_c2_id_val_idx p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6796,8 +6819,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey)
@@ -6826,8 +6854,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_id2_val
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_id2_val)
@@ -6853,9 +6886,14 @@ error hint:
 /*+IndexScan(p2 p2_val2_id)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_val2_id
-LOG:  available indexes for IndexScan(p2_c1):
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val p2_c1_val_idx8 p2_c1_val_idx7 p2_c1_expr_idx1 p2_c1_expr_idx p2_c1_val_idx6 p2_c1_val_idx5 p2_c1_val_idx4 p2_c1_val_idx3 p2_c1_val_id_idx p2_c1_val_idx2 p2_c1_val_idx1 p2_c1_val_idx p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val p2_c2_val_idx8 p2_c2_val_idx7 p2_c2_expr_idx1 p2_c2_expr_idx p2_c2_val_idx6 p2_c2_val_idx5 p2_c2_val_idx4 p2_c2_val_idx3 p2_c2_val_id_idx p2_c2_val_idx2 p2_c2_val_idx1 p2_c2_val_idx p2_c2_id_val_idx p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_val2_id)
@@ -6881,8 +6919,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey)
@@ -6909,10 +6952,15 @@ error hint:
 
 /*+IndexScan(p2 p2_c1_id_val_idx)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val p2_c2_val_idx8 p2_c2_val_idx7 p2_c2_expr_idx1 p2_c2_expr_idx p2_c2_val_idx6 p2_c2_val_idx5 p2_c2_val_idx4 p2_c2_val_idx3 p2_c2_val_id_idx p2_c2_val_idx2 p2_c2_val_idx1 p2_c2_val_idx p2_c2_id_val_idx p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_c1_id_val_idx)
@@ -6936,10 +6984,15 @@ error hint:
 
 /*+IndexScan(p2 no_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
-LOG:  available indexes for IndexScan(p2_c1):
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
+LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val p2_c1_val_idx8 p2_c1_val_idx7 p2_c1_expr_idx1 p2_c1_expr_idx p2_c1_val_idx6 p2_c1_val_idx5 p2_c1_val_idx4 p2_c1_val_idx3 p2_c1_val_id_idx p2_c1_val_idx2 p2_c1_val_idx1 p2_c1_val_idx p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val p2_c2_val_idx8 p2_c2_val_idx7 p2_c2_expr_idx1 p2_c2_expr_idx p2_c2_val_idx6 p2_c2_val_idx5 p2_c2_val_idx4 p2_c2_val_idx3 p2_c2_val_id_idx p2_c2_val_idx2 p2_c2_val_idx1 p2_c2_val_idx p2_c2_id_val_idx p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6964,8 +7017,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey p2_c1_id_val_idx)
@@ -6994,8 +7052,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey no_exist)
@@ -7022,10 +7085,15 @@ error hint:
 
 /*+IndexScan(p2 p2_c1_id_val_idx no_exist)*/
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
-LOG:  available indexes for IndexScan(p2):
+LOG:  available indexes for IndexScan(p2): p2_val2_id p2_id2_val p2_val_idx7 p2_val_idx6 p2_expr2 p2_expr p2_val_idx5 p2_val_idx4 p2_val_idx3 p2_val_idx2 p2_val_id_idx p2_val_idx_1 p2_ununi_id_val_idx p2_val_idx p2_id_val_idx p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
-LOG:  available indexes for IndexScan(p2_c1_c1):
-LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val p2_c2_val_idx8 p2_c2_val_idx7 p2_c2_expr_idx1 p2_c2_expr_idx p2_c2_val_idx6 p2_c2_val_idx5 p2_c2_val_idx4 p2_c2_val_idx3 p2_c2_val_id_idx p2_c2_val_idx2 p2_c2_val_idx1 p2_c2_val_idx p2_c2_id_val_idx p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_idx8 p2_c3_val_idx7 p2_c3_expr_idx1 p2_c3_expr_idx p2_c3_val_idx6 p2_c3_val_idx5 p2_c3_val_idx4 p2_c3_val_idx3 p2_c3_val_id_idx p2_c3_val_idx2 p2_c3_val_idx1 p2_c3_val_idx p2_c3_id_val_idx p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_val_idx8 p2_c4_val_idx7 p2_c4_expr_idx1 p2_c4_expr_idx p2_c4_val_idx6 p2_c4_val_idx5 p2_c4_val_idx4 p2_c4_val_idx3 p2_c4_val_idx2 p2_c4_val_idx1 p2_c4_val_idx p2_c4_id_val_idx p2_c4_pkey
+LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_idx8 p2_c1_c1_val_idx7 p2_c1_c1_expr_idx1 p2_c1_c1_expr_idx p2_c1_c1_val_idx6 p2_c1_c1_val_idx5 p2_c1_c1_val_idx4 p2_c1_c1_val_idx3 p2_c1_c1_val_id_idx p2_c1_c1_val_idx2 p2_c1_c1_val_idx1 p2_c1_c1_val_idx p2_c1_c1_id_val_idx p2_c1_c1_pkey
+LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_idx8 p2_c1_c2_val_idx7 p2_c1_c2_expr_idx1 p2_c1_c2_expr_idx p2_c1_c2_val_idx6 p2_c1_c2_val_idx5 p2_c1_c2_val_idx4 p2_c1_c2_val_idx3 p2_c1_c2_val_id_idx p2_c1_c2_val_idx2 p2_c1_c2_val_idx1 p2_c1_c2_val_idx p2_c1_c2_id_val_idx p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_idx8 p2_c3_c1_val_idx7 p2_c3_c1_expr_idx1 p2_c3_c1_expr_idx p2_c3_c1_val_idx6 p2_c3_c1_val_idx5 p2_c3_c1_val_idx4 p2_c3_c1_val_idx3 p2_c3_c1_val_id_idx p2_c3_c1_val_idx2 p2_c3_c1_val_idx1 p2_c3_c1_val_idx p2_c3_c1_id_val_idx p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_idx8 p2_c3_c2_val_idx7 p2_c3_c2_expr_idx1 p2_c3_c2_expr_idx p2_c3_c2_val_idx6 p2_c3_c2_val_idx5 p2_c3_c2_val_idx4 p2_c3_c2_val_idx3 p2_c3_c2_val_id_idx p2_c3_c2_val_idx2 p2_c3_c2_val_idx1 p2_c3_c2_val_idx p2_c3_c2_id_val_idx p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_c1_id_val_idx no_exist)
@@ -7051,8 +7119,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey p2_c1_id_val_idx no_exist)
@@ -7320,7 +7393,7 @@ error hint:
 
 /*+ IndexScanRegexp(t5 t5[^_].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexScanRegexp(t5):
+LOG:  available indexes for IndexScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7336,7 +7409,7 @@ error hint:
 
 /*+ IndexScanRegexp(t5 ^.*t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexScanRegexp(t5):
+LOG:  available indexes for IndexScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7352,7 +7425,7 @@ error hint:
 
 /*+ IndexScan(t5 t5_id[0-9].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexScan(t5):
+LOG:  available indexes for IndexScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7400,7 +7473,7 @@ error hint:
 
 /*+ IndexOnlyScanRegexp(t5 t5[^_].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexOnlyScanRegexp(t5):
+LOG:  available indexes for IndexOnlyScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7416,7 +7489,7 @@ error hint:
 
 /*+ IndexOnlyScanRegexp(t5 ^.*t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexOnlyScanRegexp(t5):
+LOG:  available indexes for IndexOnlyScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7432,7 +7505,7 @@ error hint:
 
 /*+ IndexOnlyScan(t5 t5_id[0-9].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for IndexOnlyScan(t5):
+LOG:  available indexes for IndexOnlyScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7484,7 +7557,7 @@ error hint:
 
 /*+ BitmapScanRegexp(t5 t5[^_].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for BitmapScanRegexp(t5):
+LOG:  available indexes for BitmapScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7500,7 +7573,7 @@ error hint:
 
 /*+ BitmapScanRegexp(t5 ^.*t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for BitmapScanRegexp(t5):
+LOG:  available indexes for BitmapScanRegexp(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7516,7 +7589,7 @@ error hint:
 
 /*+ BitmapScan(t5 t5_id[0-9].*)*/
 EXPLAIN (COSTS false) SELECT id FROM t5 WHERE id = 1;
-LOG:  available indexes for BitmapScan(t5):
+LOG:  available indexes for BitmapScan(t5): t5_idaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa t5_val t5_id3 t5_id2 t5_id1 t5_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7648,15 +7721,15 @@ error hint:
 
 /*+ IndexScanRegexp(p1 p1[^_].*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexScanRegexp(p1):
-LOG:  available indexes for IndexScanRegexp(p1_c1):
-LOG:  available indexes for IndexScanRegexp(p1_c2):
-LOG:  available indexes for IndexScanRegexp(p1_c3):
-LOG:  available indexes for IndexScanRegexp(p1_c4):
-LOG:  available indexes for IndexScanRegexp(p1_c1_c1):
-LOG:  available indexes for IndexScanRegexp(p1_c1_c2):
-LOG:  available indexes for IndexScanRegexp(p1_c3_c1):
-LOG:  available indexes for IndexScanRegexp(p1_c3_c2):
+LOG:  available indexes for IndexScanRegexp(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexScanRegexp(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7689,15 +7762,15 @@ error hint:
 
 /*+ IndexScan(p1 p1_.*val2.*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexScan(p1):
-LOG:  available indexes for IndexScan(p1_c1):
-LOG:  available indexes for IndexScan(p1_c2):
-LOG:  available indexes for IndexScan(p1_c3):
-LOG:  available indexes for IndexScan(p1_c4):
-LOG:  available indexes for IndexScan(p1_c1_c1):
-LOG:  available indexes for IndexScan(p1_c1_c2):
-LOG:  available indexes for IndexScan(p1_c3_c1):
-LOG:  available indexes for IndexScan(p1_c3_c2):
+LOG:  available indexes for IndexScan(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexScan(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexScan(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexScan(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexScan(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexScan(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexScan(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexScan(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexScan(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7821,15 +7894,15 @@ error hint:
 
 /*+ IndexOnlyScanRegexp(p1 p1[^_].*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexOnlyScanRegexp(p1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c2):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c3):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c4):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c2):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c1):
-LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c2):
+LOG:  available indexes for IndexOnlyScanRegexp(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexOnlyScanRegexp(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -7862,15 +7935,15 @@ error hint:
 
 /*+ IndexOnlyScan(p1 p1_.*val2.*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for IndexOnlyScan(p1):
-LOG:  available indexes for IndexOnlyScan(p1_c1):
-LOG:  available indexes for IndexOnlyScan(p1_c2):
-LOG:  available indexes for IndexOnlyScan(p1_c3):
-LOG:  available indexes for IndexOnlyScan(p1_c4):
-LOG:  available indexes for IndexOnlyScan(p1_c1_c1):
-LOG:  available indexes for IndexOnlyScan(p1_c1_c2):
-LOG:  available indexes for IndexOnlyScan(p1_c3_c1):
-LOG:  available indexes for IndexOnlyScan(p1_c3_c2):
+LOG:  available indexes for IndexOnlyScan(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for IndexOnlyScan(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -8012,15 +8085,15 @@ error hint:
 
 /*+ BitmapScanRegexp(p1 p1[^_].*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for BitmapScanRegexp(p1):
-LOG:  available indexes for BitmapScanRegexp(p1_c1):
-LOG:  available indexes for BitmapScanRegexp(p1_c2):
-LOG:  available indexes for BitmapScanRegexp(p1_c3):
-LOG:  available indexes for BitmapScanRegexp(p1_c4):
-LOG:  available indexes for BitmapScanRegexp(p1_c1_c1):
-LOG:  available indexes for BitmapScanRegexp(p1_c1_c2):
-LOG:  available indexes for BitmapScanRegexp(p1_c3_c1):
-LOG:  available indexes for BitmapScanRegexp(p1_c3_c2):
+LOG:  available indexes for BitmapScanRegexp(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for BitmapScanRegexp(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -8053,15 +8126,15 @@ error hint:
 
 /*+ BitmapScan(p1 p1_.*val2.*)*/
 EXPLAIN (COSTS false) SELECT val FROM p1 WHERE val = 1;
-LOG:  available indexes for BitmapScan(p1):
-LOG:  available indexes for BitmapScan(p1_c1):
-LOG:  available indexes for BitmapScan(p1_c2):
-LOG:  available indexes for BitmapScan(p1_c3):
-LOG:  available indexes for BitmapScan(p1_c4):
-LOG:  available indexes for BitmapScan(p1_c1_c1):
-LOG:  available indexes for BitmapScan(p1_c1_c2):
-LOG:  available indexes for BitmapScan(p1_c3_c1):
-LOG:  available indexes for BitmapScan(p1_c3_c2):
+LOG:  available indexes for BitmapScan(p1): p1_val3 p1_val2 p1_val1 p1_pkey
+LOG:  available indexes for BitmapScan(p1_c1): p1_c1_val3 p1_c1_val2 p1_c1_val1 p1_c1_pkey
+LOG:  available indexes for BitmapScan(p1_c2): p1_c2_val3 p1_c2_val2 p1_c2_val1 p1_c2_pkey
+LOG:  available indexes for BitmapScan(p1_c3): p1_c3_val3 p1_c3_val2 p1_c3_val1 p1_c3_pkey
+LOG:  available indexes for BitmapScan(p1_c4): p1_c4_val3 p1_c4_val2 p1_c4_val1 p1_c4_pkey
+LOG:  available indexes for BitmapScan(p1_c1_c1): p1_c1_c1_val3 p1_c1_c1_val2 p1_c1_c1_val1 p1_c1_c1_pkey
+LOG:  available indexes for BitmapScan(p1_c1_c2): p1_c1_c2_val3 p1_c1_c2_val2 p1_c1_c2_val1 p1_c1_c2_pkey
+LOG:  available indexes for BitmapScan(p1_c3_c1): p1_c3_c1_val3 p1_c3_c1_val2 p1_c3_c1_val1 p1_c3_c1_pkey
+LOG:  available indexes for BitmapScan(p1_c3_c2): p1_c3_c2_val3 p1_c3_c2_val2 p1_c3_c2_val1 p1_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -9321,17 +9394,19 @@ error hint:
 
                    QUERY PLAN                    
 -------------------------------------------------
- Nested Loop
-   Disabled: true
-   ->  Merge Join
-         Merge Cond: (t2.id = t1.id)
-         ->  Index Scan using t2_pkey on t2
-         ->  Sort
-               Sort Key: t1.id
-               ->  Gather
-                     Workers Planned: 8
+ Gather
+   Workers Planned: 8
+   ->  Nested Loop
+         Disabled: true
+         ->  Merge Join
+               Merge Cond: (t1.id = t2.id)
+               ->  Sort
+                     Sort Key: t1.id
                      ->  Parallel Seq Scan on t1
-   ->  Index Scan using t3_pkey on t3
-         Index Cond: (id = t1.id)
-(12 rows)
+               ->  Sort
+                     Sort Key: t2.id
+                     ->  Seq Scan on t2
+         ->  Index Scan using t3_pkey on t3
+               Index Cond: (id = t1.id)
+(14 rows)
 

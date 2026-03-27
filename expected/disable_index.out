@@ -131,7 +131,7 @@ IndexScan(t1 t1_i1)
 */
 EXPLAIN (COSTS false) SELECT * FROM disable_index.t1 WHERE c1 = 1;
 LOG:  indexes disabled for DisableIndex(t1): t1_i1
-LOG:  available indexes for IndexScan(t1):
+LOG:  available indexes for IndexScan(t1): t1_pkey
 LOG:  pg_hint_plan:
 used hint:
 DisableIndex(t1 t1_i1)
