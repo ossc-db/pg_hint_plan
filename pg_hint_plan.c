@@ -61,7 +61,9 @@
 /* PostgreSQL */
 #include "access/htup_details.h"
 
-#ifdef PG_MODULE_MAGIC
+#if defined(PG_MODULE_MAGIC_EXT)
+PG_MODULE_MAGIC_EXT(.name = "pg_hint_plan", .version = HINTPLANVER);
+#elif defined(PG_MODULE_MAGIC)
 PG_MODULE_MAGIC;
 #endif
 
