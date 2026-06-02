@@ -61,9 +61,10 @@
 /* PostgreSQL */
 #include "access/htup_details.h"
 
-#ifdef PG_MODULE_MAGIC
-PG_MODULE_MAGIC;
-#endif
+PG_MODULE_MAGIC_EXT(
+					.name = "pg_hint_plan",
+					.version = HINTPLANVER
+);
 
 #define BLOCK_COMMENT_START		"/*"
 #define BLOCK_COMMENT_END		"*/"
