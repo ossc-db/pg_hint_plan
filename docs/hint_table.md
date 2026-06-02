@@ -105,6 +105,45 @@ from restrictions in the planner.  For example:
 =# /*+ Rows(a b *10) */ SELECT... ; Makes the number 10 times larger.
 ```
 
+### Hints for ArrayRows (array predicate row corrections)
+
+This hint, named `ArrayRows`, adjusts row estimation for array-related
+predicates.  It can be useful when PostgreSQL's default estimate is too crude
+(especially when the array expression is not a constant).
+
+`ArrayRows` targets:
+
+- Array operators: `&&`, `@>`, `<@`
+- Scalar-array comparisons: `<cmp> ANY (array)` and `<cmp> ALL (array)`
+
+`<cmp>` can be `=`, `<>` (or `!=`), `<`, `<=`, `>` and `>=`.
+
+The last argument is the correction term:
+
+- `#<n>` sets the estimated number of rows produced by the matching predicate(s)
+- `+<n>` increases the estimated rows by the given amount
+- `-<n>` decreases the estimated rows by the given amount
+- `*<n>` scales the matching predicate(s) by the given factor
+
+The optional `qualifier` can narrow the hint down to only a specific operator
+or quantifier, for example `&&`, `ANY`, or `= ANY`.  If multiple matching
+predicates exist for the same relation set, the correction is distributed
+evenly across them.
+
+If multiple `ArrayRows` hints match the same predicate, the most specific
+qualifier wins (comparison+quantifier like `= ANY` is preferred over `ANY`/`ALL`
+or an array operator like `&&`, which are preferred over no qualifier).
+
+For inheritance/partitioned tables, it is usually best to target the parent
+relation name/alias; child rels may appear in `EXPLAIN` with planner-generated
+aliases like `parent_1`, `parent_2`, but the parent hint still applies.
+
+```sql
+=# /*+ ArrayRows(t && #10) */ EXPLAIN SELECT * FROM t WHERE t.tags && some_array();
+=# /*+ ArrayRows(t = ANY #100) */ EXPLAIN SELECT * FROM t WHERE t.id = ANY(some_array());
+=# /*+ ArrayRows(t ANY *0.1) */ EXPLAIN SELECT * FROM t WHERE t.id < ANY(some_array());
+```
+
 ### Hints for parallel plans
 
 This hint, named `Parallel`, enforces parallel execution configuration

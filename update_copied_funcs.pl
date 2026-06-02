@@ -244,7 +244,7 @@ diff --git b/make_join_rel.c a/make_join_rel.c
 index 6e601a6c86e6..23f06be4e6d4 100644
 --- b/make_join_rel.c
 +++ a/make_join_rel.c
-@@ -123,6 +123,85 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
+@@ -123,6 +123,93 @@ make_join_rel(PlannerInfo *root, RelOptInfo *rel1, RelOptInfo *rel2)
  							 sjinfo, pushed_down_joins,
  							 &restrictlist);
 
@@ -255,6 +255,14 @@ index 6e601a6c86e6..23f06be4e6d4 100644
 +		RowsHint   *justforme = NULL;
 +		RowsHint   *domultiply = NULL;
 +		RowsHint  **rows_hints = (RowsHint **) get_current_hints(HINT_TYPE_ROWS);
++
++		bool		arrayrows_applied;
++
++		arrayrows_applied = apply_arrayrows_hints_to_restrictinfos(root, restrictlist,
++																sjinfo->jointype, sjinfo);
++		if (arrayrows_applied)
++			set_joinrel_size_estimates(root, joinrel, rel1, rel2, sjinfo,
++									   restrictlist);
 +
 +		/* Search for applicable rows hint for this join node */
 +		for (i = 0; i < current_hint_state->num_hints[HINT_TYPE_ROWS]; i++)
