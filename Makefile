@@ -50,6 +50,8 @@ DATA = \
 
 EXTRA_CLEAN = RPMS
 
+PG_CFLAGS += -DHINTPLANVER=\"$(HINTPLANVER)\"
+
 # Switch environment between standalone make and make check with
 # EXTRA_INSTALL from PostgreSQL tree
 # run the following command in the PG tree to run a regression test
