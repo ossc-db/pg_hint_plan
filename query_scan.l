@@ -529,10 +529,7 @@ other			.
 				}
 
 {xqstart}		{
-					if (cur_state->std_strings)
-						BEGIN(xq);
-					else
-						BEGIN(xe);
+					BEGIN(xq);
 					/* ignore */
 				}
 {xestart}		{
@@ -882,22 +879,17 @@ query_scan_create(void)
  * be called when scanning is complete.  Note that the lexer retains
  * a pointer to the storage at *line --- this string must not be altered
  * or freed until after query_scan_finish is called.
- *
- * std_strings says whether standard_conforming_strings is on.
  */
 void
 query_scan_setup(QueryScanState state,
 				const char *line, int line_len,
-				bool std_strings, int elevel)
+				int elevel)
 {
 	/* Mustn't be scanning already */
 	Assert(state->scanbufhandle == NULL);
 
 	/* elevel for reports */
 	state->elevel = elevel;
-
-	/* Save standard-strings flag as well */
-	state->std_strings = std_strings;
 
 	/* Set up flex input buffer with appropriate translation and padding */
 	state->scanbufhandle = query_scan_prepare_buffer(state, line, line_len,
