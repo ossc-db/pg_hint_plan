@@ -3175,6 +3175,22 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 
 		current_hint_str = prev_hint_str;
 		recurse_level--;
+
+		/*
+		 * current_hint_str is useless after planning of the top-level query.
+		 * There's a case where the caller has multiple queries. This causes
+		 * hint parsing multiple times for the same string but we don't have a
+		 * simple and reliable way to distinguish that case from the case
+		 * where of separate queries.
+		 */
+		if (recurse_level < 1)
+			current_hint_retrieved = false;
+
+		/* Print hint in debug mode. */
+		if (debug_level == 1)
+			HintStateDump(current_hint_state);
+		else if (debug_level > 1)
+			HintStateDump2(current_hint_state);
 	}
 	PG_CATCH();
 	{
@@ -3190,23 +3206,6 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions, 
 		PG_RE_THROW();
 	}
 	PG_END_TRY();
-
-
-	/*
-	 * current_hint_str is useless after planning of the top-level query.
-	 * There's a case where the caller has multiple queries. This causes hint
-	 * parsing multiple times for the same string but we don't have a simple
-	 * and reliable way to distinguish that case from the case where of
-	 * separate queries.
-	 */
-	if (recurse_level < 1)
-		current_hint_retrieved = false;
-
-	/* Print hint in debug mode. */
-	if (debug_level == 1)
-		HintStateDump(current_hint_state);
-	else if (debug_level > 1)
-		HintStateDump2(current_hint_state);
 
 	/*
 	 * Rollback changes of GUC parameters, and pop current hint context from

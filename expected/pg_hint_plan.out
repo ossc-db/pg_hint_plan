@@ -9224,3 +9224,27 @@ error hint:
          Index Cond: (id = t1.id)
 (11 rows)
 
+-- Check state of hint stack across with ERROR level due to debug_print.
+-- The first query generates an error while a hint is included.  The second
+-- query should work, with a clean hint on the stack.  The error is triggered
+-- due to a combination of debug_print and message_level making the debug_print
+-- fail.
+SET pg_hint_plan.message_level TO error;
+SET pg_hint_plan.debug_print TO on;
+/*+ NoNestLoop(t1 t2) */
+EXPLAIN (COSTS OFF) SELECT count(*) FROM (SELECT count(*) FROM t1 GROUP BY id) AS q1;
+ERROR:  pg_hint_plan:
+used hint:
+not used hint:
+NoNestLoop(t1 t2)
+duplication hint:
+error hint:
+
+SELECT 1;
+ ?column? 
+----------
+        1
+(1 row)
+
+RESET pg_hint_plan.message_level;
+RESET pg_hint_plan.debug_print;
