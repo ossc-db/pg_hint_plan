@@ -434,7 +434,7 @@ static void push_hint(HintState *hstate);
 static void pop_hint(void);
 
 static void pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query,
-											JumbleState *jstate);
+											const JumbleState *jstate);
 static PlannedStmt *pg_hint_plan_planner(Query *parse, const char *query_string,
 										 int cursorOptions,
 										 ParamListInfo boundParams,
@@ -3079,7 +3079,7 @@ get_current_hint_string(Query *query, const char *query_str)
  */
 static void
 pg_hint_plan_post_parse_analyze(ParseState *pstate, Query *query,
-								JumbleState *jstate)
+								const JumbleState *jstate)
 {
 	if (prev_post_parse_analyze_hook)
 		prev_post_parse_analyze_hook(pstate, query, jstate);
