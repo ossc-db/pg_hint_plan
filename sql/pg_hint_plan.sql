@@ -1176,3 +1176,16 @@ set pg_hint_plan.parse_messages to 'NOTICE';
 -- all hint types together
 /*+ SeqScan(t1) MergeJoin(t1 t2) Leading(t1 t2) Rows(t1 t2 +10) Parallel(t1 8 hard) Set(random_page_cost 2.0)*/
 EXPLAIN (costs off) SELECT * FROM t1 JOIN t2 ON (t1.id = t2.id) JOIN t3 ON (t3.id = t2.id);
+
+-- Check state of hint stack across with ERROR level due to debug_print.
+-- The first query generates an error while a hint is included.  The second
+-- query should work, with a clean hint on the stack.  The error is triggered
+-- due to a combination of debug_print and message_level making the debug_print
+-- fail.
+SET pg_hint_plan.message_level TO error;
+SET pg_hint_plan.debug_print TO on;
+/*+ NoNestLoop(t1 t2) */
+EXPLAIN (COSTS OFF) SELECT count(*) FROM (SELECT count(*) FROM t1 GROUP BY id) AS q1;
+SELECT 1;
+RESET pg_hint_plan.message_level;
+RESET pg_hint_plan.debug_print;
