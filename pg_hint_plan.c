@@ -513,8 +513,9 @@ RelOptInfo *pg_hint_plan_standard_join_search(PlannerInfo *root,
 void		pg_hint_plan_join_search_one_level(PlannerInfo *root, int level);
 void		pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 										  Index rti, RangeTblEntry *rte);
-static void pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
-												bool inhparent, RelOptInfo *rel);
+static void pg_hint_plan_build_simple_rel_hook(PlannerInfo *root,
+											   RelOptInfo *rel,
+											   RangeTblEntry *rte);
 static void create_plain_partial_paths(PlannerInfo *root,
 									   RelOptInfo *rel);
 static void make_rels_by_clause_joins(PlannerInfo *root, RelOptInfo *old_rel,
@@ -604,7 +605,7 @@ static post_parse_analyze_hook_type prev_post_parse_analyze_hook = NULL;
 static planner_hook_type prev_planner = NULL;
 static join_search_hook_type prev_join_search = NULL;
 static set_rel_pathlist_hook_type prev_set_rel_pathlist = NULL;
-static get_relation_info_hook_type prev_get_relation_info_hook = NULL;
+static build_simple_rel_hook_type prev_simple_rel_hook = NULL;
 static needs_fmgr_hook_type prev_needs_fmgr_hook = NULL;
 static fmgr_hook_type prev_fmgr_hook = NULL;
 static ExecutorEnd_hook_type prev_ExecutorEnd = NULL;
@@ -825,8 +826,8 @@ _PG_init(void)
 	needs_fmgr_hook = pg_hint_plan_needs_fmgr_hook;
 	prev_ExecutorEnd = ExecutorEnd_hook;
 	ExecutorEnd_hook = pg_hint_ExecutorEnd;
-	prev_get_relation_info_hook = get_relation_info_hook;
-	get_relation_info_hook = pg_hint_plan_get_relation_info_hook;
+	prev_simple_rel_hook = build_simple_rel_hook;
+	build_simple_rel_hook = pg_hint_plan_build_simple_rel_hook;
 }
 
 static bool
@@ -5129,19 +5130,19 @@ set_parent_index_infos(Index parent_relid,
  * relation with the DisableIndex hints.
  */
 void
-pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
-									bool inhparent, RelOptInfo *rel)
+pg_hint_plan_build_simple_rel_hook(PlannerInfo *root,
+								   RelOptInfo *rel,
+								   RangeTblEntry *rte)
 {
 	ListCell   *cell;
 	StringInfoData buf;
-	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
 	DisableIndexHint *match_hint = NULL;
 
 	/* call the previous hook */
-	if (prev_get_relation_info_hook)
-		prev_get_relation_info_hook(root, relationObjectId, inhparent, rel);
+	if (prev_simple_rel_hook)
+		prev_simple_rel_hook(root, rel, rte);
 
-	if (!current_hint_state || inhparent)
+	if (!current_hint_state || rte->inh)
 		return;
 
 	/* Loop through the disable index hints */
@@ -5227,7 +5228,7 @@ pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 			{
 				ParentIndexInfo *p_info = (ParentIndexInfo *) lfirst(l);
 
-				if (!check_index_match(info, p_info, relationObjectId))
+				if (!check_index_match(info, p_info, rte->relid))
 					continue;
 
 				rel->indexlist = foreach_delete_current(rel->indexlist, cell);
