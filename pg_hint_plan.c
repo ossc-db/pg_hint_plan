@@ -4235,7 +4235,7 @@ transform_join_hints(HintState *hstate, PlannerInfo *root, int nbaserel,
 	/* ditto for memoize hints */
 	for (i = 0; i < hstate->num_hints[HINT_TYPE_MEMOIZE]; i++)
 	{
-		JoinMethodHint *hint = hstate->join_hints[i];
+		JoinMethodHint *hint = hstate->memoize_hints[i];
 
 		if (!hint_state_enabled(hint) || hint->nrels > nbaserel)
 			continue;
