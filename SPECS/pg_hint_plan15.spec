@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 15
 Name:       pg_hint_plan15
-Version:    1.5.3
+Version:    1.5.4
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 15.
 
 %package llvmjit
 Requires: postgresql15-server, postgresql15-llvmjit
-Requires: pg_hint_plan15 = 1.5.3
+Requires: pg_hint_plan15 = 1.5.4
 Summary:  Just-in-time compilation support for pg_hint_plan15
 
 %description llvmjit
@@ -90,10 +90,12 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
 %{_datadir}/extension/pg_hint_plan--1.4.2--1.4.3.sql
 %{_datadir}/extension/pg_hint_plan--1.4.3--1.4.4.sql
-%{_datadir}/extension/pg_hint_plan--1.4.4--1.5.sql
+%{_datadir}/extension/pg_hint_plan--1.4.4--1.4.5.sql
+%{_datadir}/extension/pg_hint_plan--1.4.5--1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.5--1.5.1.sql
 %{_datadir}/extension/pg_hint_plan--1.5.1--1.5.2.sql
 %{_datadir}/extension/pg_hint_plan--1.5.2--1.5.3.sql
+%{_datadir}/extension/pg_hint_plan--1.5.3--1.5.4.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -105,6 +107,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Thu Jun 04 2026 Michael Paquier
+- Version 1.5.4.
 * Mon Jun 30 2025 Michael Paquier
 - Version 1.5.3.
 * Tue Aug 27 2024 Michael Paquier
