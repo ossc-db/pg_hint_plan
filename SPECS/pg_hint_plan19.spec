@@ -90,17 +90,22 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
 %{_datadir}/extension/pg_hint_plan--1.4.2--1.4.3.sql
 %{_datadir}/extension/pg_hint_plan--1.4.3--1.4.4.sql
-%{_datadir}/extension/pg_hint_plan--1.4.4--1.5.sql
+%{_datadir}/extension/pg_hint_plan--1.4.4--1.4.5.sql
+%{_datadir}/extension/pg_hint_plan--1.4.5--1.5.sql
 %{_datadir}/extension/pg_hint_plan--1.5--1.5.1.sql
 %{_datadir}/extension/pg_hint_plan--1.5.1--1.5.2.sql
 %{_datadir}/extension/pg_hint_plan--1.5.2--1.5.3.sql
-%{_datadir}/extension/pg_hint_plan--1.5.3--1.6.0.sql
+%{_datadir}/extension/pg_hint_plan--1.5.3--1.5.4.sql
+%{_datadir}/extension/pg_hint_plan--1.5.4--1.6.0.sql
 %{_datadir}/extension/pg_hint_plan--1.6.0--1.6.1.sql
 %{_datadir}/extension/pg_hint_plan--1.6.1--1.6.2.sql
-%{_datadir}/extension/pg_hint_plan--1.6.2--1.7.0.sql
+%{_datadir}/extension/pg_hint_plan--1.6.2--1.6.3.sql
+%{_datadir}/extension/pg_hint_plan--1.6.3--1.7.0.sql
 %{_datadir}/extension/pg_hint_plan--1.7.0--1.7.1.sql
-%{_datadir}/extension/pg_hint_plan--1.7.1--1.8.0.sql
-%{_datadir}/extension/pg_hint_plan--1.8.0--1.9.0.sql
+%{_datadir}/extension/pg_hint_plan--1.7.1--1.7.2.sql
+%{_datadir}/extension/pg_hint_plan--1.7.2--1.8.0.sql
+%{_datadir}/extension/pg_hint_plan--1.8.0--1.8.1.sql
+%{_datadir}/extension/pg_hint_plan--1.8.1--1.9.0.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
