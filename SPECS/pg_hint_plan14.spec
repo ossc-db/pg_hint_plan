@@ -16,7 +16,7 @@
 ## Set general information for pg_store_plans.
 Summary:    Optimizer hint on PostgreSQL 12
 Name:       pg_hint_plan14
-Version:    1.4.4
+Version:    1.4.5
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -39,7 +39,7 @@ Note that this package is available for only PostgreSQL 14.
 
 %package llvmjit
 Requires: postgresql14-server, postgresql14-llvmjit
-Requires: pg_hint_plan14 = 1.4.4
+Requires: pg_hint_plan14 = 1.4.5
 Summary:  Just-in-time compilation support for pg_hint_plan14
 
 %description llvmjit
@@ -90,6 +90,7 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.4.1--1.4.2.sql
 %{_datadir}/extension/pg_hint_plan--1.4.2--1.4.3.sql
 %{_datadir}/extension/pg_hint_plan--1.4.3--1.4.4.sql
+%{_datadir}/extension/pg_hint_plan--1.4.4--1.4.5.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -101,6 +102,8 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
+* Thu Jun 04 2026 Michael Paquier
+- Version 1.4.5.
 * Mon Jun 30 2025 Michael Paquier
 - Version 1.4.4.
 * Thu Aug 29 2024 Michael Paquier
