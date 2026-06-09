@@ -9392,21 +9392,23 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                 
+                   QUERY PLAN                    
 -------------------------------------------------
- Nested Loop
-   Disabled: true
-   ->  Merge Join
-         Merge Cond: (t2.id = t1.id)
-         ->  Index Scan using t2_pkey on t2
-         ->  Sort
-               Sort Key: t1.id
-               ->  Gather
-                     Workers Planned: 8
+ Gather
+   Workers Planned: 8
+   ->  Nested Loop
+         Disabled: true
+         ->  Merge Join
+               Merge Cond: (t1.id = t2.id)
+               ->  Sort
+                     Sort Key: t1.id
                      ->  Parallel Seq Scan on t1
-   ->  Index Scan using t3_pkey on t3
-         Index Cond: (id = t1.id)
-(11 rows)
+               ->  Sort
+                     Sort Key: t2.id
+                     ->  Seq Scan on t2
+         ->  Index Scan using t3_pkey on t3
+               Index Cond: (id = t1.id)
+(14 rows)
 
 -- Check state of hint stack across with ERROR level due to debug_print.
 -- The first query generates an error while a hint is included.  The second

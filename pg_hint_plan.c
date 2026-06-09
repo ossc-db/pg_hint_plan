@@ -392,13 +392,6 @@ struct HintState
 
 	/* Initial values of parameters  */
 	int			init_scan_mask; /* enable_* mask */
-	int			init_nworkers;	/* max_parallel_workers_per_gather */
-	/* min_parallel_table_scan_size */
-	int			init_min_para_tablescan_size;
-	/* min_parallel_index_scan_size */
-	int			init_min_para_indexscan_size;
-	double		init_paratup_cost;	/* parallel_tuple_cost */
-	double		init_parasetup_cost;	/* parallel_setup_cost */
 
 	PlannerInfo *current_root;	/* PlannerInfo for the followings */
 	Index		parent_relid;	/* inherit parent of table relid */
@@ -537,8 +530,6 @@ static void setup_scan_method_enforcement(RelOptInfo *rel,
 										  HintState *state);
 static int	set_config_int32_option(const char *name, int32 value,
 									GucContext context);
-static int	set_config_double_option(const char *name, double value,
-									 GucContext context);
 static bool check_index_match(IndexOptInfo *info,
 							  ParentIndexInfo *p_info,
 							  Oid relationObjectId);
@@ -1182,11 +1173,6 @@ HintStateCreate(void)
 	hstate->all_hints = NULL;
 	memset(hstate->num_hints, 0, sizeof(hstate->num_hints));
 	hstate->init_scan_mask = 0;
-	hstate->init_nworkers = 0;
-	hstate->init_min_para_tablescan_size = 0;
-	hstate->init_min_para_indexscan_size = 0;
-	hstate->init_paratup_cost = 0;
-	hstate->init_parasetup_cost = 0;
 	hstate->current_root = NULL;
 	hstate->parent_relid = 0;
 	hstate->parent_scan_hint = NULL;
@@ -2750,23 +2736,6 @@ set_config_int32_option(const char *name, int32 value, GucContext context)
 								  pg_hint_plan_parse_message_level);
 }
 
-/*
- * Sets GUC parameter of double type without throwing exceptions. Returns false
- * if something wrong.
- */
-static int
-set_config_double_option(const char *name, double value, GucContext context)
-{
-	char	   *buf = float8out_internal(value);
-	int			result;
-
-	result = set_config_option_noerror(name, buf, context,
-									   PGC_S_SESSION, GUC_ACTION_SAVE, true,
-									   pg_hint_plan_parse_message_level);
-	pfree(buf);
-	return result;
-}
-
 /* setup scan method enforcement according to given options */
 static void
 setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
@@ -2803,42 +2772,15 @@ setup_parallel_plan_enforcement(RelOptInfo *rel,
 								ParallelHint *hint,
 								HintState *state)
 {
-	if (hint)
-	{
-		hint->base.state = HINT_STATE_USED;
-		set_config_int32_option("max_parallel_workers_per_gather",
-								hint->nworkers, state->context);
-	}
-	else
-		set_config_int32_option("max_parallel_workers_per_gather",
-								state->init_nworkers, state->context);
+	Assert(hint != NULL);
 
-	/* force means that enforce parallel as far as possible */
-	if (hint && hint->force_parallel && hint->nworkers > 0)
-	{
-		set_config_double_option("parallel_tuple_cost", 0.0, state->context);
-		set_config_double_option("parallel_setup_cost", 0.0, state->context);
-		set_config_int32_option("min_parallel_table_scan_size", 0,
-								state->context);
-		set_config_int32_option("min_parallel_index_scan_size", 0,
-								state->context);
+	hint->base.state = HINT_STATE_USED;
+	rel->rel_parallel_workers = hint->nworkers;
 
-	}
-	else
-	{
-		set_config_double_option("parallel_tuple_cost",
-								 state->init_paratup_cost, state->context);
-		set_config_double_option("parallel_setup_cost",
-								 state->init_parasetup_cost, state->context);
-		set_config_int32_option("min_parallel_table_scan_size",
-								state->init_min_para_tablescan_size,
-								state->context);
-		set_config_int32_option("min_parallel_index_scan_size",
-								state->init_min_para_indexscan_size,
-								state->context);
-	}
+	if (!hint->force_parallel)
+		return;
 
-	if (hint && hint->nworkers > 0)
+	if (hint->nworkers > 0)
 	{
 		rel->pgs_mask |= PGS_GATHER;
 
@@ -2857,12 +2799,6 @@ setup_parallel_plan_enforcement(RelOptInfo *rel,
 	}
 }
 
-#define SET_CONFIG_OPTION(name, type_bits) \
-	set_config_option_noerror((name), \
-		(mask & (type_bits)) ? "true" : "false", \
-		context, PGC_S_SESSION, GUC_ACTION_SAVE, true, ERROR)
-
-
 /*
  * Setup GUC environment to enforce scan methods. If scanhint is NULL, reset
  * GUCs to the saved state in state.
@@ -2872,14 +2808,13 @@ setup_scan_method_enforcement(RelOptInfo *rel,
 							  ScanMethodHint *scanhint,
 							  HintState *state)
 {
-	unsigned char enforce_mask = state->init_scan_mask;
+	unsigned char enforce_mask;
 	unsigned char mask;
 
-	if (scanhint)
-	{
-		enforce_mask = scanhint->enforce_mask;
-		scanhint->base.state = HINT_STATE_USED;
-	}
+	Assert(scanhint != NULL);
+
+	enforce_mask = scanhint->enforce_mask;
+	scanhint->base.state = HINT_STATE_USED;
 
 	if (enforce_mask == ENABLE_SEQSCAN || enforce_mask == ENABLE_INDEXSCAN ||
 		enforce_mask == ENABLE_BITMAPSCAN || enforce_mask == ENABLE_TIDSCAN
@@ -3240,21 +3175,15 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions,
 
 		current_hint_state->init_scan_mask = get_current_scan_mask();
 		current_hint_state->init_join_mask = get_current_join_mask();
-		current_hint_state->init_min_para_tablescan_size =
-			min_parallel_table_scan_size;
-		current_hint_state->init_min_para_indexscan_size =
-			min_parallel_index_scan_size;
-		current_hint_state->init_paratup_cost = parallel_tuple_cost;
-		current_hint_state->init_parasetup_cost = parallel_setup_cost;
 
 		/*
 		 * max_parallel_workers_per_gather should be non-zero here if Workers
 		 * hint is specified.
 		 */
-		if (max_hint_nworkers > 0 && max_parallel_workers_per_gather < 1)
+		if (max_hint_nworkers > 0 &&
+			max_parallel_workers_per_gather < max_hint_nworkers)
 			set_config_int32_option("max_parallel_workers_per_gather",
-									1, current_hint_state->context);
-		current_hint_state->init_nworkers = max_parallel_workers_per_gather;
+									max_hint_nworkers, current_hint_state->context);
 
 		if (debug_level > 1)
 		{
@@ -3824,31 +3753,6 @@ get_parent_index_info(Oid indexoid, Oid relid)
 }
 
 /*
- * cancel hint enforcement
- */
-static void
-reset_hint_enforcement(RelOptInfo *rel)
-{
-	/*
-	 * Save and restore pgs_mask around the GUC reset.  The pgs_mask flags
-	 * were set during hint enforcement and must persist on the rel for
-	 * correct path costing in later planning stages (e.g.,
-	 * generate_useful_gather_paths needs PGS_GATHER to remain set so Gather
-	 * paths are not penalized as disabled).
-	 */
-	uint64		saved_pgs_mask = rel->pgs_mask;
-
-	/* We cannot handle if this requires an outer */
-	if (rel->lateral_relids)
-		return;
-
-	setup_scan_method_enforcement(rel, NULL, current_hint_state);
-	setup_parallel_plan_enforcement(rel, NULL, current_hint_state);
-
-	rel->pgs_mask = saved_pgs_mask;
-}
-
-/*
  * Set planner guc parameters according to corresponding scan hints.  Returns
  * bitmap of HintTypeBitmap. If shint or phint is not NULL, set used hint
  * there respectively.
@@ -3986,7 +3890,18 @@ setup_hint_enforcement(PlannerInfo *root, RangeTblEntry *rte, RelOptInfo *rel)
 	if (!phint)
 		phint = current_hint_state->parent_parallel_hint;
 
-	setup_parallel_plan_enforcement(rel, phint, current_hint_state);
+	/*
+	 * Skip parallel enforcement for relations that cannot use parallel
+	 * execution.  Tablesample relations are only parallel-safe when the
+	 * sample function itself is safe, but we can't determine that here
+	 * (consider_parallel hasn't been set yet).  Rather than risk marking the
+	 * hint as used for an unsafe relation, skip it entirely.
+	 */
+	if (phint && rte->tablesample != NULL)
+		phint = NULL;
+
+	if (phint)
+		setup_parallel_plan_enforcement(rel, phint, current_hint_state);
 
 	if (phint)
 		ret |= HINT_BM_PARALLEL;
@@ -4005,8 +3920,6 @@ setup_hint_enforcement(PlannerInfo *root, RangeTblEntry *rte, RelOptInfo *rel)
 							get_rel_name(relationObjectId),
 							inhparent, current_hint_state, hint_inhibit_level,
 							current_hint_state->init_scan_mask)));
-
-		setup_scan_method_enforcement(rel, NULL, current_hint_state);
 
 		return ret;
 	}
@@ -4899,8 +4812,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 
 		return;
 	}
-
-	reset_hint_enforcement(rel);
 }
 
 /*

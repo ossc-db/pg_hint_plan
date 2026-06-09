@@ -5,11 +5,11 @@ SET client_min_messages TO LOG;
 
 -- Queries on ordinary tables with default setting
 EXPLAIN (COSTS false) SELECT * FROM s1.t1;
--- Note that parallel is not enforced on a single relation without
--- the GUCs related to parallelism reset.
+-- Note that parallel is enforced on a single relation with "hard" mode
+-- since pgs_mask directly penalizes non-parallel paths.
 /*+Parallel(t1 5 hard)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1;
--- Still it works for multiple relations.
+-- It also works for multiple relations.
 /*+Parallel(t11 5 hard)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1 as t11, s1.t1 as t12;
 
@@ -56,7 +56,7 @@ SET enable_parallel_append to true;
 /*+Parallel(p1 8 hard)*/
 EXPLAIN (COSTS false) SELECT * FROM p1;
 
--- hinting on children doesn't work (changed as of pg_hint_plan 10)
+-- hinting on children propagates to the whole inheritance tree
 SET enable_parallel_append to false;
 /*+Parallel(p1_c1 8 hard)*/
 EXPLAIN (COSTS false) SELECT * FROM p1;
@@ -150,7 +150,7 @@ SET enable_parallel_append to true;
 /*+Parallel(p1 8 hard) IndexScan(p1) */
 EXPLAIN (COSTS false) SELECT * FROM p1 join p2 on p1.id = p2.id;
 
--- This hint doesn't turn on parallel, so the Parallel hint is ignored
+-- This hint disables parallel on p1 (nworkers=0), combined with IndexScan
 set max_parallel_workers_per_gather TO 0;
 /*+Parallel(p1 0 hard) IndexScan(p1) */
 EXPLAIN (COSTS false) SELECT * FROM p1 join p2 on p1.id = p2.id;
@@ -182,12 +182,8 @@ SET max_parallel_workers_per_gather to 8;
 /*+Parallel(p1 5 hard)Parallel(p2 6 hard) */
 EXPLAIN (COSTS false) SELECT id FROM p1 UNION ALL SELECT id FROM p2;
 
--- On empty tables, parallel hints can only be enforced for index scans
--- and not sequential scans.  Adding a single row allows a parallel
--- hint to be enforced on a sequential scan.  It is a bit weird that
--- having no rows controls how parallel workers are triggered, but
--- at the same time we have nothing to query, and this is an old
--- historical (and accidental) behavior.
+-- On empty tables, parallel hints are enforced through pgs_mask
+-- penalization of non-parallel paths.
 /*+Parallel(t5 4 hard) Parallel(t6 2 hard)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t5 NATURAL JOIN s1.t6;
 /*+Parallel(t5 4 hard) Parallel(t6 2 hard) NoSeqScan(t5) NoSeqScan(t6) */
