@@ -69,4 +69,6 @@ ALTER EXTENSION pg_hint_plan UPDATE TO "1.8.1";
 \dx+ pg_hint_plan
 ALTER EXTENSION pg_hint_plan UPDATE TO "1.9.0";
 \dx+ pg_hint_plan
+ALTER EXTENSION pg_hint_plan UPDATE TO "2.0.0";
+\dx+ pg_hint_plan
 DROP EXTENSION pg_hint_plan;

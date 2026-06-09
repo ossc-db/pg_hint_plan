@@ -10,7 +10,7 @@ OBJS = \
 	pg_hint_plan.o \
 	query_scan.o
 
-HINTPLANVER = 1.9.0
+HINTPLANVER = 2.0.0
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
 	ut-fdw ut-W ut-T ut-fini plpgsql hint_table disable_index \
@@ -51,7 +51,8 @@ DATA = \
 	pg_hint_plan--1.7.1--1.7.2.sql \
 	pg_hint_plan--1.7.2--1.8.0.sql \
 	pg_hint_plan--1.8.0--1.8.1.sql \
-	pg_hint_plan--1.8.1--1.9.0.sql
+	pg_hint_plan--1.8.1--1.9.0.sql \
+	pg_hint_plan--1.9.0--2.0.0.sql
 
 EXTRA_CLEAN = RPMS
 
@@ -73,8 +74,8 @@ include $(DESTDIR)/../src/Makefile.global
 include $(DESTDIR)/../contrib/contrib-global.mk
 endif
 
-STARBALL19 = pg_hint_plan19-$(HINTPLANVER).tar.gz
-STARBALLS = $(STARBALL19)
+STARBALL20 = pg_hint_plan20-$(HINTPLANVER).tar.gz
+STARBALLS = $(STARBALL20)
 
 TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	pg_hint_plan--*.sql \
@@ -82,7 +83,7 @@ TARSOURCES = Makefile *.c  *.h COPYRIGHT* \
 	docs/* expected/*.out sql/*.sql \
 	data/data.csv SPECS/*.spec
 
-rpms: rpm19
+rpms: rpm20
 
 $(STARBALLS): $(TARSOURCES)
 	if [ -h $(subst .tar.gz,,$@) ]; then rm $(subst .tar.gz,,$@); fi
@@ -94,5 +95,5 @@ $(STARBALLS): $(TARSOURCES)
 	tar -chzf $@ $(addprefix $(subst .tar.gz,,$@)/, $^)
 	rm $(subst .tar.gz,,$@)
 
-rpm19: $(STARBALL19)
-	MAKE_ROOT=`pwd` rpmbuild -bb SPECS/pg_hint_plan19.spec
+rpm20: $(STARBALL20)
+	MAKE_ROOT=`pwd` rpmbuild -bb SPECS/pg_hint_plan20.spec

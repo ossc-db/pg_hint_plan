@@ -1,7 +1,7 @@
 # SPEC file for pg_hint_plan
-# Copyright(c) 2022-2025, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
+# Copyright(c) 2022-2026, NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
-%define _pgdir   /usr/pgsql-19
+%define _pgdir   /usr/pgsql-20
 %define _bindir  %{_pgdir}/bin
 %define _libdir  %{_pgdir}/lib
 %define _datadir %{_pgdir}/share
@@ -14,9 +14,9 @@
 %endif
 
 ## Set general information for pg_hint_plan.
-Summary:    Optimizer hint on PostgreSQL 19
-Name:       pg_hint_plan19
-Version:    1.9.0
+Summary:    Optimizer hint on PostgreSQL 20
+Name:       pg_hint_plan20
+Version:    2.0.0
 Release:    1%{?dist}
 License:    BSD
 Group:      Applications/Databases
@@ -26,8 +26,8 @@ BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-%(%{__id_u} -n)
 Vendor:     NIPPON TELEGRAPH AND TELEPHONE CORPORATION
 
 ## We use postgresql-devel package
-BuildRequires:  postgresql19-devel
-Requires:  postgresql19-server
+BuildRequires:  postgresql20-devel
+Requires:  postgresql20-server
 
 ## Description for "pg_hint_plan"
 %description
@@ -35,19 +35,19 @@ Requires:  postgresql19-server
 pg_hint_plan provides capability to tweak execution plans to be
 executed on PostgreSQL.
 
-Note that this package is available for only PostgreSQL 19.
+Note that this package is available for only PostgreSQL 20.
 
 %package llvmjit
-Requires: postgresql19-server, postgresql19-llvmjit
-Requires: pg_hint_plan19 = 1.9.0
-Summary:  Just-in-time compilation support for pg_hint_plan19
+Requires: postgresql20-server, postgresql20-llvmjit
+Requires: pg_hint_plan20 = 1.9.0
+Summary:  Just-in-time compilation support for pg_hint_plan20
 
 %description llvmjit
-Just-in-time compilation support for pg_hint_plan19
+Just-in-time compilation support for pg_hint_plan20
 
 ## pre work for build pg_hint_plan
 %prep
-PATH=/usr/pgsql-19/bin:$PATH
+PATH=/usr/pgsql-20/bin:$PATH
 if [ "${MAKE_ROOT}" != "" ]; then
   pushd ${MAKE_ROOT}
   make clean %{name}-%{version}.tar.gz
@@ -58,7 +58,7 @@ if [ ! -d %{_rpmdir} ]; then mkdir -p %{_rpmdir}; fi
 
 ## Set variables for build environment
 %build
-PATH=/usr/pgsql-19/bin:$PATH
+PATH=/usr/pgsql-20/bin:$PATH
 make USE_PGXS=1 LDFLAGS+=-Wl,--build-id %{?_smp_mflags}
 
 ## Set variables for install
@@ -106,6 +106,7 @@ rm -rf %{buildroot}
 %{_datadir}/extension/pg_hint_plan--1.7.2--1.8.0.sql
 %{_datadir}/extension/pg_hint_plan--1.8.0--1.8.1.sql
 %{_datadir}/extension/pg_hint_plan--1.8.1--1.9.0.sql
+%{_datadir}/extension/pg_hint_plan--1.9.0--2.0.0.sql
 %{_datadir}/extension/pg_hint_plan.control
 
 %files llvmjit
@@ -117,5 +118,5 @@ rm -rf %{buildroot}
 
 # History of pg_hint_plan.
 %changelog
-* Mon Jun 30 2025 Michael Paquier
-- Support PostgreSQL 19.
+* Mon Jun 09 2026 Michael Paquier
+- Support PostgreSQL 20.
