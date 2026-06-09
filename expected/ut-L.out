@@ -379,7 +379,7 @@ EXPLAIN (COSTS false) SELECT *, (SELECT max(t1.c1) FROM s1.t1, s1.t2, s1.t3, s1.
                                QUERY PLAN                               
 ------------------------------------------------------------------------
  Nested Loop
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  ->  Merge Join
@@ -419,7 +419,7 @@ error hint:
 ------------------------------------------------------------------------
  Merge Join
    Merge Cond: (t1.c1 = t2.c1)
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Merge Join
                  Merge Cond: (t1_1.c1 = t2_1.c1)
@@ -475,7 +475,7 @@ error hint:
                            ->  Seq Scan on t2
                ->  Index Scan using t3_i1 on t3
                      Index Cond: (c1 = t4.c1)
-   SubPlan 1
+   SubPlan expr_1
      ->  Aggregate
            ->  Result
                  One-Time Filter: ((t1.c1 = t2.c1) AND (t1.c1 = t3.c1) AND (t1.c1 = t4.c1))
@@ -1210,7 +1210,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t4.c1)
@@ -1226,7 +1226,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b1t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t4.c1)
@@ -1283,7 +1283,7 @@ error hint:
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1299,7 +1299,7 @@ error hint:
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t1 b1t1
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -1345,7 +1345,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t4.c1)
@@ -1361,7 +1361,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b1t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t4.c1)
@@ -1377,7 +1377,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b2t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t4.c1)
@@ -1438,7 +1438,7 @@ error hint:
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1454,7 +1454,7 @@ error hint:
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t1 b1t1
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -1470,7 +1470,7 @@ error hint:
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Seq Scan on t2 b2t2
                        Filter: (ctid = '(1,1)'::tid)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t3.c1)
@@ -1613,10 +1613,10 @@ SELECT max(b1t1.c1) FROM s1.t1 b1t1, s1.t2 b1t2, s1.t3 b1t3, s1.t4 b1t4 WHERE b1
 SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2t1.ctid = '(1,1)' AND b2t1.c1 = b2t2.c1 AND b2t2.ctid = '(1,1)' AND b2t1.c1 = b2t3.c1 AND b2t3.ctid = '(1,1)' AND b2t1.c1 = b2t4.c1 AND b2t4.ctid = '(1,1)'
 )
 ;
-                                         QUERY PLAN                                          
----------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t4.c1)
@@ -1632,7 +1632,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b1t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t4.c1)
@@ -1656,7 +1656,7 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
                      Join Filter: (bmt1.c1 = bmt2.c1)
                      ->  Tid Scan on t1 bmt1
                            TID Cond: (ctid = '(1,1)'::tid)
-                           Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1))
+                           Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1))
                      ->  Seq Scan on t2 bmt2
                            Filter: (ctid = '(1,1)'::tid)
                ->  Tid Scan on t3 bmt3
@@ -1687,10 +1687,10 @@ not used hint:
 duplication hint:
 error hint:
 
-                                         QUERY PLAN                                          
----------------------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1706,7 +1706,7 @@ error hint:
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t1 b1t1
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -1730,7 +1730,7 @@ error hint:
                      Join Filter: (bmt1.c1 = bmt2.c1)
                      ->  Tid Scan on t1 bmt1
                            TID Cond: (ctid = '(1,1)'::tid)
-                           Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1))
+                           Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1))
                      ->  Seq Scan on t2 bmt2
                            Filter: (ctid = '(1,1)'::tid)
                ->  Tid Scan on t3 bmt3
@@ -1750,10 +1750,10 @@ SELECT max(b2t1.c1) FROM s1.t1 b2t1, s1.t2 b2t2, s1.t3 b2t3, s1.t4 b2t4 WHERE b2
 SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.ctid = '(1,1)' AND b3t1.c1 = b3t2.c1 AND b3t2.ctid = '(1,1)' AND b3t1.c1 = b3t3.c1 AND b3t3.ctid = '(1,1)' AND b3t1.c1 = b3t4.c1 AND b3t4.ctid = '(1,1)'
 )
 ;
-                                                        QUERY PLAN                                                         
----------------------------------------------------------------------------------------------------------------------------
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t4.c1)
@@ -1769,7 +1769,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b1t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t4.c1)
@@ -1785,7 +1785,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b2t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t4.c1)
@@ -1809,7 +1809,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                      Join Filter: (bmt1.c1 = bmt2.c1)
                      ->  Tid Scan on t1 bmt1
                            TID Cond: (ctid = '(1,1)'::tid)
-                           Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1) AND (c1 <> (InitPlan 3).col1))
+                           Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1) AND (c1 <> (InitPlan expr_3).col1))
                      ->  Seq Scan on t2 bmt2
                            Filter: (ctid = '(1,1)'::tid)
                ->  Tid Scan on t3 bmt3
@@ -1844,10 +1844,10 @@ not used hint:
 duplication hint:
 error hint:
 
-                                                        QUERY PLAN                                                         
----------------------------------------------------------------------------------------------------------------------------
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b1t1.c1 = b1t2.c1)
@@ -1863,7 +1863,7 @@ error hint:
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t1 b1t1
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -1879,7 +1879,7 @@ error hint:
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Seq Scan on t2 b2t2
                        Filter: (ctid = '(1,1)'::tid)
-   InitPlan 3
+   InitPlan expr_3
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t3.c1)
@@ -1903,7 +1903,7 @@ error hint:
                      Join Filter: (bmt1.c1 = bmt2.c1)
                      ->  Tid Scan on t1 bmt1
                            TID Cond: (ctid = '(1,1)'::tid)
-                           Filter: ((c1 <> (InitPlan 1).col1) AND (c1 <> (InitPlan 2).col1) AND (c1 <> (InitPlan 3).col1))
+                           Filter: ((c1 <> (InitPlan expr_1).col1) AND (c1 <> (InitPlan expr_2).col1) AND (c1 <> (InitPlan expr_3).col1))
                      ->  Seq Scan on t2 bmt2
                            Filter: (ctid = '(1,1)'::tid)
                ->  Tid Scan on t3 bmt3
@@ -2278,19 +2278,21 @@ AND bmt1.c1 <> (
 SELECT max(b3t1.c1) FROM s1.t1 b3t1 WHERE b3t1.ctid = '(1,1)' AND b3t1.c1 = 1
 )
 ;
-                           QUERY PLAN                           
-----------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Aggregate
-   InitPlan 2
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Tid Scan on t1 b2t1
                          TID Cond: (ctid = '(1,1)'::tid)
                          Filter: (c1 = 1)
-   InitPlan 4
+   InitPlan expr_2
      ->  Result
-           InitPlan 3
+           Replaces: MinMaxAggregate
+           InitPlan minmax_2
              ->  Limit
                    ->  Tid Scan on t1 b3t1
                          TID Cond: (ctid = '(1,1)'::tid)
@@ -2298,9 +2300,10 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1 WHERE b3t1.ctid = '(1,1)' AND b3t1.c1 = 1
    ->  Nested Loop
          ->  Tid Scan on t1 bmt1
                TID Cond: (ctid = '(1,1)'::tid)
-               Filter: ((c1 <> (InitPlan 4).col1) AND (c1 = 1))
+               Filter: ((c1 <> (InitPlan expr_2).col1) AND (c1 = 1))
          ->  Result
-(20 rows)
+               Replaces: MinMaxAggregate
+(23 rows)
 
 /*+
 Leading(c1 bmt1)
@@ -2324,19 +2327,21 @@ not used hint:
 duplication hint:
 error hint:
 
-                           QUERY PLAN                           
-----------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Aggregate
-   InitPlan 2
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Tid Scan on t1 b2t1
                          TID Cond: (ctid = '(1,1)'::tid)
                          Filter: (c1 = 1)
-   InitPlan 4
+   InitPlan expr_2
      ->  Result
-           InitPlan 3
+           Replaces: MinMaxAggregate
+           InitPlan minmax_2
              ->  Limit
                    ->  Tid Scan on t1 b3t1
                          TID Cond: (ctid = '(1,1)'::tid)
@@ -2344,9 +2349,10 @@ error hint:
    ->  Nested Loop
          ->  Tid Scan on t1 bmt1
                TID Cond: (ctid = '(1,1)'::tid)
-               Filter: ((c1 <> (InitPlan 4).col1) AND (c1 = 1))
+               Filter: ((c1 <> (InitPlan expr_2).col1) AND (c1 = 1))
          ->  Result
-(20 rows)
+               Replaces: MinMaxAggregate
+(23 rows)
 
 -- No. L-2-2-2
 EXPLAIN (COSTS false)
@@ -2362,10 +2368,10 @@ AND bmt1.c1 <> (
 SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2 WHERE b3t1.ctid = '(1,1)' AND b3t1.c1 = b3t2.c1 AND b3t2.ctid = '(1,1)'
 )
 ;
-                        QUERY PLAN                         
------------------------------------------------------------
+                         QUERY PLAN                         
+------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -2373,7 +2379,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2 WHERE b3t1.ctid = '(1,1)' AND b3
                        TID Cond: (ctid = '(1,1)'::tid)
                  ->  Seq Scan on t2 b2t2
                        Filter: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t2.c1)
@@ -2387,7 +2393,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2 WHERE b3t1.ctid = '(1,1)' AND b3
                Join Filter: (bmt1.c1 = bmt2.c1)
                ->  Tid Scan on t1 bmt1
                      TID Cond: (ctid = '(1,1)'::tid)
-                     Filter: (c1 <> (InitPlan 2).col1)
+                     Filter: (c1 <> (InitPlan expr_2).col1)
                ->  Seq Scan on t2 bmt2
                      Filter: (ctid = '(1,1)'::tid)
          ->  Aggregate
@@ -2431,7 +2437,7 @@ error hint:
                            QUERY PLAN                            
 -----------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -2439,7 +2445,7 @@ error hint:
                        TID Cond: (ctid = '(1,1)'::tid)
                  ->  Seq Scan on t2 b2t2
                        Filter: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t2.c1)
@@ -2462,7 +2468,7 @@ error hint:
                                  Filter: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t1 bmt1
                TID Cond: (ctid = '(1,1)'::tid)
-               Filter: (c1 <> (InitPlan 2).col1)
+               Filter: (c1 <> (InitPlan expr_2).col1)
 (33 rows)
 
 -- No. L-2-2-3
@@ -2478,10 +2484,10 @@ AND bmt1.c1 <> (
 SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3t1.ctid = '(1,1)' AND b3t1.c1 = b3t2.c1 AND b3t2.ctid = '(1,1)' AND b3t1.c1 = b3t3.c1 AND b3t3.ctid = '(1,1)' AND b3t1.c1 = b3t4.c1 AND b3t4.ctid = '(1,1)'
 )
 ;
-                              QUERY PLAN                               
------------------------------------------------------------------------
+                               QUERY PLAN                               
+------------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t4.c1)
@@ -2497,7 +2503,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                              TID Cond: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t4 b2t4
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t4.c1)
@@ -2523,7 +2529,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1, s1.t2 b3t2, s1.t3 b3t3, s1.t4 b3t4 WHERE b3
                            Join Filter: (bmt1.c1 = bmt2.c1)
                            ->  Tid Scan on t1 bmt1
                                  TID Cond: (ctid = '(1,1)'::tid)
-                                 Filter: (c1 <> (InitPlan 2).col1)
+                                 Filter: (c1 <> (InitPlan expr_2).col1)
                            ->  Seq Scan on t2 bmt2
                                  Filter: (ctid = '(1,1)'::tid)
                      ->  Tid Scan on t3 bmt3
@@ -2578,7 +2584,7 @@ error hint:
                                        QUERY PLAN                                        
 -----------------------------------------------------------------------------------------
  Aggregate
-   InitPlan 1
+   InitPlan expr_1
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b2t1.c1 = b2t2.c1)
@@ -2594,7 +2600,7 @@ error hint:
                              Filter: (ctid = '(1,1)'::tid)
                  ->  Tid Scan on t1 b2t1
                        TID Cond: (ctid = '(1,1)'::tid)
-   InitPlan 2
+   InitPlan expr_2
      ->  Aggregate
            ->  Nested Loop
                  Join Filter: (b3t1.c1 = b3t2.c1)
@@ -2641,7 +2647,7 @@ error hint:
                      Filter: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t1 bmt1
                TID Cond: (ctid = '(1,1)'::tid)
-               Filter: (c1 <> (InitPlan 2).col1)
+               Filter: (c1 <> (InitPlan expr_2).col1)
 (65 rows)
 
 -- No. L-2-2-4
@@ -2657,17 +2663,18 @@ AND bmt1.c1 <> (
 SELECT max(b3t1.c1) FROM s1.t1 b3t1 WHERE b3t1.ctid = '(1,1)'
 )
 ;
-                              QUERY PLAN                               
------------------------------------------------------------------------
+                               QUERY PLAN                               
+------------------------------------------------------------------------
  Aggregate
-   InitPlan 2
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Tid Scan on t1 b2t1
                          TID Cond: (ctid = '(1,1)'::tid)
                          Filter: (c1 = 1)
-   InitPlan 3
+   InitPlan expr_2
      ->  Aggregate
            ->  Tid Scan on t1 b3t1
                  TID Cond: (ctid = '(1,1)'::tid)
@@ -2681,7 +2688,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1 WHERE b3t1.ctid = '(1,1)'
                            Join Filter: (bmt1.c1 = bmt2.c1)
                            ->  Tid Scan on t1 bmt1
                                  TID Cond: (ctid = '(1,1)'::tid)
-                                 Filter: (c1 <> (InitPlan 3).col1)
+                                 Filter: (c1 <> (InitPlan expr_2).col1)
                            ->  Seq Scan on t2 bmt2
                                  Filter: (ctid = '(1,1)'::tid)
                      ->  Tid Scan on t3 bmt3
@@ -2703,7 +2710,7 @@ SELECT max(b3t1.c1) FROM s1.t1 b3t1 WHERE b3t1.ctid = '(1,1)'
                                  TID Cond: (ctid = '(1,1)'::tid)
                      ->  Tid Scan on t4 b1t4
                            TID Cond: (ctid = '(1,1)'::tid)
-(44 rows)
+(45 rows)
 
 /*+
 Leading(c1 bmt4 bmt3 bmt2 bmt1)
@@ -2732,14 +2739,15 @@ error hint:
                                        QUERY PLAN                                        
 -----------------------------------------------------------------------------------------
  Aggregate
-   InitPlan 2
+   InitPlan expr_1
      ->  Result
-           InitPlan 1
+           Replaces: MinMaxAggregate
+           InitPlan minmax_1
              ->  Limit
                    ->  Tid Scan on t1 b2t1
                          TID Cond: (ctid = '(1,1)'::tid)
                          Filter: (c1 = 1)
-   InitPlan 3
+   InitPlan expr_2
      ->  Aggregate
            ->  Tid Scan on t1 b3t1
                  TID Cond: (ctid = '(1,1)'::tid)
@@ -2774,8 +2782,8 @@ error hint:
                      Filter: (ctid = '(1,1)'::tid)
          ->  Tid Scan on t1 bmt1
                TID Cond: (ctid = '(1,1)'::tid)
-               Filter: (c1 <> (InitPlan 3).col1)
-(44 rows)
+               Filter: (c1 <> (InitPlan expr_2).col1)
+(45 rows)
 
 ----
 ---- No. L-2-3 RULE or VIEW
