@@ -526,10 +526,6 @@ static void pg_hint_plan_join_path_setup(PlannerInfo *root,
 										 RelOptInfo *innerrel,
 										 JoinType jointype,
 										 JoinPathExtraData *extra);
-static void create_plain_partial_paths(PlannerInfo *root,
-									   RelOptInfo *rel);
-static void set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
-								   RangeTblEntry *rte);
 RelOptInfo *pg_hint_plan_make_join_rel(PlannerInfo *root, RelOptInfo *rel1,
 									   RelOptInfo *rel2);
 
@@ -2845,7 +2841,15 @@ setup_parallel_plan_enforcement(RelOptInfo *rel,
 	if (hint && hint->nworkers > 0)
 	{
 		rel->pgs_mask |= PGS_GATHER;
-		rel->pgs_mask &= ~PGS_CONSIDER_NONPARTIAL;
+
+		/*
+		 * Clear PGS_CONSIDER_NONPARTIAL only when forcing parallel with more
+		 * than 0 workers.  This penalizes non-partial paths so the planner
+		 * prefers execution.  We must not do this if nworkers is 0 which
+		 * disables parallel, otherwise all paths end up disabled.
+		 */
+		if (hint->force_parallel)
+			rel->pgs_mask &= ~PGS_CONSIDER_NONPARTIAL;
 	}
 	else
 	{
@@ -2887,7 +2891,7 @@ setup_scan_method_enforcement(RelOptInfo *rel,
 
 	rel->pgs_mask &=
 		~(PGS_SCAN_ANY | PGS_APPEND | PGS_MERGE_APPEND |
-			PGS_CONSIDER_INDEXONLY);
+		  PGS_CONSIDER_INDEXONLY);
 
 	if (mask & ENABLE_SEQSCAN)
 		rel->pgs_mask |= PGS_SEQSCAN;
@@ -3281,20 +3285,20 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions,
 			current_hint_retrieved = false;
 
 		/*
-		 * Mark join hints as used when the join path setup hook never
-		 * fired at the join level the hint targets.  This happens when
-		 * a join is eliminated early (e.g., WHERE false makes rels
-		 * empty/dummy at a lower join level, so higher-level joins are
-		 * never constructed).  In that case, join hints targeting the
-		 * higher level remain at HINT_STATE_NOTUSED even though they
-		 * were validly specified for relations present in the query.
+		 * Mark join hints as used when the join path setup hook never fired
+		 * at the join level the hint targets.  This happens when a join is
+		 * eliminated early (e.g., WHERE false makes rels empty/dummy at a
+		 * lower join level, so higher-level joins are never constructed).  In
+		 * that case, join hints targeting the higher level remain at
+		 * HINT_STATE_NOTUSED even though they were validly specified for
+		 * relations present in the query.
 		 *
-		 * We only mark hints whose nrels exceeds the maximum join level
-		 * where the hook actually fired.  Hints at levels where the
-		 * hook did fire are legitimately unused (join order mismatch).
+		 * We only mark hints whose nrels exceeds the maximum join level where
+		 * the hook actually fired.  Hints at levels where the hook did fire
+		 * are legitimately unused (join order mismatch).
 		 */
 		{
-			int		i;
+			int			i;
 			JoinMethodHint **join_hints = (JoinMethodHint **)
 				get_current_hints(HINT_TYPE_JOIN_METHOD);
 
@@ -3363,6 +3367,43 @@ standard_planner_proc:
 }
 
 /*
+ * Checks whether a given range table index is for an append rel child.
+ *
+ * This cannot rely on RELOPT_OTHER_MEMBER_REL because simple_rel_array is not
+ * yet initialized for inheritance children when get_relation_info gets called.
+ */
+static bool
+is_appendrel_child(PlannerInfo *root, Index rti)
+{
+	Index		top_rti = rti;
+
+	/*
+	 * If this is a child RTE, find the topmost parent that is still of type
+	 * RTE_RELATION. We do this because we identify children of partitioned
+	 * tables by the name of the child table, but subqueries can also have
+	 * child rels and we don't care about those here.
+	 */
+	for (;;)
+	{
+		AppendRelInfo *appinfo;
+		RangeTblEntry *parent_rte;
+
+		/* append_rel_array can be NULL if there are no children */
+		if (root->append_rel_array == NULL ||
+			(appinfo = root->append_rel_array[top_rti]) == NULL)
+			break;
+
+		parent_rte = planner_rt_fetch(appinfo->parent_relid, root);
+		if (parent_rte->rtekind != RTE_RELATION)
+			break;
+
+		top_rti = appinfo->parent_relid;
+	}
+
+	return rti != top_rti;
+}
+
+/*
  * Helper macro used by the find_*_hint routines checking for a match
  * for a relation name stored in a hint and a RTE.
  *
@@ -3392,8 +3433,7 @@ do {																\
 			alias_hint = hint;										\
 																	\
 		/* check the real name for appendrel children */			\
-		if (!real_name_hint &&										\
-			rel && rel->reloptkind == RELOPT_OTHER_MEMBER_REL)		\
+		if (!real_name_hint && is_appendrel_child(root, relid))		\
 		{															\
 			char	   *realname = get_rel_name(rte->relid);		\
 																	\
@@ -3473,29 +3513,7 @@ find_parallel_hint(PlannerInfo *root, Index relid)
 	RangeTblEntry *rte;
 	ParallelHint *match_hint;
 
-	/* This should not be a join rel */
-	Assert(relid > 0);
-	rel = root->simple_rel_array[relid];
-
-	/*
-	 * Parallel planning is appliable only on base relation, which has
-	 * RelOptInfo.
-	 */
-	if (!rel)
-		return NULL;
-
-	/*
-	 * We have set root->glob->parallelModeOK if needed. What we should do
-	 * here is just following the decision of planner.
-	 */
-	if (!rel->consider_parallel)
-		return NULL;
-
-	/*
-	 * This is baserel or appendrel children. We can refer to RangeTblEntry.
-	 */
-	rte = root->simple_rte_array[relid];
-	Assert(rte);
+	CHECK_RELATION_FOR_HINT();
 
 	/* Loop through the parallel hints */
 	FIND_MATCHING_HINT(ParallelHint, HINT_TYPE_PARALLEL);
@@ -3815,10 +3833,14 @@ reset_hint_enforcement(RelOptInfo *rel)
 	 * Save and restore pgs_mask around the GUC reset.  The pgs_mask flags
 	 * were set during hint enforcement and must persist on the rel for
 	 * correct path costing in later planning stages (e.g.,
-	 * generate_useful_gather_paths needs PGS_GATHER to remain set so
-	 * Gather paths are not penalized as disabled).
+	 * generate_useful_gather_paths needs PGS_GATHER to remain set so Gather
+	 * paths are not penalized as disabled).
 	 */
 	uint64		saved_pgs_mask = rel->pgs_mask;
+
+	/* We cannot handle if this requires an outer */
+	if (rel->lateral_relids)
+		return;
 
 	setup_scan_method_enforcement(rel, NULL, current_hint_state);
 	setup_parallel_plan_enforcement(rel, NULL, current_hint_state);
@@ -3832,21 +3854,14 @@ reset_hint_enforcement(RelOptInfo *rel)
  * there respectively.
  */
 static int
-setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
-					   ScanMethodHint **rshint, ParallelHint **rphint)
+setup_hint_enforcement(PlannerInfo *root, RangeTblEntry *rte, RelOptInfo *rel)
 {
 	Index		new_parent_relid = 0;
 	ScanMethodHint *shint = NULL;
 	ParallelHint *phint = NULL;
-	bool		inhparent = root->simple_rte_array[rel->relid]->inh;
-	Oid			relationObjectId = root->simple_rte_array[rel->relid]->relid;
+	bool		inhparent = rte->inh;
+	Oid			relationObjectId = rte->relid;
 	int			ret = 0;
-
-	/* reset returns if requested  */
-	if (rshint != NULL)
-		*rshint = NULL;
-	if (rphint != NULL)
-		*rphint = NULL;
 
 	/*
 	 * We could register the parent relation of the following children here
@@ -3862,8 +3877,6 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 		if (phint)
 		{
 			setup_parallel_plan_enforcement(rel, phint, current_hint_state);
-			if (rphint)
-				*rphint = phint;
 			ret |= HINT_BM_PARALLEL;
 			return ret;
 		}
@@ -3997,11 +4010,6 @@ setup_hint_enforcement(PlannerInfo *root, RelOptInfo *rel,
 
 		return ret;
 	}
-
-	if (rshint != NULL)
-		*rshint = shint;
-	if (rphint != NULL)
-		*rphint = phint;
 
 	return ret;
 }
@@ -4526,8 +4534,8 @@ adjust_rows(double rows, RowsHint *hint)
 
 static void
 pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
-				   RelOptInfo *outerrel, RelOptInfo *innerrel,
-				   SpecialJoinInfo *sjinfo, List *restrictlist)
+						   RelOptInfo *outerrel, RelOptInfo *innerrel,
+						   SpecialJoinInfo *sjinfo, List *restrictlist)
 {
 	Assert(bms_membership(joinrel->relids) == BMS_MULTIPLE);
 
@@ -4630,8 +4638,8 @@ pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
 
 static void
 pg_hint_plan_join_path_setup(PlannerInfo *root, RelOptInfo *joinrel,
-					 RelOptInfo *outerrel, RelOptInfo *innerrel,
-					 JoinType jointype, JoinPathExtraData *extra)
+							 RelOptInfo *outerrel, RelOptInfo *innerrel,
+							 JoinType jointype, JoinPathExtraData *extra)
 {
 	JoinMethodHint *join_hint = NULL;
 	JoinMethodHint *memoize_hint = NULL;
@@ -4641,7 +4649,7 @@ pg_hint_plan_join_path_setup(PlannerInfo *root, RelOptInfo *joinrel,
 	/* Track the max join level (nrels) where this hook fired */
 	if (current_hint_state)
 	{
-		int		nrels = bms_num_members(joinrel->relids);
+		int			nrels = bms_num_members(joinrel->relids);
 
 		if (nrels > current_hint_state->max_join_level_fired)
 			current_hint_state->max_join_level_fired = nrels;
@@ -4655,9 +4663,9 @@ pg_hint_plan_join_path_setup(PlannerInfo *root, RelOptInfo *joinrel,
 		Relids		joinrelids = bms_union(outerrel->relids, innerrel->relids);
 
 		/*
-		* joinrelids may include outer-join relids since PostgreSQL 16, so filter
-		* them out as hints can only handle base relations.
-		*/
+		 * joinrelids may include outer-join relids since PostgreSQL 16, so
+		 * filter them out as hints can only handle base relations.
+		 */
 		joinrelids = bms_intersect(joinrelids, root->all_baserels);
 
 		join_hint = find_join_hint(joinrelids);
@@ -4812,11 +4820,8 @@ pg_hint_plan_join_search(PlannerInfo *root, int levels_needed,
 	pfree(current_hint_state->join_hint_level);
 	pfree(join_method_hints);
 
-	//not sure if this is OK..
 	if (leading_hint_enable)
 		current_hint_state->deny_all_joins = false;
-	//set_join_config_options(&current_hint_state->init_join_mask, true,
-	//							current_hint_state->context);
 
 	return rel;
 }
@@ -4828,10 +4833,6 @@ void
 pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 							  Index rti, RangeTblEntry *rte)
 {
-	ParallelHint *phint;
-	ListCell   *l;
-	int			found_hints;
-
 	/* call the previous hook */
 	if (prev_set_rel_pathlist)
 		prev_set_rel_pathlist(root, rel, rti, rte);
@@ -4842,16 +4843,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 
 	/* Don't touch dummy rels. */
 	if (IS_DUMMY_REL(rel))
-		return;
-
-	/*
-	 * We can accept only plain relations, foreign tables and tablesamples are
-	 * also unacceptable. See set_rel_pathlist.
-	 */
-	if ((rel->rtekind != RTE_RELATION &&
-		 rel->rtekind != RTE_SUBQUERY) ||
-		rte->relkind == RELKIND_FOREIGN_TABLE ||
-		rte->tablesample != NULL)
 		return;
 
 	/*
@@ -4907,112 +4898,6 @@ pg_hint_plan_set_rel_pathlist(PlannerInfo *root, RelOptInfo *rel,
 		}
 
 		return;
-	}
-
-	/* We cannot handle if this requires an outer */
-	if (rel->lateral_relids)
-		return;
-
-	/* Return if this relation gets no enforcement */
-	if ((found_hints = setup_hint_enforcement(root, rel, NULL, &phint)) == 0)
-		return;
-
-	/* Here, we regenerate paths with the current hint restriction */
-	if (found_hints & HINT_BM_SCAN_METHOD || found_hints & HINT_BM_PARALLEL)
-	{
-		/*
-		 * When hint is specified on non-parent relations, discard existing
-		 * paths and regenerate based on the hint considered. Otherwise we
-		 * already have hinted child paths then just adjust the number of
-		 * planned number of workers.
-		 */
-		if (root->simple_rte_array[rel->relid]->inh)
-		{
-			/* enforce number of workers if requested */
-			if (phint && phint->force_parallel)
-			{
-				if (phint->nworkers == 0)
-				{
-					list_free_deep(rel->partial_pathlist);
-					rel->partial_pathlist = NIL;
-				}
-				else
-				{
-					/* prioritize partial paths */
-					foreach(l, rel->partial_pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->parallel_safe)
-						{
-							ppath->parallel_workers = phint->nworkers;
-							ppath->startup_cost = 0;
-							ppath->total_cost = 0;
-							ppath->disabled_nodes = 0;
-						}
-					}
-
-					/* disable non-partial paths */
-					foreach(l, rel->pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->disabled_nodes < 1)
-							ppath->disabled_nodes++;
-					}
-				}
-			}
-		}
-		else
-		{
-			/* Just discard all the paths considered so far */
-			list_free_deep(rel->pathlist);
-			rel->pathlist = NIL;
-			list_free_deep(rel->partial_pathlist);
-			rel->partial_pathlist = NIL;
-
-			/* Regenerate paths with the current enforcement */
-			set_plain_rel_pathlist(root, rel, rte);
-
-			/* Additional work to enforce parallel query execution */
-			if (phint && phint->nworkers > 0)
-			{
-				/*
-				 * For Parallel Append to be planned properly, we shouldn't
-				 * set the costs of non-partial paths to disable-value.  Lower
-				 * the priority of non-parallel paths by setting partial path
-				 * costs to 0 instead.
-				 */
-				foreach(l, rel->partial_pathlist)
-				{
-					Path	   *path = (Path *) lfirst(l);
-
-					path->startup_cost = 0;
-					path->total_cost = 0;
-					path->disabled_nodes = 0;
-				}
-
-				/* enforce number of workers if requested */
-				if (phint->force_parallel)
-				{
-					foreach(l, rel->partial_pathlist)
-					{
-						Path	   *ppath = (Path *) lfirst(l);
-
-						if (ppath->parallel_safe)
-							ppath->parallel_workers = phint->nworkers;
-					}
-				}
-
-				/*
-				 * Generate gather paths.  However, if this is an inheritance
-				 * child, skip it.
-				 */
-				if (rel->reloptkind == RELOPT_BASEREL &&
-					!bms_equal(rel->relids, root->all_baserels))
-					generate_useful_gather_paths(root, rel, false);
-			}
-		}
 	}
 
 	reset_hint_enforcement(rel);
@@ -5229,24 +5114,15 @@ set_parent_index_infos(Index parent_relid,
 	table_close(parent_rel, NoLock);
 }
 
-/*
- * relation_info_hook, to control the list of indexes disabled for a given
- * relation with the DisableIndex hints.
- */
-void
-pg_hint_plan_build_simple_rel_hook(PlannerInfo *root,
-								   RelOptInfo *rel,
-								   RangeTblEntry *rte)
+static void
+process_disable_index(PlannerInfo *root, RangeTblEntry *rte, RelOptInfo *rel)
 {
 	ListCell   *cell;
 	StringInfoData buf;
 	DisableIndexHint *match_hint = NULL;
+	Index		relid = rel->relid;
 
-	/* call the previous hook */
-	if (prev_simple_rel_hook)
-		prev_simple_rel_hook(root, rel, rte);
-
-	if (!current_hint_state || rte->inh)
+	if (rte->inh)
 		return;
 
 	/* Loop through the disable index hints */
@@ -5382,4 +5258,23 @@ pg_hint_plan_build_simple_rel_hook(PlannerInfo *root,
 	current_hint_state->parent_disableindex_hint = NULL;
 }
 
-#include "core.c"
+/*
+ * relation_info_hook, to control the list of indexes disabled for a given
+ * relation with the DisableIndex hints.
+ */
+void
+pg_hint_plan_build_simple_rel_hook(PlannerInfo *root,
+								   RelOptInfo *rel,
+								   RangeTblEntry *rte)
+{
+	/* call the previous hook */
+	if (prev_simple_rel_hook)
+		prev_simple_rel_hook(root, rel, rte);
+
+	if (!current_hint_state)
+		return;
+
+	process_disable_index(root, rte, rel);
+
+	setup_hint_enforcement(root, rte, rel);
+}

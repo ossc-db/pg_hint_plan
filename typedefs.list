@@ -10,6 +10,7 @@ HintStatus
 HintType
 IndexOptInfo
 JoinMethodHint
+JoinPathExtraData
 JumbleState
 LeadingHint
 List

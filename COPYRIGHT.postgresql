@@ -1,9 +1,4 @@
-core.c is the parts of PostgreSQL Database Management System (formerly
-known as Postgres, then as Postgres95).  Copyright holders of those files
-are following organizations:
-
 Portions Copyright (c) 1996-2026, PostgreSQL Global Development Group
-
 Portions Copyright (c) 1994, The Regents of the University of California
 
 Permission to use, copy, modify, and distribute this software and its

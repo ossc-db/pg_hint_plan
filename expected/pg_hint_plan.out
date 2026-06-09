@@ -1436,7 +1436,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -1518,7 +1518,7 @@ error hint:
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Bitmap Heap Scan on t2
-         Recheck Cond: (t1.id = id)
+         Recheck Cond: (id = t1.id)
          Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Index Scan on t2_pkey
                Index Cond: (id = t1.id)
@@ -1557,7 +1557,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -1577,7 +1577,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -1597,7 +1597,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -1617,7 +1617,7 @@ error hint:
               QUERY PLAN               
 ---------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Seq Scan on t1
          Filter: (ctid = '(1,1)'::tid)
    ->  Seq Scan on t2
@@ -2076,7 +2076,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -2158,7 +2158,7 @@ error hint:
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Bitmap Heap Scan on t2
-         Recheck Cond: (t1.id = id)
+         Recheck Cond: (id = t1.id)
          Filter: (ctid = '(1,1)'::tid)
          ->  Bitmap Index Scan on t2_pkey
                Index Cond: (id = t1.id)
@@ -2197,7 +2197,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -2217,7 +2217,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -2237,7 +2237,7 @@ error hint:
                QUERY PLAN                
 -----------------------------------------
  Nested Loop
-   Join Filter: (t1.id = t2.id)
+   Join Filter: (t2.id = t1.id)
    ->  Tid Scan on t1
          TID Cond: (ctid = '(1,1)'::tid)
    ->  Tid Scan on t2
@@ -4355,7 +4355,7 @@ error hint:
                               QUERY PLAN                               
 -----------------------------------------------------------------------
  Nested Loop
-   Join Filter: (p1.id = t1.id)
+   Join Filter: (t1.id = p1.id)
    ->  Seq Scan on p1
          Filter: ((id >= 50) AND (id <= 51) AND (ctid = '(1,1)'::tid))
    ->  Index Scan using t1_pkey on t1
@@ -4416,7 +4416,7 @@ error hint:
                  QUERY PLAN                  
 ---------------------------------------------
  Nested Loop
-   Join Filter: (p1.id = t1.id)
+   Join Filter: (t1.id = p1.id)
    ->  Tid Scan on p1
          TID Cond: (ctid = '(1,1)'::tid)
          Filter: ((id >= 50) AND (id <= 51))
@@ -4437,7 +4437,7 @@ error hint:
                               QUERY PLAN                               
 -----------------------------------------------------------------------
  Nested Loop
-   Join Filter: (p1.id = t1.id)
+   Join Filter: (t1.id = p1.id)
    ->  Seq Scan on p1
          Filter: ((id >= 50) AND (id <= 51) AND (ctid = '(1,1)'::tid))
    ->  Index Scan using t1_pkey on t1
@@ -4498,7 +4498,7 @@ error hint:
                  QUERY PLAN                  
 ---------------------------------------------
  Nested Loop
-   Join Filter: (p1.id = t1.id)
+   Join Filter: (t1.id = p1.id)
    ->  Tid Scan on p1
          TID Cond: (ctid = '(1,1)'::tid)
          Filter: ((id >= 50) AND (id <= 51))
@@ -6647,8 +6647,13 @@ EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid =
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey)
@@ -6677,8 +6682,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_id_val_idx
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id_val_idx
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_id_val_idx
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_id_val_idx
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_id_val_idx
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_id_val_idx
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_id_val_idx
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_id_val_idx
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_id_val_idx)
@@ -6707,8 +6717,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_val_id_idx
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_val_id_idx
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_val_id_idx
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_val_id_idx
+LOG:  available indexes for IndexScan(p2_c4):
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_val_id_idx
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_val_id_idx
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_val_id_idx
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_val_id_idx
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_val_id_idx)
@@ -6804,8 +6819,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey)
@@ -6834,8 +6854,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_id2_val
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id2_val
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_id2_val
+LOG:  available indexes for IndexScan(p2_c3):
+LOG:  available indexes for IndexScan(p2_c4):
 LOG:  available indexes for IndexScan(p2_c1_c1):
 LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c3_c1):
+LOG:  available indexes for IndexScan(p2_c3_c2):
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_id2_val)
@@ -6862,8 +6887,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_val2_id
 LOG:  available indexes for IndexScan(p2_c1):
+LOG:  available indexes for IndexScan(p2_c2):
+LOG:  available indexes for IndexScan(p2_c3):
+LOG:  available indexes for IndexScan(p2_c4):
 LOG:  available indexes for IndexScan(p2_c1_c1):
 LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c3_c1):
+LOG:  available indexes for IndexScan(p2_c3_c2):
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_val2_id)
@@ -6889,8 +6919,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey)
@@ -6919,8 +6954,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2):
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
+LOG:  available indexes for IndexScan(p2_c2):
+LOG:  available indexes for IndexScan(p2_c3):
+LOG:  available indexes for IndexScan(p2_c4):
 LOG:  available indexes for IndexScan(p2_c1_c1):
 LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c3_c1):
+LOG:  available indexes for IndexScan(p2_c3_c2):
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_c1_id_val_idx)
@@ -6946,8 +6986,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2):
 LOG:  available indexes for IndexScan(p2_c1):
+LOG:  available indexes for IndexScan(p2_c2):
+LOG:  available indexes for IndexScan(p2_c3):
+LOG:  available indexes for IndexScan(p2_c4):
 LOG:  available indexes for IndexScan(p2_c1_c1):
 LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c3_c1):
+LOG:  available indexes for IndexScan(p2_c3_c2):
 LOG:  pg_hint_plan:
 used hint:
 not used hint:
@@ -6972,8 +7017,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey p2_c1_id_val_idx)
@@ -7002,8 +7052,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey no_exist)
@@ -7032,8 +7087,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2):
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx
+LOG:  available indexes for IndexScan(p2_c2):
+LOG:  available indexes for IndexScan(p2_c3):
+LOG:  available indexes for IndexScan(p2_c4):
 LOG:  available indexes for IndexScan(p2_c1_c1):
 LOG:  available indexes for IndexScan(p2_c1_c2):
+LOG:  available indexes for IndexScan(p2_c3_c1):
+LOG:  available indexes for IndexScan(p2_c3_c2):
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_c1_id_val_idx no_exist)
@@ -7059,8 +7119,13 @@ error hint:
 EXPLAIN (COSTS false) SELECT * FROM p2 WHERE id >= 50 AND id <= 51 AND p2.ctid = '(1,1)';
 LOG:  available indexes for IndexScan(p2): p2_pkey
 LOG:  available indexes for IndexScan(p2_c1): p2_c1_id_val_idx p2_c1_pkey
+LOG:  available indexes for IndexScan(p2_c2): p2_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3): p2_c3_pkey
+LOG:  available indexes for IndexScan(p2_c4): p2_c4_pkey
 LOG:  available indexes for IndexScan(p2_c1_c1): p2_c1_c1_pkey
 LOG:  available indexes for IndexScan(p2_c1_c2): p2_c1_c2_pkey
+LOG:  available indexes for IndexScan(p2_c3_c1): p2_c3_c1_pkey
+LOG:  available indexes for IndexScan(p2_c3_c2): p2_c3_c2_pkey
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p2 p2_pkey p2_c1_id_val_idx no_exist)
@@ -9327,7 +9392,7 @@ not used hint:
 duplication hint:
 error hint:
 
-                   QUERY PLAN                    
+                   QUERY PLAN                 
 -------------------------------------------------
  Nested Loop
    Disabled: true
@@ -9341,7 +9406,7 @@ error hint:
                      ->  Parallel Seq Scan on t1
    ->  Index Scan using t3_pkey on t3
          Index Cond: (id = t1.id)
-(12 rows)
+(11 rows)
 
 -- Check state of hint stack across with ERROR level due to debug_print.
 -- The first query generates an error while a hint is included.  The second
