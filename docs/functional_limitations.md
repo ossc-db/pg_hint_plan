@@ -20,8 +20,8 @@ executed:
 ## Queries in ECPG
 
 ECPG removes comments in queries written as embedded SQLs so hints cannot
-be passed to it.  The only exception `EXECUTE`, that passes the query string
-to the server as-is.  The hint table can be used in the case.
+be passed to it.  The only exception is `EXECUTE`, which passes the query
+string to the server as-is.  The hint table can be used in that case.
 
 ## Query Identifiers
 

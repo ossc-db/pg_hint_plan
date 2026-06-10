@@ -5,18 +5,9 @@
  *
  * This file declares the QueryScanStateData structure used by query_scan.l.
  *
- * Another interesting thing we do here is scan different parts of the same
- * input with physically separate flex lexers (ie, lexers written in separate
- * .l files).  We can get away with this because the only part of the
- * persistent state of a flex lexer that depends on its parsing rule tables
- * is the start state number, which is easy enough to manage --- usually,
- * in fact, we just need to set it to INITIAL when changing lexers.  But to
- * make that work at all, we must use re-entrant lexers, so that all the
- * relevant state is in the yyscan_t attached to the QueryScanState;
- * if we were using lexers with separate static state we would soon end up
- * with dangling buffer pointers in one or the other.  Also note that this
- * is unlikely to work very nicely if the lexers aren't all built with the
- * same flex version, or if they don't use the same flex options.
+ * We use a re-entrant lexer so that all the relevant state is in the
+ * yyscan_t attached to the QueryScanState.  This avoids problems with
+ * static state and allows multiple concurrent scanner operations.
  *
  *
  * Portions Copyright (c) 1996-2026, PostgreSQL Global Development Group
@@ -48,8 +39,8 @@ typedef void *yyscan_t;
 /*
  * All working state of the lexer must be stored in QueryScanStateData
  * between calls.  This allows us to have multiple open lexer operations,
- * which is needed for nested include files.  The lexer itself is not
- * recursive, but it must be re-entrant.
+ * which is needed for concurrent use of the scanner.  The lexer itself is
+ * not recursive, but it must be re-entrant.
  */
 typedef struct QueryScanStateData
 {

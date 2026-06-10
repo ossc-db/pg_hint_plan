@@ -35,7 +35,7 @@ they are in separate hint comments:
 
 `pg_hint_plan` works for queries in PL/pgSQL scripts with some restrictions.
 
--   Hints affect only on the following kind of queries:
+-   Hints affect only the following kind of queries:
     -   Queries that return one row (`SELECT`, `INSERT`, `UPDATE` and `DELETE`)
     -   Queries that return multiple rows (`RETURN QUERY`)
     -   Dynamic SQL statements (`EXECUTE`)
@@ -74,7 +74,7 @@ The objects defined in a hint's parameter can use double quotes if they
 include parentheses, double quotes and white spaces.  The escaping rules are
 the same as PostgreSQL.
 
-## Distinction between multiple occurences of a table
+## Distinction between multiple occurrences of a table
 
 `pg_hint_plan` identifies the target object by using aliases if any.  This
 behavior is useful to point to a specific occurrence among multiple
@@ -133,8 +133,8 @@ comments in a multi-statement query cause an error.
 
 ## VALUES expressions
 
-`VALUES` expressions in `FROM` clause are named as `*VALUES*` internally these
-can be hinted if it is the only `VALUES` of a query.  Two or more `VALUES`
+`VALUES` expressions in `FROM` clause are named as `*VALUES*` internally so
+they can be hinted if there is only one `VALUES` in a query.  Two or more `VALUES`
 expressions in a query cannot be distinguished by looking at an `EXPLAIN` result,
 resulting in ambiguous results:
 

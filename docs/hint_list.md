@@ -10,7 +10,7 @@ The available hints are listed below.
 | | `IndexScan(table[ index...])` | Forces index scan on the table.  Restricts to specified indexes if any. |
 | | `IndexOnlyScan(table[ index...])` | Forces index-only scan on the table.  Restricts to specified indexes if any.  Index scan may be used if index-only scan is not available. |
 | | `BitmapScan(table[ index...])`| Forces bitmap scan on the table.  Restricts to specified indexes if any. |
-| | `IndexScanRegexp(table[ POSIX Regexp...])`<br>`IndexOnlyScanRegexp(table[ POSIX Regexp...])`<br>`BitmapScanRegexp(table[ POSIX Regexp...])` | Forces index scan, index-only scan (For PostgreSQL 9.2 and later) or bitmap scan on the table.  Restricts to indexes that matches the specified POSIX regular expression pattern. |
+| | `IndexScanRegexp(table[ POSIX Regexp...])`<br>`IndexOnlyScanRegexp(table[ POSIX Regexp...])`<br>`BitmapScanRegexp(table[ POSIX Regexp...])` | Forces index scan, index-only scan or bitmap scan on the table.  Restricts to indexes that matches the specified POSIX regular expression pattern. |
 | | `NoSeqScan(table)`| Forces to *not* do sequential scan on the table. |
 | | `NoTidScan(table)`| Forces to *not* do TID scan on the table.|
 | | `NoIndexScan(table)`| Forces to *not* do index scan and index-only scan on the table. |
