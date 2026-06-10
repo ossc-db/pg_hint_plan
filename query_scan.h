@@ -3,7 +3,7 @@
  * query_scan.h
  *	  lexical scanner for SQL commands
  *
- * This lexer can be used to extra hints from query contents, taking into
+ * This lexer can be used to extract hints from query contents, taking into
  * account what the backend would consider as values, for example.
  *
  * Portions Copyright (c) 1996-2026, PostgreSQL Global Development Group

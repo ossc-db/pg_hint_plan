@@ -5,11 +5,9 @@
  *	  lexical scanner for SQL commands
  *
  * This code is mainly concerned with determining where query hints are
- * located and where the end of a SQL statement is: we are looking for
- * semicolons that are not within quotes, comments, or parentheses.
- * The most reliable way to handle this is to borrow the backend's flex
- * lexer rules, lock, stock, and barrel.  The rules below are (except for
- * a few) the same as the backend's, but their actions are just ECHO
+ * located.  The most reliable way to handle this is to borrow the backend's
+ * flex lexer rules, lock, stock, and barrel.  The rules below are (except
+ * for a few) the same as the backend's, but their actions are just ECHO
  * whereas the backend's actions generally do other things.
  *
  * XXX The rules in this file must be kept in sync with the backend lexer!!!

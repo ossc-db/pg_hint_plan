@@ -55,7 +55,7 @@
 
 #include "plpgsql.h"
 
-/* Owner scanner */
+/* Query hint scanner */
 #include "query_scan.h"
 
 /* PostgreSQL */
@@ -139,7 +139,7 @@ enum JOIN_TYPE_BITS
 #define DISABLE_ALL_SCAN 0
 #define DISABLE_ALL_JOIN 0
 
-/* hint keyword of enum type*/
+/* hint keyword of enum type */
 typedef enum HintKeyword
 {
 	HINT_KEYWORD_SEQSCAN,
@@ -255,10 +255,10 @@ static const char *current_hint_str = NULL;
 /*
  * We can utilize in-core generated jumble state in post_parse_analyze_hook.
  * On the other hand there's a case where we're forced to get hints in
- * planner_hook, where we don't have a jumble state.  If we a query had not a
- * hint, we need to try to retrieve hints twice or more for one query, which is
- * the quite common case.  To avoid such case, this variables is set true when
- * we *try* hint retrieval.
+ * planner_hook, where we don't have a jumble state.  If a query does not have
+ * a hint, we need to try to retrieve hints twice or more for one query, which
+ * is the quite common case.  To avoid that, this variable is set true when we
+ * *try* hint retrieval.
  */
 static bool current_hint_retrieved = false;
 
@@ -548,8 +548,6 @@ static bool pg_hint_plan_enable_hint_table = false;
 static int	plpgsql_recurse_level = 0;	/* PLpgSQL recursion level            */
 static int	recurse_level = 0;	/* recursion level incl. direct SPI calls */
 static int	hint_inhibit_level = 0; /* Inhibit hinting if this is above 0 */
-
- /* (This could not be above 1)        */
 static int	max_hint_nworkers = -1; /* Maximum nworkers of Workers hints */
 
 static bool hint_table_deactivated = false;
@@ -605,10 +603,10 @@ static ExecutorEnd_hook_type prev_ExecutorEnd = NULL;
 static HintState *current_hint_state = NULL;
 
 /*
- * Reference to OID of PL/pgsql language, saved on first lookup at a
+ * Reference to OID of PL/pgSQL language, saved on first lookup at a
  * PL function.
  */
-static Oid pg_hint_plan_pgpg_oid = InvalidOid;
+static Oid pg_hint_plan_plpgsql_oid = InvalidOid;
 
 /*
  * List of hint contexts.  We treat the head of the list as the Top of the
@@ -666,10 +664,10 @@ pg_hint_plan_is_plpgsql_function(Oid funcoid)
 
 	procStruct = (Form_pg_proc) GETSTRUCT(procTuple);
 
-	if (!OidIsValid(pg_hint_plan_pgpg_oid))
-		pg_hint_plan_pgpg_oid = get_language_oid("plpgsql", false);
+	if (!OidIsValid(pg_hint_plan_plpgsql_oid))
+		pg_hint_plan_plpgsql_oid = get_language_oid("plpgsql", false);
 
-	result = (procStruct->prolang == pg_hint_plan_pgpg_oid);
+	result = (procStruct->prolang == pg_hint_plan_plpgsql_oid);
 
 	ReleaseSysCache(procTuple);
 
@@ -2503,7 +2501,7 @@ RowsHintParse(RowsHint *hint, const char *str)
 		i++;
 	}
 
-	/* Retieve rows estimation */
+	/* Retrieve rows estimation */
 	rows_str = list_nth(name_list, hint->nrels);
 	hint->rows_str = rows_str;	/* store as-is for error logging */
 	if (rows_str[0] == '#')
@@ -2736,7 +2734,7 @@ set_config_int32_option(const char *name, int32 value, GucContext context)
 								  pg_hint_plan_parse_message_level);
 }
 
-/* setup scan method enforcement according to given options */
+/* Apply Set hint GUC parameters according to given options */
 static void
 setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
 {
@@ -2763,9 +2761,7 @@ setup_guc_enforcement(SetHint **options, int noptions, GucContext context)
 }
 
 /*
- * Setup parallel execution environment.
- *
- * If hint is not NULL, set up using it, elsewise reset to initial environment.
+ * Setup parallel execution environment using the given hint.
  */
 static void
 setup_parallel_plan_enforcement(RelOptInfo *rel,
@@ -2800,8 +2796,7 @@ setup_parallel_plan_enforcement(RelOptInfo *rel,
 }
 
 /*
- * Setup GUC environment to enforce scan methods. If scanhint is NULL, reset
- * GUCs to the saved state in state.
+ * Set pgs_mask to enforce scan methods for the given relation.
  */
 static void
 setup_scan_method_enforcement(RelOptInfo *rel,
@@ -3148,7 +3143,7 @@ pg_hint_plan_planner(Query *parse, const char *query_string, int cursorOptions,
 	 */
 	push_hint(hstate);
 
-	/* Set scan enforcement here. */
+	/* Save the GUC nesting level for Set hints. */
 	save_nestlevel = NewGUCNestLevel();
 
 	/*
@@ -3615,7 +3610,7 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 	 *
 	 * If the hint has no matching indexes, skip applying the hinted scan
 	 * method.  For example if an IndexScan hint does not have any matching
-	 * indexes, we should not enforce an enable_indexscan.
+	 * indexes, we should not enforce the hinted scan method.
 	 */
 	if (list_length(unused_indexes) < list_length(rel->indexlist))
 	{
@@ -3769,7 +3764,7 @@ setup_hint_enforcement(PlannerInfo *root, RangeTblEntry *rte, RelOptInfo *rel)
 
 	/*
 	 * We could register the parent relation of the following children here
-	 * when inhparent == true but inheritnce planner doesn't call this
+	 * when inhparent == true but inheritance planner doesn't call this
 	 * function for parents. Since we cannot distinguish who called this
 	 * function we cannot do other than always seeking the parent regardless
 	 * of who called this function.
@@ -3815,7 +3810,7 @@ setup_hint_enforcement(PlannerInfo *root, RangeTblEntry *rte, RelOptInfo *rel)
 	{
 		/*
 		 * Here we found a new parent for the current relation. Scan continues
-		 * hint to other childrens of this parent so remember it to avoid
+		 * hint to other children of this parent so remember it to avoid
 		 * redundant setup cost.
 		 */
 		current_hint_state->parent_relid = new_parent_relid;
@@ -4489,7 +4484,7 @@ pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
 				/*
 				 * If the rows_hint's target relids is not a subset of both of
 				 * component rels and is a subset of this joinrel, ths hint's
-				 * targets spread over both component rels. This menas that
+				 * targets spread over both component rels. This means that
 				 * this hint has been never applied so far and this joinrel is
 				 * the first (and only) chance to fire in current join tree.
 				 * Only the multiplication hint has the cumulative nature so
@@ -4503,8 +4498,8 @@ pg_hint_plan_joinrel_setup(PlannerInfo *root, RelOptInfo *joinrel,
 		{
 			/*
 			 * If a hint just for me is found, no other adjust method is
-			 * useles, but this cannot be more than twice becuase this joinrel
-			 * is already adjusted by this hint.
+			 * useless, but this cannot be more than twice because this
+			 * joinrel is already adjusted by this hint.
 			 */
 			if (justforme->base.state == HINT_STATE_NOTUSED)
 				joinrel->rows = adjust_rows(joinrel->rows, justforme);

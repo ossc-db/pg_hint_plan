@@ -1,7 +1,7 @@
 # The hint table
 
-Hints can be specified in a comment, still this can be inconvenient in the case
-where queries cannot be edited.  In the case, hints can be placed in a special
+Hints can be specified in a comment, but this can be inconvenient when
+queries cannot be edited.  In such cases, hints can be placed in a special
 table named `"hint_plan.hints"`.  The table consists of the following columns:
 
 | column | description |
@@ -147,7 +147,7 @@ that the query is enforced differently on each table:
 
 `Set` hints change GUC parameters just while planning.  GUC parameter shown in
 [Query Planning](http://www.postgresql.org/docs/current/static/runtime-config-query.html)
-can have the expected effects on planning unless an other hint conflicts with
+can have the expected effects on planning unless another hint conflicts with
 the planner method configuration parameters.  When multiple hints change the
 same GUC, the last hint takes effect.
 [GUC parameters for `pg_hint_plan`](#guc-parameters-for-pg_hint_plan) are also
