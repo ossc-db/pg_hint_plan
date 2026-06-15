@@ -40,6 +40,7 @@
 #include "parser/scansup.h"
 #include "partitioning/partbounds.h"
 #include "tcop/utility.h"
+#include "utils/backend_status.h"
 #include "utils/builtins.h"
 #include "utils/float.h"
 #include "utils/lsyscache.h"
@@ -1940,6 +1941,7 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 	Datum		values[2];
 	char		nulls[2] = {' ', ' '};
 	text	   *app;
+	uint64		saved_queryid = pgstat_get_my_query_id();
 
 	/*
 	 * Make sure the extension is installed if trying to use the hint table.
@@ -1981,6 +1983,7 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 		values[1] = PointerGetDatum(app);
 
 		SPI_execute_plan(plan, values, nulls, true, 1);
+		pgstat_report_query_id(saved_queryid, true);
 
 		if (SPI_processed > 0)
 		{
@@ -2010,6 +2013,7 @@ get_hints_from_table(uint64 queryId, const char *client_application)
 	PG_CATCH();
 	{
 		hint_inhibit_level--;
+		pgstat_report_query_id(saved_queryid, true);
 		PG_RE_THROW();
 	}
 	PG_END_TRY();
