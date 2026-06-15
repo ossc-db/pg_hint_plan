@@ -38,6 +38,7 @@
 #include "parser/scansup.h"
 #include "partitioning/partbounds.h"
 #include "tcop/utility.h"
+#include "utils/backend_status.h"
 #include "utils/builtins.h"
 #include "utils/float.h"
 #include "utils/lsyscache.h"
@@ -1848,6 +1849,7 @@ get_hints_from_table(const char *client_query, const char *client_application)
 	text   *app;
 	Oid		namespaceId;
 	bool	hints_table_found = false;
+	uint64		saved_queryid = pgstat_get_my_query_id();
 
 	/*
 	 * Make sure that hint_plan.hints is found before we attempt to look for
@@ -1894,6 +1896,7 @@ get_hints_from_table(const char *client_query, const char *client_application)
 		values[1] = PointerGetDatum(app);
 
 		SPI_execute_plan(plan, values, nulls, true, 1);
+		pgstat_report_query_id(saved_queryid, true);
 
 		if (SPI_processed > 0)
 		{
@@ -1922,6 +1925,7 @@ get_hints_from_table(const char *client_query, const char *client_application)
 	PG_CATCH();
 	{
 		hint_inhibit_level--;
+		pgstat_report_query_id(saved_queryid, true);
 		PG_RE_THROW();
 	}
 	PG_END_TRY();
