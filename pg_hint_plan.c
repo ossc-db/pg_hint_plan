@@ -64,7 +64,7 @@
 
 PG_MODULE_MAGIC_EXT(
 					.name = "pg_hint_plan",
-					.version = HINTPLANVER
+					.version = "2.0.0"
 );
 
 #define BLOCK_COMMENT_START		"/*"
