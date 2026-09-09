@@ -13,7 +13,7 @@ OBJS = \
 HINTPLANVER = 1.7.2
 
 REGRESS = init base_plan pg_hint_plan ut-init ut-A ut-S ut-J ut-L ut-G ut-R \
-	ut-fdw ut-W ut-T ut-fini plpgsql hint_table query_parser \
+	ut-fdw ut-W ut-T ut-fini plpgsql hint_table hypopg query_parser \
 	oldextversions
 REGRESS_OPTS = --encoding=UTF8
 
