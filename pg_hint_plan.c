@@ -3568,6 +3568,17 @@ restrict_indexes(PlannerInfo *root, ScanMethodHint *hint, RelOptInfo *rel,
 		ListCell   *l;
 		bool		use_index = false;
 
+		/*
+		 * Indexes without a name are not registered in the catalogs, like
+		 * hypothetical indexes, so they cannot be matched by a hint.  Discard
+		 * them.
+		 */
+		if (indexname == NULL)
+		{
+			unused_indexes = lappend_oid(unused_indexes, info->indexoid);
+			continue;
+		}
+
 		foreach(l, hint->indexnames)
 		{
 			char	   *hintname = (char *) lfirst(l);
@@ -5163,6 +5174,14 @@ pg_hint_plan_get_relation_info_hook(PlannerInfo *root, Oid relationObjectId,
 		char	   *indexname = get_rel_name(info->indexoid);
 		ListCell   *l;
 		bool		result = false;
+
+		/*
+		 * Indexes without a name are not registered in the catalogs, like
+		 * hypothetical indexes, so they cannot be matched by a hint.  Just
+		 * leave them alone.
+		 */
+		if (indexname == NULL)
+			continue;
 
 		foreach(l, match_hint->indexnames)
 		{
