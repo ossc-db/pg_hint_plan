@@ -1,0 +1,6 @@
+-- Test hypothetical indexes with hypopg
+-- Skip test if hypopg is not installed.
+SELECT count(*) = 0 AS hypopg_missing FROM pg_available_extensions
+  WHERE name = 'hypopg' \gset
+\if :hypopg_missing
+\quit
