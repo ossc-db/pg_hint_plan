@@ -5255,9 +5255,9 @@ SELECT explain_filter('
 EXPLAIN SELECT c4 FROM s1.p1 WHERE c2 * 2 < 100 AND c1 < 10;
 ');
 LOG:  available indexes for IndexScan(p1): p1_parent
-LOG:  available indexes for IndexScan(p1c1): p1c1_c4_expr_idx
-LOG:  available indexes for IndexScan(p1c2): p1c2_c4_expr_idx
-LOG:  available indexes for IndexScan(p1c3): p1c3_c4_expr_idx
+LOG:  available indexes for IndexScan(p1c1): p1c1_c4_c1_2_100_idx
+LOG:  available indexes for IndexScan(p1c2): p1c2_c4_c1_2_100_idx
+LOG:  available indexes for IndexScan(p1c3): p1c3_c4_c1_2_100_idx
 LOG:  pg_hint_plan:
 used hint:
 IndexScan(p1 p1_parent)
@@ -5265,12 +5265,12 @@ not used hint:
 duplication hint:
 error hint:
 
-                                     explain_filter                                     
-----------------------------------------------------------------------------------------
+                                       explain_filter                                       
+--------------------------------------------------------------------------------------------
  Append  (cost=xxx..xxx rows=4 width=xxx)
    ->  Index Scan using p1_parent on p1 p1_1  (cost=xxx..xxx rows=1 width=xxx)
          Filter: ((c2 * 2) < 100)
-   ->  Index Scan using p1c1_c4_expr_idx on p1c1 p1_2  (cost=xxx..xxx rows=3 width=xxx)
+   ->  Index Scan using p1c1_c4_c1_2_100_idx on p1c1 p1_2  (cost=xxx..xxx rows=3 width=xxx)
          Filter: ((c2 * 2) < 100)
 (5 rows)
 
@@ -6069,9 +6069,9 @@ error hint:
 /*+IndexScanRegexp(p1 p1.*i)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.p1 WHERE c1 = 1;
 LOG:  available indexes for IndexScanRegexp(p1): p1_i2 p1_i
-LOG:  available indexes for IndexScanRegexp(p1c1): p1c1_i p1c1_c4_expr_idx
-LOG:  available indexes for IndexScanRegexp(p1c2): p1c2_i p1c2_c4_expr_idx
-LOG:  available indexes for IndexScanRegexp(p1c3): p1c3_i p1c3_c4_expr_idx
+LOG:  available indexes for IndexScanRegexp(p1c1): p1c1_i p1c1_c4_c1_2_100_idx
+LOG:  available indexes for IndexScanRegexp(p1c2): p1c2_i p1c2_c4_c1_2_100_idx
+LOG:  available indexes for IndexScanRegexp(p1c3): p1c3_i p1c3_c4_c1_2_100_idx
 LOG:  pg_hint_plan:
 used hint:
 IndexScanRegexp(p1 p1.*i)
