@@ -3222,130 +3222,23 @@ NestLoop(t1 t1)
 
 -- No. A-12-1-1
 -- No. A-12-2-1
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+-- we changed client_min_messages
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 ERROR:  pg_hint_plan: hint syntax error at or near "NestLoop(t1 t1)"
 DETAIL:  Relation name "t1" is duplicated.
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3371,130 +3264,22 @@ error hint:
 
 -- No. A-12-1-2
 -- No. A-12-2-2
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 ERROR:  pg_hint_plan: hint syntax error at or near "NestLoop(t1 t1)"
 DETAIL:  Relation name "t1" is duplicated.
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 EXPLAIN (COSTS false) EXECUTE p1;
              QUERY PLAN             
@@ -3509,65 +3294,11 @@ EXPLAIN (COSTS false) EXECUTE p1;
 
 -- No. A-12-1-3
 -- No. A-12-2-3
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
@@ -3605,127 +3336,19 @@ EXPLAIN (COSTS false) EXECUTE p1;
    ->  Index Scan using t2_i1 on t2
 (6 rows)
 
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 -- No. A-12-1-4
 -- No. A-12-2-4
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
@@ -3741,65 +3364,11 @@ EXPLAIN (COSTS false) EXECUTE p1;
    ->  Index Scan using t2_i1 on t2
 (6 rows)
 
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | on
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | on
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
+ ?column? 
+----------
+ t
+(1 row)
 
 DEALLOCATE p1;
 SET pg_hint_plan.parse_messages TO LOG;
@@ -3830,65 +3399,12 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
          ->  Seq Scan on t2
 (5 rows)
 
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | off
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | off
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
+       name       | setting | new_setting 
+------------------+---------+-------------
+ enable_indexscan | on      | off
+ enable_mergejoin | on      | off
+(2 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -3911,65 +3427,12 @@ error hint:
    ->  Index Scan using t2_i1 on t2
 (4 rows)
 
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | off
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | off
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
+       name       | setting | new_setting 
+------------------+---------+-------------
+ enable_indexscan | on      | off
+ enable_mergejoin | on      | off
+(2 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
@@ -3994,65 +3457,12 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
          ->  Seq Scan on t2
 (5 rows)
 
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | off
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | off
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
+       name       | setting | new_setting 
+------------------+---------+-------------
+ enable_indexscan | on      | off
+ enable_mergejoin | on      | off
+(2 rows)
 
 BEGIN;
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
@@ -4078,65 +3488,12 @@ error hint:
 
 COMMIT;
 BEGIN;
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | off
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | off
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
+       name       | setting | new_setting 
+------------------+---------+-------------
+ enable_indexscan | on      | off
+ enable_mergejoin | on      | off
+(2 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
@@ -4162,65 +3519,12 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
          ->  Seq Scan on t2
 (5 rows)
 
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | log
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | off
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | off
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
+       name       | setting | new_setting 
+------------------+---------+-------------
+ enable_indexscan | on      | off
+ enable_mergejoin | on      | off
+(2 rows)
 
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
@@ -4247,65 +3551,12 @@ error hint:
 SET enable_indexscan TO off;
 SET enable_mergejoin TO off;
 LOAD 'pg_hint_plan';
-SELECT name, setting FROM settings;
-              name              |  setting  
---------------------------------+-----------
- client_min_messages            | notice
- geqo                           | on
- geqo_effort                    | 5
- geqo_generations               | 0
- geqo_pool_size                 | 0
- geqo_seed                      | 0
- geqo_selection_bias            | 2
- geqo_threshold                 | 12
- constraint_exclusion           | partition
- cursor_tuple_fraction          | 0.1
- default_statistics_target      | 100
- from_collapse_limit            | 8
- jit                            | off
- join_collapse_limit            | 8
- plan_cache_mode                | auto
- recursive_worktable_factor     | 10
- cpu_index_tuple_cost           | 0.005
- cpu_operator_cost              | 0.0025
- cpu_tuple_cost                 | 0.01
- effective_cache_size           | 16384
- jit_above_cost                 | 100000
- jit_inline_above_cost          | 500000
- jit_optimize_above_cost        | 500000
- min_eager_agg_group_size       | 8
- min_parallel_index_scan_size   | 64
- min_parallel_table_scan_size   | 1024
- parallel_setup_cost            | 1000
- parallel_tuple_cost            | 0.1
- random_page_cost               | 4
- seq_page_cost                  | 1
- enable_async_append            | on
- enable_bitmapscan              | on
- enable_distinct_reordering     | on
- enable_eager_aggregate         | on
- enable_gathermerge             | on
- enable_group_by_reordering     | on
- enable_hashagg                 | on
- enable_hashjoin                | on
- enable_incremental_sort        | on
- enable_indexonlyscan           | on
- enable_indexscan               | off
- enable_material                | on
- enable_memoize                 | on
- enable_mergejoin               | off
- enable_nestloop                | on
- enable_parallel_append         | on
- enable_parallel_hash           | on
- enable_partition_pruning       | on
- enable_partitionwise_aggregate | off
- enable_partitionwise_join      | off
- enable_presorted_aggregate     | on
- enable_self_join_elimination   | on
- enable_seqscan                 | on
- enable_sort                    | on
- enable_tidscan                 | on
-(55 rows)
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
+       name       | setting | new_setting 
+------------------+---------+-------------
+ enable_indexscan | on      | off
+ enable_mergejoin | on      | off
+(2 rows)
 
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
           QUERY PLAN          
