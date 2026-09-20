@@ -145,13 +145,23 @@ SELECT current_database() AS datname \gset
 ALTER DATABASE :"datname" SET effective_cache_size TO 16384;
 SET effective_cache_size TO 16384;
 
-CREATE VIEW settings AS
-SELECT name, setting, category
+CREATE TABLE ori_settings AS
+  SELECT name, setting
   FROM pg_settings
- WHERE category LIKE 'Query Tuning%'
-    OR name = 'client_min_messages'
- ORDER BY category, name;
-SELECT * FROM settings;
+  WHERE category LIKE 'Query Tuning%'
+    OR name = 'client_min_messages';
+
+CREATE VIEW changed_settings AS
+SELECT ori.*, new.setting as new_setting
+  FROM ori_settings ori
+  JOIN (SELECT name, setting
+    FROM pg_settings
+    WHERE category LIKE 'Query Tuning%'
+      OR name = 'client_min_messages'
+  ) new ON ori.name = new.name AND ori.setting <> new.setting
+ORDER BY name;
+
+SELECT count(*) = 0 FROM changed_settings;
 
 -- EXPLAIN filtering
 --

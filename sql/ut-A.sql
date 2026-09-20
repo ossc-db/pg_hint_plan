@@ -942,40 +942,41 @@ EXPLAIN (COSTS false) EXECUTE p1;
 
 -- No. A-12-1-1
 -- No. A-12-2-1
-SELECT name, setting FROM settings;
+-- we changed client_min_messages
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 
 -- No. A-12-1-2
 -- No. A-12-2-2
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 SET pg_hint_plan.parse_messages TO error;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)NestLoop(t1 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 EXPLAIN (COSTS false) EXECUTE p1;
 
 -- No. A-12-1-3
 -- No. A-12-2-3
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
 /*+Set(enable_seqscan off)Set(geqo_threshold 100)SeqScan(t1)MergeJoin(t1 t2)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 EXPLAIN (COSTS false) EXECUTE p1;
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 
 -- No. A-12-1-4
 -- No. A-12-2-4
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 SET pg_hint_plan.parse_messages TO error;
 EXPLAIN (COSTS false) EXECUTE p2;
 EXPLAIN (COSTS false) EXECUTE p1;
-SELECT name, setting FROM settings;
+SELECT count(*) = 0 FROM changed_settings WHERE name <> 'client_min_messages';
 
 DEALLOCATE p1;
 SET pg_hint_plan.parse_messages TO LOG;
@@ -990,23 +991,23 @@ EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 SET enable_indexscan TO off;
 SET enable_mergejoin TO off;
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-SELECT name, setting FROM settings;
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-SELECT name, setting FROM settings;
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 
 -- No. A-12-3-2
 SET enable_indexscan TO off;
 SET enable_mergejoin TO off;
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-SELECT name, setting FROM settings;
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
 BEGIN;
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 COMMIT;
 BEGIN;
-SELECT name, setting FROM settings;
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 COMMIT;
 
@@ -1014,14 +1015,14 @@ COMMIT;
 SET enable_indexscan TO off;
 SET enable_mergejoin TO off;
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
-SELECT name, setting FROM settings;
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
 /*+Set(enable_indexscan on)Set(geqo_threshold 100)IndexScan(t2)MergeJoin(t1 t2)Leading(t2 t1)*/
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 \connect
 SET enable_indexscan TO off;
 SET enable_mergejoin TO off;
 LOAD 'pg_hint_plan';
-SELECT name, setting FROM settings;
+SELECT * FROM changed_settings WHERE name <> 'client_min_messages';
 EXPLAIN (COSTS false) SELECT * FROM s1.t1, s1.t2 WHERE t1.c1 = t2.c1;
 
 SET pg_hint_plan.enable_hint TO on;
